@@ -36,13 +36,7 @@ void get_savestate_filename_noshot(u32 slot, char *name_buffer);
 void get_savestate_filename(u32 slot, char *name_buffer);
 void get_savestate_snapshot(char *savestate_filename);
 
-#ifdef POLLUX_BUILD
-  #define default_clock_speed 533
-#elif defined(GP2X_BUILD)
-  #define default_clock_speed 200
-#else
-  #define default_clock_speed 333
-#endif
+#define default_clock_speed 333
 
 #endif
 

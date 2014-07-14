@@ -38,13 +38,8 @@ debug_state current_debug_state = RUN;
 
 //u32 breakpoint_value = 0;
 
-#ifdef RPI_BUILD
-frameskip_type current_frameskip_type = manual_frameskip; //manual; //auto_frameskip;
-u32 global_cycles_per_instruction = 1;
-#else
 frameskip_type current_frameskip_type = auto_frameskip;
 u32 global_cycles_per_instruction = 1;
-#endif
 
 u32 random_skip = 0;
 u32 fps_debug = 0;
@@ -83,11 +78,7 @@ u32 oam_update_count = 0;
 u32 synchronize_flag = 1;
 
 u32 update_backup_flag = 1;
-#ifdef GP2X_BUILD
-u32 clock_speed = 200;
-#else
 u32 clock_speed = 333;
-#endif
 char main_path[512];
 
 void trigger_ext_event();
@@ -275,11 +266,7 @@ int main(int argc, char *argv[])
     debug_screen_printl("a860e8c0b6d573d191e4ec7db1b1e4f6                  ");
     debug_screen_printl("                                                  ");
     debug_screen_printl("When you do get it name it gba_bios.bin and put it");
-#ifdef PND_BUILD
-    debug_screen_printl("in <SD card>/pandora/appdata/gpsp/ .              ");
-#else
     debug_screen_printl("in the same directory as gpSP.                    ");
-#endif
     debug_screen_printl("                                                  ");
     debug_screen_printl("Press any button to exit.                         ");
 
@@ -827,11 +814,7 @@ void synchronize()
   }
   else if (synchronize_flag)
   {
-#if defined(PND_BUILD) || defined(RPI_BUILD)
-    fb_wait_vsync();
-#elif !defined(GP2X_BUILD) // sleeping on GP2X is a bad idea
     delay_us((u64)virtual_frame_count * 50000 / 3 - new_ticks + 2);
-#endif
   }
 
   frames++;
@@ -873,11 +856,9 @@ void synchronize()
 
   interval_skipped_frames += skip_next_frame;
 
-#if !defined(GP2X_BUILD) && !defined(PND_BUILD) && !defined(RPI_BUILD)
   char char_buffer[64];
   sprintf(char_buffer, "gpSP: %2d (%2d) fps", fps, frames_drawn);
   SDL_WM_SetCaption(char_buffer, "gpSP");
-#endif
 }
 
 #endif
@@ -1034,8 +1015,6 @@ void set_clock_speed()
     printf("about to set CPU clock to %iMHz\n", clock_speed);
   #ifdef PSP_BUILD
     scePowerSetClockFrequency(clock_speed, clock_speed, clock_speed / 2);
-  #elif defined(GP2X_BUILD)
-    set_FCLK(clock_speed);
   #endif
     clock_speed_old = clock_speed;
   }

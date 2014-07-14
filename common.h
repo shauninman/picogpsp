@@ -49,9 +49,6 @@
   #include <sys/time.h>
 #endif /* _WIN32_WCE */
 
-#ifdef GIZ_BUILD
-  #include "giz/giz.h"
-#endif
 #endif /* ARM_ARCH */
 
 // Huge thanks to pollux for the heads up on using native file I/O
@@ -140,20 +137,8 @@
   #define file_check_valid(filename_tag)                                      \
     (filename_tag)                                                            \
 
-#ifdef GP2X_BUILD
-
-  #define file_close(filename_tag)                                            \
-  {                                                                           \
-    fclose(filename_tag);                                                     \
-    sync();                                                                   \
-  }                                                                           \
-
-#else
-
   #define file_close(filename_tag)                                            \
     fclose(filename_tag)                                                      \
-
-#endif
 
   #define file_read(filename_tag, buffer, size)                               \
     fread(buffer, 1, size, filename_tag)                                      \
@@ -251,27 +236,6 @@ typedef u32 fixed8_24;
 #ifdef PC_BUILD
   #define STDIO_DEBUG
   //#define REGISTER_USAGE_ANALYZE
-#endif
-
-#ifdef GP2X_BUILD
-  #include <strings.h>
-  #include "gp2x/gp2x.h"
-
-  #define printf(format, ...)                                                 \
-    fprintf(stderr, format, ##__VA_ARGS__)                                    \
-
-  #define vprintf(format, ap)                                                 \
-    vfprintf(stderr, format, ap)                                              \
-
-//  #define STDIO_DEBUG
-#endif
-
-#ifdef PND_BUILD
-  #include "pandora/pnd.h"
-#endif
-
-#ifdef RPI_BUILD
-  #include "raspberrypi/rpi.h"
 #endif
 
 #endif

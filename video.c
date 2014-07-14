@@ -86,41 +86,8 @@ static void Ge_Finish_Callback(int id, void *arg)
 #define get_screen_pitch()                                                    \
   screen_pitch                                                                \
 
-#elif defined(POLLUX_BUILD)
-
-static u16 rot_buffer[240*4];
-static u32 rot_lines_total = 4;
-static u32 rot_line_count = 0;
-#ifdef WIZ_BUILD
-static char rot_msg_buff[64];
-#endif
-
-static u32 screen_offset = 0;
-static u16 *screen_pixels = NULL;
-const u32 screen_pitch = 320;
-
-#define get_screen_pixels()                                                   \
-  screen_pixels                                                               \
-
-#define get_screen_pitch()                                                    \
-  screen_pitch                                                                \
-
-#elif defined(PND_BUILD) || defined(RPI_BUILD)
-
-static u16 *screen_pixels = NULL;
-
-#define get_screen_pixels()                                                   \
-  screen_pixels                                                               \
-
-#define get_screen_pitch()                                                    \
-  resolution_width                                                            \
-
 #else
 
-#ifdef GP2X_BUILD
-#include "SDL_gp2x.h"
-SDL_Surface *hw_screen;
-#endif
 SDL_Surface *screen;
 const u32 video_scale = 1;
 
@@ -3273,28 +3240,6 @@ void update_scanline()
   if(skip_next_frame)
     return;
 
-#ifdef WIZ_BUILD
-  if (screen_scale == unscaled_rot || screen_scale == scaled_aspect_rot)
-  {
-    if (rot_line_count == rot_lines_total)
-    {
-      rot_line_count = 0;
-      if (vcount - rot_lines_total < FONT_HEIGHT && rot_msg_buff[0])
-      {
-        print_string_ext(rot_msg_buff, 0xFFFF, 0x0000, 0, 0,
-          rot_buffer, 240, 0, vcount - rot_lines_total, rot_lines_total);
-        if (vcount >= FONT_HEIGHT)
-          rot_msg_buff[0] = 0;
-      }
-      if (screen_scale == unscaled_rot)
-        do_rotated_blit(gpsp_gp2x_screen, rot_buffer, vcount);
-      else
-        upscale_aspect_row(gpsp_gp2x_screen, rot_buffer, vcount/3);
-    }
-    screen_offset = &rot_buffer[rot_line_count++ * 240];
-  }
-#endif
-
   // If the screen is in in forced blank draw pure white.
   if(dispcnt & 0x80)
   {
@@ -3356,43 +3301,6 @@ void flip_screen()
     else
       screen_pixels = screen_texture;
   }
-}
-
-#elif defined(POLLUX_BUILD)
-
-void flip_screen()
-{
-  if((resolution_width == small_resolution_width) &&
-   (resolution_height == small_resolution_height))
-  {
-    switch(screen_scale)
-    {
-      case unscaled:
-        break;
-      case scaled_aspect:
-        upscale_aspect(gpsp_gp2x_screen, screen_pixels);
-        break;
-      case unscaled_rot:
-        do_rotated_blit(gpsp_gp2x_screen, rot_buffer, 160);
-        rot_line_count = 0;
-        goto no_clean;
-      case scaled_aspect_rot:
-        rot_line_count = 0;
-        goto no_clean;
-    }
-  }
-  warm_cache_op_all(WOP_D_CLEAN);
-
-no_clean:
-  pollux_video_flip();
-  screen_pixels = (u16 *)gpsp_gp2x_screen + screen_offset;
-}
-
-#elif defined(PND_BUILD) || defined(RPI_BUILD)
-
-void flip_screen()
-{
-  screen_pixels = fb_flip_screen();
 }
 
 #else
@@ -3468,43 +3376,7 @@ void flip_screen()
       }
     }
   }
-#ifdef GP2X_BUILD
-  {
-    if((resolution_width == small_resolution_width) &&
-     (resolution_height == small_resolution_height))
-    {
-      switch (screen_scale)
-      {
-        case unscaled:
-        {
-          SDL_Rect srect = {0, 0, 240, 160};
-          SDL_Rect drect = {40, 40, 240, 160};
-          warm_cache_op_all(WOP_D_CLEAN);
-          SDL_BlitSurface(screen, &srect, hw_screen, &drect);
-          return;
-        }
-        case scaled_aspect:
-        {
-          SDL_Rect drect = {0, 10, 0, 0};
-          warm_cache_op_all(WOP_D_CLEAN);
-          SDL_BlitSurface(screen, NULL, hw_screen, &drect);
-          return;
-        }
-        case scaled_aspect_sw:
-        {
-          upscale_aspect(hw_screen->pixels, get_screen_pixels());
-          return;
-        }
-        case fullscreen:
-          break;
-      }
-    }
-    warm_cache_op_all(WOP_D_CLEAN);
-    SDL_BlitSurface(screen, NULL, hw_screen, NULL);
-  }
-#else
   SDL_Flip(screen);
-#endif
 }
 
 #endif
@@ -3604,31 +3476,13 @@ void init_video()
   GE_CMD(NOP, 0);
 }
 
-#elif defined(WIZ_BUILD) || defined(PND_BUILD) || defined (RPI_BUILD)
-
-void init_video()
-{
-}
-
 #else
 
 void init_video()
 {
   SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_NOPARACHUTE);
 
-#ifdef GP2X_BUILD
-  SDL_GP2X_AllowGfxMemory(NULL, 0);
-
-  hw_screen = SDL_SetVideoMode(320 * video_scale, 240 * video_scale,
-   16, SDL_HWSURFACE);
-
-  screen = SDL_CreateRGBSurface(SDL_HWSURFACE, 240 * video_scale,
-   160 * video_scale, 16, 0xFFFF, 0xFFFF, 0xFFFF, 0);
-
-  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
-#else
   screen = SDL_SetVideoMode(240 * video_scale, 160 * video_scale, 16, 0);
-#endif
   SDL_ShowCursor(0);
 }
 
@@ -3739,163 +3593,23 @@ void clear_screen(u16 color)
   sceGuSync(0, 0); */
 }
 
-#elif defined(POLLUX_BUILD)
-
-void video_resolution_large()
-{
-  screen_offset = 0;
-  resolution_width = 320;
-  resolution_height = 240;
-
-  fb_use_buffers(1);
-  flip_screen();
-  clear_screen(0);
-  wiz_lcd_set_portrait(0);
-}
-
-void video_resolution_small()
-{
-  fb_use_buffers(4);
-
-  switch (screen_scale)
-  {
-    case unscaled:
-      screen_offset = 320*40 + 40;
-      wiz_lcd_set_portrait(0);
-      break;
-    case scaled_aspect:
-      screen_offset = 320*(80 - 14) + 80;
-      wiz_lcd_set_portrait(0);
-      break;
-    case unscaled_rot:
-      wiz_lcd_set_portrait(1);
-      rot_lines_total = 4;
-      rot_line_count = 0;
-      break;
-    case scaled_aspect_rot:
-      wiz_lcd_set_portrait(1);
-      rot_lines_total = 3;
-      rot_line_count = 0;
-      break;
-  }
-
-  flip_screen();
-  clear_screen(0);
-
-  resolution_width = 240;
-  resolution_height = 160;
-}
-
-void set_gba_resolution(video_scale_type scale)
-{
-  screen_scale = scale;
-}
-
-void clear_screen(u16 color)
-{
-  u32 col = ((u32)color << 16) | color;
-  u32 *p = gpsp_gp2x_screen;
-  int c = 320*240/2;
-  while (c-- > 0)
-    *p++ = col;
-}
-
-#elif defined(PND_BUILD) || defined(RPI_BUILD)
-
-void video_resolution_large()
-{
-#if defined (RPI_BUILD)
-  resolution_width = 480;
-#else
-  resolution_width = 400;
-#endif
-  resolution_height = 272;
-
-  fb_set_mode(resolution_width, resolution_height, 1, 15, screen_filter, screen_filter2);
-  flip_screen();
-  clear_screen(0);
-}
-
-void video_resolution_small()
-{
-  resolution_width = 240;
-  resolution_height = 160;
-
-  fb_set_mode(resolution_width, resolution_height, 3, screen_scale, screen_filter, screen_filter2);
-  flip_screen();
-  clear_screen(0);
-}
-
-void set_gba_resolution(video_scale_type scale)
-{
-  screen_scale = scale;
-}
-
-void clear_screen(u16 color)
-{
-  u32 col = ((u32)color << 16) | color;
-  u32 *p = (u32 *)get_screen_pixels();
-  int c = resolution_width * resolution_height / 2;
-  while (c-- > 0)
-    *p++ = col;
-}
-
 #else
 
 void video_resolution_large()
 {
   current_scale = unscaled;
 
-#ifdef GP2X_BUILD
-  SDL_FreeSurface(screen);
-  SDL_GP2X_AllowGfxMemory(NULL, 0);
-    hw_screen = SDL_SetVideoMode(320, 240, 16, SDL_HWSURFACE);
-  screen = SDL_CreateRGBSurface(SDL_HWSURFACE, 320, 240, 16, 0xFFFF,
-   0xFFFF, 0xFFFF, 0);
-  resolution_width = 320;
-    resolution_height = 240;
-  SDL_ShowCursor(0);
-
-  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
-#else
   screen = SDL_SetVideoMode(480, 272, 16, 0);
   resolution_width = 480;
   resolution_height = 272;
-#endif
 }
 
 void video_resolution_small()
 {
   current_scale = screen_scale;
 
-#ifdef GP2X_BUILD
-  int w, h;
-  SDL_FreeSurface(screen);
-  SDL_GP2X_AllowGfxMemory(NULL, 0);
-
-  w = 320; h = 240;
-  if (screen_scale == scaled_aspect || screen_scale == fullscreen)
-  {
-    w = small_resolution_width * video_scale;
-    h = small_resolution_height * video_scale;
-  }
-  if (screen_scale == scaled_aspect) h += 20;
-  hw_screen = SDL_SetVideoMode(w, h, 16, SDL_HWSURFACE);
-
-  w = small_resolution_width * video_scale;
-  if (screen_scale == scaled_aspect_sw)
-    w = 320;
-  screen = SDL_CreateRGBSurface(SDL_HWSURFACE,
-   w, small_resolution_height * video_scale,
-   16, 0xFFFF, 0xFFFF, 0xFFFF, 0);
-
-  SDL_ShowCursor(0);
-
-  warm_change_cb_upper(WCB_C_BIT|WCB_B_BIT, 1);
-#else
   screen = SDL_SetVideoMode(small_resolution_width * video_scale,
    small_resolution_height * video_scale, 16, 0);
-#endif
   resolution_width = small_resolution_width;
   resolution_height = small_resolution_height;
 }
@@ -4024,15 +3738,6 @@ void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
 void print_string(const char *str, u16 fg_color, u16 bg_color,
  u32 x, u32 y)
 {
-#ifdef WIZ_BUILD
-  if ((screen_scale == unscaled_rot || screen_scale == scaled_aspect_rot) &&
-   (resolution_width == small_resolution_width) &&
-   (resolution_height == small_resolution_height))
-  {
-    snprintf(rot_msg_buff, sizeof(rot_msg_buff), "%s", str);
-    return;
-  }
-#endif
   print_string_ext(str, fg_color, bg_color, x, y, get_screen_pixels(),
    get_screen_pitch(), 0, 0, FONT_HEIGHT);
 }

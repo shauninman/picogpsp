@@ -32,19 +32,9 @@
 
 // Blatantly stolen and trimmed from MZX (megazeux.sourceforge.net)
 
-#ifdef GP2X_BUILD
-
-#define FILE_LIST_ROWS 20
-#define FILE_LIST_POSITION 5
-#define DIR_LIST_POSITION 260
-
-#else
-
 #define FILE_LIST_ROWS 25
 #define FILE_LIST_POSITION 5
 #define DIR_LIST_POSITION (resolution_width * 3 / 4)
-
-#endif
 
 #ifdef PSP_BUILD
 
@@ -78,29 +68,6 @@
     clock_speed = (clock_speed_number + 1) * 33
   #define get_clock_speed_number() \
     clock_speed_number = (clock_speed / 33) - 1
-#elif defined(POLLUX_BUILD)
-  static const char *clock_speed_options[] =
-  {
-    "300MHz", "333MHz", "366MHz", "400MHz", "433MHz",
-    "466MHz", "500MHz", "533MHz", "566MHz", "600MHz",
-    "633MHz", "666MHz", "700MHz", "733MHz", "766MHz",
-    "800MHz", "833MHz", "866MHz", "900MHz"
-  };
-  #define menu_get_clock_speed() \
-    clock_speed = 300 + (clock_speed_number * 3333) / 100
-  #define get_clock_speed_number() \
-    clock_speed_number = (clock_speed - 300) / 33
-#elif defined(GP2X_BUILD)
-  static const char *clock_speed_options[] =
-  {
-    "150MHz", "160MHz", "170MHz", "180MHz", "190MHz",
-    "200MHz", "210MHz", "220MHz", "230MHz", "240MHz",
-    "250MHz", "260MHz", "270MHz", "280MHz", "290MHz"
-  };
-  #define menu_get_clock_speed() \
-    clock_speed = 150 + clock_speed_number * 10
-  #define get_clock_speed_number() \
-    clock_speed_number = (clock_speed - 150) / 10
 #else
   static const char *clock_speed_options[] =
   {
@@ -267,24 +234,15 @@ s32 load_file(const char **wildcards, char *result)
     if(current_dir_length > 80)
     {
 
-#ifdef GP2X_BUILD
-    snprintf(current_dir_short, 80,
-     "...%s", current_dir_name + current_dir_length - 77);
-#else
     memcpy(current_dir_short, "...", 3);
       memcpy(current_dir_short + 3,
        current_dir_name + current_dir_length - 77, 77);
       current_dir_short[80] = 0;
-#endif
     }
     else
     {
-#ifdef GP2X_BUILD
-      snprintf(current_dir_short, 80, "%s", current_dir_name);
-#else
       memcpy(current_dir_short, current_dir_name,
        current_dir_length + 1);
-#endif
     }
 
     repeat = 1;
@@ -299,13 +257,8 @@ s32 load_file(const char **wildcards, char *result)
       flip_screen();
 
       print_string(current_dir_short, COLOR_ACTIVE_ITEM, COLOR_BG, 0, 0);
-#ifdef GP2X_BUILD
-      print_string("Press X to return to the main menu.",
-       COLOR_HELP_TEXT, COLOR_BG, 20, 220);
-#else
       print_string("Press X to return to the main menu.",
        COLOR_HELP_TEXT, COLOR_BG, 20, 260);
-#endif
 
       for(i = 0, current_file_number = i + current_file_scroll_value;
        i < FILE_LIST_ROWS; i++, current_file_number++)
@@ -732,42 +685,10 @@ u32 gamepad_config_line_to_button[] =
 
 #endif
 
-#ifdef GP2X_BUILD
-
-u32 gamepad_config_line_to_button[] =
- { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 14, 15 };
-
-#endif
-
-#ifdef PND_BUILD
-
-u32 gamepad_config_line_to_button[] =
- { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 12, 13, 14, 15 };
-
-#endif
-
-#ifdef RPI_BUILD
-
-u32 gamepad_config_line_to_button[] =
- { 0, 2, 1, 3, 8, 9, 10, 11, 6, 7, 4, 5, 12, 13, 14, 15 };
-
-#endif
-
 static const char *scale_options[] =
 {
 #ifdef PSP_BUILD
   "unscaled 3:2", "scaled 3:2", "fullscreen 16:9"
-#elif defined(WIZ_BUILD)
-  "unscaled 3:2", "scaled 3:2 (slower)",
-  "unscaled 3:2 (anti-tear)", "scaled 3:2 (anti-tear)"
-#elif defined(POLLUX_BUILD)
-  "unscaled 3:2", "scaled 3:2 (slower)"
-#elif defined(PND_BUILD)
-  "unscaled", "2x", "3x", "fullscreen"
-#elif defined(GP2X_BUILD)
-  "unscaled 3:2", "scaled 3:2", "fullscreen", "scaled 3:2 (software)"
-#elif defined(RPI_BUILD)
-  "fullscreen"
 #else
   "unscaled 3:2"
 #endif
@@ -818,16 +739,8 @@ s32 load_game_config_file()
       random_skip = file_options[2] % 2;
       clock_speed = file_options[3];
 
-#ifdef POLLUX_BUILD
-      if(clock_speed > 900)
-        clock_speed = 533;
-#elif defined(GP2X_BUILD)
-      if(clock_speed >= 300)
-        clock_speed = 200;
-#else
       if(clock_speed > 333)
         clock_speed = 333;
-#endif
 
       if(clock_speed < 33)
         clock_speed = 33;
@@ -852,16 +765,8 @@ s32 load_game_config_file()
   if(file_loaded)
     return 0;
 
-#ifdef RPI_BUILD
-  current_frameskip_type = manual_frameskip;
-  frameskip_value = 1;
-#else
   current_frameskip_type = auto_frameskip;
   frameskip_value = 4;
-#ifdef POLLUX_BUILD
-  frameskip_value = 1;
-#endif
-#endif
   random_skip = 0;
   clock_speed = default_clock_speed;
 
@@ -1085,9 +990,7 @@ void get_savestate_snapshot(char *savestate_filename)
      COLOR_BG, 10, 40);
   }
 
-#ifndef GP2X_BUILD
   blit_to_screen(snapshot_buffer, 240, 160, 230, 40);
-#endif
 }
 
 void get_savestate_filename_noshot(u32 slot, char *name_buffer)
@@ -1341,11 +1244,9 @@ u32 menu(u16 *original_screen)
   // Marker for help information, don't go past this mark (except \n)------*
   menu_option_type graphics_sound_options[] = 
  {
-#ifndef RPI_BUILD
     string_selection_option(NULL, "Display scaling", scale_options,
      (u32 *)(&screen_scale),
      sizeof(scale_options) / sizeof(scale_options[0]),
-#ifndef GP2X_BUILD
      "Determines how the GBA screen is resized in relation to the\n"
      "entire screen."
 #ifdef PSP_BUILD
@@ -1353,50 +1254,38 @@ u32 menu(u16 *original_screen)
      "aspect ratio scaled to fill the height of the PSP screen, and\n"
      "fullscreen to fill the entire PSP screen."
 #endif
-#endif
      "", 2),
-#endif
 
-#ifndef GP2X_BUILD
     string_selection_option(NULL, "Screen filtering", yes_no_options,
      (u32 *)(&screen_filter), 2,
      "Determines whether or not filtering should be used when\n"
      "scaling the screen. Selecting this will produce a more even and\n"
      "smooth image, at the cost of being blurry and having less vibrant\n"
      "colors.", 3),
-#endif
-#if defined (PND_BUILD)
     string_selection_option(NULL, "Scaling filter", filter2_options,
      (u32 *)(&screen_filter2),
      sizeof(filter2_options) / sizeof(filter2_options[0]),
      "Optional pixel art scaling filter", 4),
-#endif
     string_selection_option(NULL, "Frameskip type", frameskip_options,
      (u32 *)(&current_frameskip_type), 3,
-#ifndef GP2X_BUILD
      "Determines what kind of frameskipping to use.\n"
      "Frameskipping may improve emulation speed of many games.\n"
-#endif
      "Off: Do not skip any frames.\n"
      "Auto: Skip up to N frames (see next opt) as needed.\n"
      "Manual: Always render only 1 out of N + 1 frames."
      , 5),
     numeric_selection_option(NULL, "Frameskip value", &frameskip_value, 100,
-#ifndef GP2X_BUILD
      "For auto frameskip, determines the maximum number of frames that\n"
      "are allowed to be skipped consecutively.\n"
      "For manual frameskip, determines the number of frames that will\n"
      "always be skipped."
-#endif
      "", 6),
     string_selection_option(NULL, "Framskip variation",
      frameskip_variation_options, &random_skip, 2,
-#ifndef GP2X_BUILD
      "If objects in the game flicker at a regular rate certain manual\n"
      "frameskip values may cause them to normally disappear. Change this\n"
      "value to 'random' to avoid this. Do not use otherwise, as it tends\n"
      "to make the image quality worse, especially in high motion games."
-#endif
      "", 7),
     string_selection_option(NULL, "Audio output", yes_no_options,
      &global_enable_audio, 2,
@@ -1438,7 +1327,7 @@ u32 menu(u16 *original_screen)
     cheat_option(7),
     cheat_option(8),
     cheat_option(9),
-#if defined(PSP_BUILD) || defined(GP2X_BUILD)
+#if defined(PSP_BUILD)
     string_selection_option(NULL, "Clock speed",
      clock_speed_options, &clock_speed_number,
      sizeof(clock_speed_options) / sizeof(clock_speed_options[0]),
@@ -1448,17 +1337,12 @@ u32 menu(u16 *original_screen)
 #endif
     string_selection_option(NULL, "Update backup",
      update_backup_options, &update_backup_flag, 2,
-#ifdef GP2X_BUILD
-     "Determines when in-game save files should be\n"
-     "written back to SD card."
-#else
      "Determines when in-game save files should be written back to\n"
      "card. If set to 'automatic' writebacks will occur shortly after\n"
      "the game's backup is altered. On 'exit only' it will only be\n"
      "written back when you exit from this menu.\n"
 #ifdef PSP
      "(NOT from using the home button), use the latter with extreme care."
-#endif
 #endif
      "", 12),
     submenu_option(NULL, "Back", "Return to the main menu.", 14)
@@ -1530,62 +1414,7 @@ u32 menu(u16 *original_screen)
 
 #endif
 
-#if defined(GP2X_BUILD) || defined(PND_BUILD)
-
-  menu_option_type gamepad_config_options[] =
-  {
-    gamepad_config_option("D-pad up     ", 0),
-    gamepad_config_option("D-pad down   ", 1),
-    gamepad_config_option("D-pad left   ", 2),
-    gamepad_config_option("D-pad right  ", 3),
-    gamepad_config_option("A            ", 4),
-    gamepad_config_option("B            ", 5),
-    gamepad_config_option("X            ", 6),
-    gamepad_config_option("Y            ", 7),
-    gamepad_config_option("Left Trigger ", 8),
-    gamepad_config_option("Right Trigger", 9),
-#ifdef WIZ_BUILD
-    gamepad_config_option("Menu         ", 10),
-    gamepad_config_option("Select       ", 11),
-#elif defined(POLLUX_BUILD)
-    gamepad_config_option("I            ", 10),
-    gamepad_config_option("II           ", 11),
-    gamepad_config_option("Push         ", 12),
-    gamepad_config_option("Home         ", 13),
-#elif defined(PND_BUILD)
-    gamepad_config_option("Start        ", 10),
-    gamepad_config_option("Select       ", 11),
-    gamepad_config_option("1            ", 12),
-    gamepad_config_option("2            ", 13),
-    gamepad_config_option("3            ", 14),
-    gamepad_config_option("4            ", 15),
-#else // GP2X
-    gamepad_config_option("Start        ", 10),
-    gamepad_config_option("Select       ", 11),
-    gamepad_config_option("Stick Push   ", 12),
-#endif
-#ifdef PND_BUILD
-    submenu_option(NULL, "Back", "Return to the main menu.", 16)
-#else
-    submenu_option(NULL, "Back", "Return to the main menu.", 14)
-#endif
-  };
-
-
-  menu_option_type analog_config_options[] =
-  {
-#if defined(POLLUX_BUILD)
-    numeric_selection_option(NULL, "Analog sensitivity",
-     &analog_sensitivity_level, 10,
-     "Determine sensitivity/responsiveness of the analog input.\n"
-     "Lower numbers are less sensitive.", 8),
-#endif
-    submenu_option(NULL, "Back", "Return to the main menu.", 11)
-  };
-
-#endif
-
-#if defined(PC_BUILD) || defined(RPI_BUILD)
+#if defined(PC_BUILD)
 
   menu_option_type gamepad_config_options[] =
   {
@@ -1624,10 +1453,8 @@ u32 menu(u16 *original_screen)
     submenu_option(&gamepad_config_menu, "Configure gamepad input",
      "Select to change the in-game behavior of buttons\n"
      "and d-pad.", 6),
-#ifndef WIZ_BUILD
     submenu_option(&analog_config_menu, "Configure analog input",
      "Select to change the in-game behavior of the analog nub.", 7),
-#endif
     submenu_option(&cheats_misc_menu, "Cheats and Miscellaneous options",
      "Select to manage cheats, set backup behavior,\n"
      "and set device clock speed.", 9),
@@ -1652,9 +1479,7 @@ u32 menu(u16 *original_screen)
 
     clear_screen(COLOR_BG);
 
-#ifndef GP2X_BUILD
     blit_to_screen(original_screen, 240, 160, 230, 40);
-#endif
 
     current_menu = new_menu;
     current_option = new_menu->options;
@@ -1674,14 +1499,10 @@ u32 menu(u16 *original_screen)
   menu_update_clock();
   video_resolution_large();
 
-#ifndef GP2X_BUILD
   SDL_LockMutex(sound_mutex);
-#endif
   SDL_PauseAudio(1);
 
-#ifndef GP2X_BUILD
   SDL_UnlockMutex(sound_mutex);
-#endif
 
   if(gamepak_filename[0] == 0)
   {

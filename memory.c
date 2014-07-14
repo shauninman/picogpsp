@@ -2166,14 +2166,10 @@ u32 load_gamepak(char *name)
   s32 file_size;
   char cheats_filename[256];
 
-#ifdef WIZ_BUILD
-  file_size = wiz_load_gamepak(name);
-#else
   if(!strcmp(dot_position, ".zip"))
     file_size = load_file_zip(name);
   else
     file_size = load_gamepak_raw(name);
-#endif
 
   // A dumb April fool's joke was here once :o
 
