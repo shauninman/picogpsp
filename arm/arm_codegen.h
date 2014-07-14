@@ -59,48 +59,6 @@ void write_to_file(u32 val);
 //write32(i);
 /*{ *(u32*)translation_ptr = (i); translation_ptr += 4; } */
 
-#if defined(GIZMONDO) || defined(POCKETPC) /* Implemented but not working right yet for PPC */
-
-// --------------------------------------------------------------------------
-// These declarations for coredll are extracted from platform builder
-// source code
-// --------------------------------------------------------------------------
-
-/* Flags for CacheSync/CacheRangeFlush */
-#define CACHE_SYNC_DISCARD      0x001   /* write back & discard all cached data */
-#define CACHE_SYNC_INSTRUCTIONS 0x002   /* discard all cached instructions */
-#define CACHE_SYNC_WRITEBACK    0x004   /* write back but don't discard data cache*/
-#define CACHE_SYNC_FLUSH_I_TLB  0x008   /* flush I-TLB */
-#define CACHE_SYNC_FLUSH_D_TLB  0x010   /* flush D-TLB */
-#define CACHE_SYNC_FLUSH_TLB    (CACHE_SYNC_FLUSH_I_TLB|CACHE_SYNC_FLUSH_D_TLB)    /* flush all TLB */
-#define CACHE_SYNC_L2_WRITEBACK 0x020   /* write-back L2 Cache */
-#define CACHE_SYNC_L2_DISCARD   0x040   /* discard L2 Cache */
-
-#define CACHE_SYNC_ALL          0x07F   /* sync and discard everything in Cache/TLB */
-
-extern "C" {
-  void CacheSync(int flags);
-}
-#define CLEAR_INSN_CACHE(BEG, END) CacheSync(CACHE_SYNC_INSTRUCTIONS | CACHE_SYNC_WRITEBACK);
-
-#else
-
-#if 0
-#define CLEAR_INSN_CACHE(BEG, END)                  \
-{                                 \
-  register unsigned long _beg __asm ("a1") = (unsigned long) (BEG); \
-  register unsigned long _end __asm ("a2") = (unsigned long) (END); \
-  register unsigned long _flg __asm ("a3") = 0;           \
-  register unsigned long _scno __asm ("r7") = 0xf0002;        \
-  __asm __volatile ("swi 0x9f0002   @ sys_cacheflush"     \
-        : "=r" (_beg)                     \
-        : "0" (_beg), "r" (_end), "r" (_flg), "r" (_scno));   \
-}
-
-#endif
-
-#endif
-
 #if defined(_MSC_VER) && !defined(ARM_NOIASM)
 # define ARM_IASM(_expr) __easfdmit (_expr)
 #else
