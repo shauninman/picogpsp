@@ -17,7 +17,7 @@ BIN       ?= gpsp.exe
 VPATH      += ..
 CFLAGS     += -DPC_BUILD -Wall -m32
 INCLUDES   = -I${PREFIX}/include `sdl-config --cflags`
-LIBS       = -L${PREFIX}/lib `sdl-config --libs` -mconsole -lz -m32
+LIBS       = -L${PREFIX}/lib `sdl-config --libs` -lz -m32
 
 # Compilation:
 

@@ -588,7 +588,6 @@ u32 update_input()
         key &= ~(joy_map(event.jbutton.button));
         break;
       }
-      }
     }
   }
 
