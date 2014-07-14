@@ -19,14 +19,10 @@
 #include "common.h"
 #include "font.h"
 
-#ifndef _WIN32_WCE
-
 #include <sys/stat.h>
 #include <unistd.h>
 #include <ctype.h>
 #include <dirent.h>
-
-#endif
 
 #define MAX_PATH 1024
 

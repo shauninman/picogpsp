@@ -133,14 +133,12 @@ static const char *file_ext[] = { ".gba", ".bin", ".zip", NULL };
 #ifndef PSP_BUILD
 static void ChangeWorkingDirectory(char *exe)
 {
-#ifndef _WIN32_WCE
   char *s = strrchr(exe, '/');
   if (s != NULL) {
     *s = '\0';
     chdir(exe);
     *s = '/';
   }
-#endif
 }
 
 static void switch_to_romdir(void)

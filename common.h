@@ -23,7 +23,7 @@
 #define ror(dest, value, shift)                                               \
   dest = ((value) >> shift) | ((value) << (32 - shift))                       \
 
-#if defined(_WIN32) || defined(_WIN32_WCE)
+#if defined(_WIN32)
   #define PATH_SEPARATOR "\\"
   #define PATH_SEPARATOR_CHAR '\\'
 #else
@@ -34,20 +34,16 @@
 // These includes must be used before SDL is included.
 #ifdef ARM_ARCH
 
-#ifdef _WIN32_WCE
-  #include <windows.h>
-#else
-  #define _BSD_SOURCE // sync
-  #include <stdlib.h>
-  #include <stdio.h>
-  #include <string.h>
-  #include <math.h>
-  #include <fcntl.h>
-  #include <unistd.h>
-  #include <stdarg.h>
-  #include <time.h>
-  #include <sys/time.h>
-#endif /* _WIN32_WCE */
+#define _BSD_SOURCE // sync
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <time.h>
+#include <sys/time.h>
 
 #endif /* ARM_ARCH */
 
