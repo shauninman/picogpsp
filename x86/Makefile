@@ -10,16 +10,26 @@ AS        = as
 PREFIX    = /usr
 OBJS      = main.o cpu.o memory.o video.o input.o sound.o \
 	    cpu_threaded.o gui.o x86_stub.o cheats.o zip.o
-BIN       ?= gpsp.exe 
 
 # Platform specific definitions 
+
+ifeq ($(shell uname -a),)
+EXE_EXT = .exe
+else ifneq ($(findstring MINGW,$(shell uname -a)),)
+EXE_EXT = .exe
+else
+EXE_EXT =
+endif
+
+BIN       ?= gpsp$(EXE_EXT)
 
 VPATH      += ..
 CFLAGS     += -DPC_BUILD -Wall -m32
 INCLUDES   = -I${PREFIX}/include `sdl-config --cflags`
-LIBS       = -L${PREFIX}/lib `sdl-config --libs` -lz -m32
+LIBS       = -L${PREFIX}/lib32 `sdl-config --libs` -lz -m32
 
 # Compilation:
+
 
 .SUFFIXES: .c .S
 
