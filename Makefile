@@ -4,7 +4,7 @@ CC  = gcc
 AR  = psp-ar
 STATIC_LINKING = 0
 
-CFLAGS   += -fPIC
+CFLAGS   += -fPIC -Werror-implicit-function-declaration
 CFLAGS   += -DPC_BUILD -Wall -m32
 CFLAGS   += -D__LIBRETRO__
 
@@ -26,7 +26,7 @@ OBJS += input.o
 OBJS += sound.o
 OBJS += cpu_threaded.o
 
-OBJS += x86_stub.o
+OBJS += x86/x86_stub.o
 OBJS += cheats.o
 OBJS += zip.o
 

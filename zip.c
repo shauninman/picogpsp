@@ -43,7 +43,7 @@ struct SZIPFileHeader
   s16 ExtraFieldLength;
 }  __attribute__((packed));
 
-u32 load_file_zip(char *filename)
+u32 load_file_zip(const char *filename)
 {
   struct SZIPFileHeader data;
   char tmp[1024];

@@ -2115,7 +2115,7 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
   return -1;
 }
 
-s32 load_gamepak_raw(char *name)
+s32 load_gamepak_raw(const char *name)
 {
   file_open(gamepak_file, name, read);
 
@@ -2160,7 +2160,7 @@ char gamepak_code[5];
 char gamepak_maker[3];
 char gamepak_filename[512];
 
-u32 load_gamepak(char *name)
+u32 load_gamepak(const char *name)
 {
   char *dot_position = strrchr(name, '.');
   s32 file_size;
@@ -3117,6 +3117,26 @@ void init_memory()
   rtc_state = RTC_DISABLED;
   memset(rtc_registers, 0, sizeof(rtc_registers));
   bios_read_protect = 0xe129f000;
+}
+
+void memory_term(void)
+{
+  if (file_check_valid(gamepak_file_large))
+  {
+    file_close(gamepak_file_large);
+  }
+
+  if (gamepak_memory_map != NULL)
+  {
+    free(gamepak_memory_map);
+    gamepak_memory_map = NULL;
+  }
+
+  if (gamepak_rom != NULL)
+  {
+    free(gamepak_rom);
+    gamepak_rom = NULL;
+  }
 }
 
 void bios_region_read_allow()

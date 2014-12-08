@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#include <ctype.h>
 
 #ifdef PSP_BUILD
 
@@ -773,6 +774,8 @@ void synchronize()
 */
 }
 
+#elif defined(__LIBRETRO__)
+
 #else
 
 u32 real_frame_count = 0;
@@ -870,6 +873,8 @@ void quit()
 
   sound_exit();
 
+#ifndef __LIBRETRO__
+
 #ifdef REGISTER_USAGE_ANALYZE
   print_register_usage();
 #endif
@@ -884,6 +889,8 @@ void quit()
 #endif
 
   exit(0);
+#endif
+
 #endif
 }
 
@@ -919,7 +926,7 @@ void get_ticks_us(u64 *tick_return)
 
 #else
 
-u32 file_length(char *dummy, FILE *fp)
+u32 file_length(const char *dummy, FILE *fp)
 {
   u32 length;
 
@@ -930,7 +937,9 @@ u32 file_length(char *dummy, FILE *fp)
   return length;
 }
 
-#ifdef PC_BUILD
+#ifdef __LIBRETRO__
+
+#elif defined(PC_BUILD)
 
 void delay_us(u32 us_count)
 {

@@ -343,10 +343,11 @@ void init_input()
   sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 }
 
-#endif
+#elif defined(__LIBRETRO__)
 
+/* todo */
 
-#if defined(PC_BUILD)
+#elif defined(PC_BUILD)
 
 u32 key_map(SDLKey key_sym)
 {

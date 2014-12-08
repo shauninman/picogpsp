@@ -175,13 +175,14 @@ extern char gamepak_filename[512];
 
 cpu_alert_type dma_transfer(dma_transfer_type *dma);
 u8 *memory_region(u32 address, u32 *memory_limit);
-u32 load_gamepak(char *name);
+u32 load_gamepak(const char *name);
 u32 load_backup(char *name);
 s32 load_bios(char *name);
 void update_backup();
 void update_backup_force();
 void init_memory();
 void init_gamepak_buffer();
+void memory_term(void);
 void bios_region_read_allow();
 void bios_region_read_protect();
 u8 *load_gamepak_page(u32 physical_index);

@@ -25,79 +25,79 @@
 #define GBA_XTAL      16777216.0f
 #define GBA_60HZ_RATE 16853760.0f /* 228*(272+960)*60 */
 
-#if !defined(PSP_BUILD)
-  // run GBA at 60Hz (~0.5% faster) to better match host display
-  #define GBC_BASE_RATE GBA_60HZ_RATE
+#if !defined(PSP_BUILD) && !defined(__LIBRETRO__)
+// run GBA at 60Hz (~0.5% faster) to better match host display
+#define GBC_BASE_RATE GBA_60HZ_RATE
 #else
-  #define GBC_BASE_RATE GBA_XTAL
+#define GBC_BASE_RATE GBA_XTAL
 #endif
 
 typedef enum
 {
-  DIRECT_SOUND_INACTIVE,
-  DIRECT_SOUND_RIGHT,
-  DIRECT_SOUND_LEFT,
-  DIRECT_SOUND_LEFTRIGHT
+   DIRECT_SOUND_INACTIVE,
+   DIRECT_SOUND_RIGHT,
+   DIRECT_SOUND_LEFT,
+   DIRECT_SOUND_LEFTRIGHT
 } direct_sound_status_type;
 
 typedef enum
 {
-  DIRECT_SOUND_VOLUME_50,
-  DIRECT_SOUND_VOLUME_100
+   DIRECT_SOUND_VOLUME_50,
+   DIRECT_SOUND_VOLUME_100
 } direct_sound_volume_type;
 
 typedef struct
 {
-  s8 fifo[32];
-  u32 fifo_base;
-  u32 fifo_top;
-  fixed8_24 fifo_fractional;
-  // The + 1 is to give some extra room for linear interpolation
-  // when wrapping around.
-  u32 buffer_index;
-  direct_sound_status_type status;
-  direct_sound_volume_type volume;
-  u32 last_cpu_ticks;
+   s8 fifo[32];
+   u32 fifo_base;
+   u32 fifo_top;
+   fixed8_24 fifo_fractional;
+   // The + 1 is to give some extra room for linear interpolation
+   // when wrapping around.
+   u32 buffer_index;
+   direct_sound_status_type status;
+   direct_sound_volume_type volume;
+   u32 last_cpu_ticks;
 } direct_sound_struct;
 
 typedef enum
 {
-  GBC_SOUND_INACTIVE,
-  GBC_SOUND_RIGHT,
-  GBC_SOUND_LEFT,
-  GBC_SOUND_LEFTRIGHT
+   GBC_SOUND_INACTIVE,
+   GBC_SOUND_RIGHT,
+   GBC_SOUND_LEFT,
+   GBC_SOUND_LEFTRIGHT
 } gbc_sound_status_type;
 
 
 typedef struct
 {
-  u32 rate;
-  fixed16_16 frequency_step;
-  fixed16_16 sample_index;
-  fixed16_16 tick_counter;
-  u32 total_volume;
-  u32 envelope_initial_volume;
-  u32 envelope_volume;
-  u32 envelope_direction;
-  u32 envelope_status;
-  u32 envelope_step;
-  u32 envelope_ticks;
-  u32 envelope_initial_ticks;
-  u32 sweep_status;
-  u32 sweep_direction;
-  u32 sweep_ticks;
-  u32 sweep_initial_ticks;
-  u32 sweep_shift;
-  u32 length_status;
-  u32 length_ticks;
-  u32 noise_type;
-  u32 wave_type;
-  u32 wave_bank;
-  u32 wave_volume;
-  gbc_sound_status_type status;
-  u32 active_flag;
-  u32 master_enable;
-  s8 *sample_data;
+   u32 rate;
+   fixed16_16 frequency_step;
+   fixed16_16 sample_index;
+   fixed16_16 tick_counter;
+   u32 total_volume;
+   u32 envelope_initial_volume;
+   u32 envelope_volume;
+   u32 envelope_direction;
+   u32 envelope_status;
+   u32 envelope_step;
+   u32 envelope_ticks;
+   u32 envelope_initial_ticks;
+   u32 sweep_status;
+   u32 sweep_direction;
+   u32 sweep_ticks;
+   u32 sweep_initial_ticks;
+   u32 sweep_shift;
+   u32 length_status;
+   u32 length_ticks;
+   u32 noise_type;
+   u32 wave_type;
+   u32 wave_bank;
+   u32 wave_volume;
+   gbc_sound_status_type status;
+   u32 active_flag;
+   u32 master_enable;
+   s8* sample_data;
 } gbc_sound_struct;
 
 extern direct_sound_struct direct_sound_channel[2];
@@ -116,7 +116,9 @@ extern u32 global_enable_audio;
 extern u32 enable_low_pass_filter;
 extern u32 audio_buffer_size_number;
 
-extern SDL_mutex *sound_mutex;
+#ifndef __LIBRETRO__
+extern SDL_mutex* sound_mutex;
+#endif
 
 void sound_timer_queue8(u32 channel, u8 value);
 void sound_timer_queue16(u32 channel, u16 value);
@@ -127,6 +129,11 @@ void update_gbc_sound(u32 cpu_ticks);
 void init_sound(int need_reset);
 void sound_write_mem_savestate(file_tag_type savestate_file);
 void sound_read_savestate(file_tag_type savestate_file);
+
+#ifdef __LIBRETRO__
+void render_audio(void);
+#endif
+
 
 #ifdef IN_MEMORY_C
 
