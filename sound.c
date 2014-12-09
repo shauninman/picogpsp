@@ -517,33 +517,6 @@ void update_gbc_sound(u32 cpu_ticks)
    (gbc_sound_buffer_index + (buffer_ticks * 2)) % BUFFER_SIZE;
 }
 
-#define sound_copy_normal()                                                   \
-  current_sample = source[i]                                                  \
-
-#define sound_copy(source_offset, length, render_type)                        \
-  _length = (length) / 2;                                                     \
-  source = (s16 *)(sound_buffer + source_offset);                             \
-  for(i = 0; i < _length; i++)                                                \
-  {                                                                           \
-    sound_copy_##render_type();                                               \
-    if(current_sample > 2047)                                                 \
-      current_sample = 2047;                                                  \
-    if(current_sample < -2048)                                                \
-      current_sample = -2048;                                                 \
-                                                                              \
-    stream_base[i] = current_sample << 4;                                     \
-    source[i] = 0;                                                            \
-  }                                                                           \
-
-#define sound_copy_null(source_offset, length)                                \
-  _length = (length) / 2;                                                     \
-  source = (s16 *)(sound_buffer + source_offset);                             \
-  for(i = 0; i < _length; i++)                                                \
-  {                                                                           \
-    stream_base[i] = 0;                                                       \
-    source[i] = 0;                                                            \
-  }                                                                           \
-
 // Special thanks to blarrg for the LSFR frequency used in Meridian, as posted
 // on the forum at http://meridian.overclocked.org:
 // http://meridian.overclocked.org/cgi-bin/wwwthreads/showpost.pl?Board=merid
@@ -664,13 +637,22 @@ void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_c
 void render_audio(void)
 {
    static s16 stream_base[512];
-   u32 _length;
    s16 *source;
    u32 i;
-   s32 current_sample;
 
-   while (((gbc_sound_buffer_index - sound_buffer_base) & BUFFER_SIZE_MASK) > 512)   {
-      sound_copy(sound_buffer_base, 1024, normal);
+   while (((gbc_sound_buffer_index - sound_buffer_base) & BUFFER_SIZE_MASK) > 512)
+   {
+      source = (s16 *)(sound_buffer + sound_buffer_base);
+      for(i = 0; i < 512; i++)
+      {
+         s32 current_sample = source[i];
+         if(current_sample > 2047)
+            current_sample = 2047;
+         if(current_sample < -2048)
+            current_sample = -2048;
+         stream_base[i] = current_sample << 4;
+         source[i] = 0;
+      }
       audio_batch_cb(stream_base, 256);
       sound_buffer_base += 512;
       sound_buffer_base &= BUFFER_SIZE_MASK;
