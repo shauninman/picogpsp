@@ -43,6 +43,7 @@ static inline void switch_to_cpu_thread(void)
 static void cpu_thread_entry(void)
 {
    execute_arm_translate(execute_cycles);
+   execute_arm(execute_cycles);
 }
 
 static inline void init_context_switch(void)

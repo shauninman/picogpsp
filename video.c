@@ -101,7 +101,6 @@ const u32 video_scale = 1;
 
 #define get_screen_pitch()                                                    \
   (screen->pitch / 2)                                                         \
-#endif
 
 #endif
 
