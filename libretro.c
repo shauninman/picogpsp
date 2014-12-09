@@ -79,8 +79,8 @@ extern struct retro_perf_callback perf_cb;
 
 void retro_get_system_info(struct retro_system_info* info)
 {
-   info->library_name = "TempGBA";
-   info->library_version = "v0.0.1";
+   info->library_name = "gpSP";
+   info->library_version = "v0.91";
    info->need_fullpath = true;
    info->block_extract = false;
    info->valid_extensions = "gba|bin|agb|gbz" ;
