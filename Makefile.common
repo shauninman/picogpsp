@@ -1,5 +1,7 @@
 INCFLAGS   := -I$(CORE_DIR)/libretro -I$(CORE_DIR)/src
 
+SOURCES_ASM :=
+
 ifeq ($(HAVE_GRIFFIN), 1)
 SOURCES_C := $(CORE_DIR)/gpsp_griffin.c
 else
@@ -16,6 +18,12 @@ SOURCES_C := $(CORE_DIR)/main.c \
 
 endif
 
-SOURCES_ASM := $(CORE_DIR)/x86/x86_stub.S
+ifeq ($(CPU_ARCH), x86_32)
+SOURCES_ASM += $(CORE_DIR)/x86/x86_stub.S
+endif
+ifeq ($(CPU_ARCH), arm)
+SOURCES_ASM += $(CORE_DIR)/arm/arm_stub.S \
+					$(CORE_DIR)/arm/video_blend.S
+endif
 
 INCFLAGS := -I$(CORE_DIR)

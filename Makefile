@@ -47,6 +47,7 @@ ifeq ($(platform), unix)
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC
 	FORCE_32BIT := -m32
+	CPU_ARCH := x86_32
 	SHARED := -shared $(FORCE_32BIT) -Wl,--version-script=link.T
 	ifneq ($(findstring Haiku,$(shell uname -a)),)
 		LIBM :=
