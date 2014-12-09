@@ -100,6 +100,7 @@ void sound_timer_queue32(u32 channel, u32 value)
 
 void sound_timer(fixed8_24 frequency_step, u32 channel)
 {
+  unsigned sample_status = DIRECT_SOUND_INACTIVE;
   direct_sound_struct *ds = direct_sound_channel + channel;
 
   fixed8_24 fifo_fractional = ds->fifo_fractional;
@@ -118,28 +119,27 @@ void sound_timer(fixed8_24 frequency_step, u32 channel)
       next_sample >>= 1;
     }
 
-    switch(ds->status)
-    {
-      case DIRECT_SOUND_INACTIVE:
+    sample_status = ds->status;
+
+  }
+
+  switch(sample_status)
+  {
+     case DIRECT_SOUND_INACTIVE:
         render_samples(null);
         break;
 
-      case DIRECT_SOUND_RIGHT:
+     case DIRECT_SOUND_RIGHT:
         render_samples(right);
         break;
 
-      case DIRECT_SOUND_LEFT:
+     case DIRECT_SOUND_LEFT:
         render_samples(left);
         break;
 
-      case DIRECT_SOUND_LEFTRIGHT:
+     case DIRECT_SOUND_LEFTRIGHT:
         render_samples(both);
         break;
-    }
-  }
-  else
-  {
-    render_samples(null);
   }
 
   ds->buffer_index = buffer_index;
