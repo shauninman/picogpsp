@@ -629,8 +629,3 @@ void printout(void *str, u32 val)
 {
   printf(str, val);
 }
-
-void set_clock_speed()
-{
-}
-

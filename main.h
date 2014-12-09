@@ -192,8 +192,6 @@ static u32 prescale_table[] = { 0, 6, 8, 10 };
 void change_ext(const char *src, char *buffer, const char *extension);
 void make_rpath(char *buff, size_t size, const char *ext);
 
-void set_clock_speed();
-
 #endif
 
 
