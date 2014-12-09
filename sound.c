@@ -27,7 +27,11 @@ u32 global_enable_audio = 1;
 direct_sound_struct direct_sound_channel[2];
 gbc_sound_struct gbc_sound_channel[4];
 
+#ifdef __LIBRETRO__
+u32 sound_frequency = GBA_SOUND_FREQUENCY;
+#else
 u32 sound_frequency = 44100;
+#endif
 
 #ifndef __LIBRETRO__
 SDL_mutex *sound_mutex;
@@ -604,7 +608,7 @@ void update_gbc_sound(u32 cpu_ticks)
     source[i] = 0;                                                            \
   }                                                                           \
 
-
+#ifndef __LIBRETRO__
 void sound_callback(void *userdata, u8 *stream, int length)
 {
   u32 sample_length = length / 2;
@@ -614,7 +618,6 @@ void sound_callback(void *userdata, u8 *stream, int length)
   s16 *source;
   s32 current_sample;
 
-#ifndef __LIBRETRO__
   SDL_LockMutex(sound_mutex);
 
   while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) <
@@ -622,7 +625,6 @@ void sound_callback(void *userdata, u8 *stream, int length)
   {
     SDL_CondWait(sound_cv, sound_mutex);
   }
-#endif
 
   if(global_enable_audio)
   {
@@ -657,12 +659,11 @@ void sound_callback(void *userdata, u8 *stream, int length)
     }
   }
 
-#ifndef __LIBRETRO__
   SDL_CondSignal(sound_cv);
 
   SDL_UnlockMutex(sound_mutex);
-#endif
 }
+#endif
 
 // Special thanks to blarrg for the LSFR frequency used in Meridian, as posted
 // on the forum at http://meridian.overclocked.org:
@@ -852,12 +853,13 @@ void render_audio(void)
    u32 i;
    s32 current_sample;
 
-   return;
+//   return;
 
-   while (((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) > 512)   {
+   while (((gbc_sound_buffer_index - sound_buffer_base) & BUFFER_SIZE_MASK) > 512)   {
       sound_copy(sound_buffer_base, 512, normal);
       audio_batch_cb(stream_base, 256);
       sound_buffer_base += 512;
+      sound_buffer_base &= BUFFER_SIZE_MASK;
    }
 }
 #endif

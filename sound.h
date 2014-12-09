@@ -20,7 +20,13 @@
 #ifndef SOUND_H
 #define SOUND_H
 
-#define BUFFER_SIZE 65536
+#define BUFFER_SIZE        (1 << 16)
+#define BUFFER_SIZE_MASK   (BUFFER_SIZE - 1)
+
+#ifdef __LIBRETRO__
+#define GBA_SOUND_FREQUENCY   (64 * 1024)
+#endif
+
 
 #define GBA_XTAL      16777216.0f
 #define GBA_60HZ_RATE 16853760.0f /* 228*(272+960)*60 */
