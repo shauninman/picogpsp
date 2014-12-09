@@ -89,17 +89,6 @@ u16 gba_screen_pixels[GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT];
 
 #define get_screen_pixels()   gba_screen_pixels
 #define get_screen_pitch()    GBA_SCREEN_PITCH
-
-#else
-SDL_Surface *screen;
-const u32 video_scale = 1;
-
-#define get_screen_pixels()                                                   \
-  ((u16 *)screen->pixels)                                                     \
-
-#define get_screen_pitch()                                                    \
-  (screen->pitch / 2)                                                         \
-
 #endif
 
 static void render_scanline_conditional_tile(u32 start, u32 end, u16 *scanline,
@@ -3305,83 +3294,6 @@ void flip_screen()
       screen_pixels = screen_texture;
   }
 }
-
-#elif !defined(__LIBRETRO__)
-
-#define integer_scale_copy_2()                                                \
-  current_scanline_ptr[x2] = current_pixel;                                   \
-  current_scanline_ptr[x2 - 1] = current_pixel;                               \
-  x2 -= 2                                                                     \
-
-#define integer_scale_copy_3()                                                \
-  current_scanline_ptr[x2] = current_pixel;                                   \
-  current_scanline_ptr[x2 - 1] = current_pixel;                               \
-  current_scanline_ptr[x2 - 2] = current_pixel;                               \
-  x2 -= 3                                                                     \
-
-#define integer_scale_copy_4()                                                \
-  current_scanline_ptr[x2] = current_pixel;                                   \
-  current_scanline_ptr[x2 - 1] = current_pixel;                               \
-  current_scanline_ptr[x2 - 2] = current_pixel;                               \
-  current_scanline_ptr[x2 - 3] = current_pixel;                               \
-  x2 -= 4                                                                     \
-
-#define integer_scale_horizontal(scale_factor)                                \
-  for(y = 0; y < 160; y++)                                                    \
-  {                                                                           \
-    for(x = 239, x2 = (240 * video_scale) - 1; x >= 0; x--)                   \
-    {                                                                         \
-      current_pixel = current_scanline_ptr[x];                                \
-      integer_scale_copy_##scale_factor();                                    \
-      current_scanline_ptr[x2] = current_scanline_ptr[x];                     \
-      current_scanline_ptr[x2 - 1] = current_scanline_ptr[x];                 \
-      current_scanline_ptr[x2 - 2] = current_scanline_ptr[x];                 \
-    }                                                                         \
-    current_scanline_ptr += pitch;                                            \
-  }                                                                           \
-
-void flip_screen()
-{
-  if((video_scale != 1) && (current_scale != unscaled))
-  {
-    s32 x, y;
-    s32 x2, y2;
-    u16 *screen_ptr = get_screen_pixels();
-    u16 *current_scanline_ptr = screen_ptr;
-    u32 pitch = get_screen_pitch();
-    u16 current_pixel;
-    u32 i;
-
-    switch(video_scale)
-    {
-      case 2:
-        integer_scale_horizontal(2);
-        break;
-
-      case 3:
-        integer_scale_horizontal(3);
-        break;
-
-      default:
-      case 4:
-        integer_scale_horizontal(4);
-        break;
-
-    }
-
-    for(y = 159, y2 = (160 * video_scale) - 1; y >= 0; y--)
-    {
-      for(i = 0; i < video_scale; i++)
-      {
-        memcpy(screen_ptr + (y2 * pitch),
-         screen_ptr + (y * pitch), 480 * video_scale);
-        y2--;
-      }
-    }
-  }
-  SDL_Flip(screen);
-}
-
 #endif
 
 #ifndef __LIBRETRO__
@@ -3480,17 +3392,6 @@ void init_video()
   GE_CMD(NOP, 0);
   GE_CMD(NOP, 0);
 }
-
-#elif !defined(__LIBRETRO__)
-
-void init_video()
-{
-  SDL_Init(SDL_INIT_VIDEO | SDL_INIT_JOYSTICK | SDL_INIT_NOPARACHUTE);
-
-  screen = SDL_SetVideoMode(240 * video_scale, 160 * video_scale, 16, 0);
-  SDL_ShowCursor(0);
-}
-
 #endif
 
 video_scale_type screen_scale = scaled_aspect;
@@ -3597,54 +3498,6 @@ void clear_screen(u16 color)
   sceGuFinish();
   sceGuSync(0, 0); */
 }
-
-#elif !defined(__LIBRETRO__)
-
-void video_resolution_large()
-{
-  current_scale = unscaled;
-
-  screen = SDL_SetVideoMode(480, 272, 16, 0);
-  resolution_width = 480;
-  resolution_height = 272;
-}
-
-void video_resolution_small()
-{
-  current_scale = screen_scale;
-
-  screen = SDL_SetVideoMode(small_resolution_width * video_scale,
-   small_resolution_height * video_scale, 16, 0);
-  resolution_width = small_resolution_width;
-  resolution_height = small_resolution_height;
-}
-
-void set_gba_resolution(video_scale_type scale)
-{
-  if(screen_scale != scale)
-  {
-    screen_scale = scale;
-    small_resolution_width = 240 * video_scale;
-    small_resolution_height = 160 * video_scale;
-  }
-}
-
-void clear_screen(u16 color)
-{
-  u16 *dest_ptr = get_screen_pixels();
-  u32 line_skip = get_screen_pitch() - screen->w;
-  u32 x, y;
-
-  for(y = 0; y < screen->h; y++)
-  {
-    for(x = 0; x < screen->w; x++, dest_ptr++)
-    {
-      *dest_ptr = color;
-    }
-    dest_ptr += line_skip;
-  }
-}
-
 #endif
 
 u16 *copy_screen()
