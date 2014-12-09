@@ -42,7 +42,7 @@ endif
 
 ASFLAGS = $(CFLAGS)
 INCDIRS := -I.
-LDFLAGS += -shared -m32 -Wl,--no-undefined -Wl,--version-script=link.T
+LDFLAGS += -shared -m32 -Wl,--no-undefined -Wl,--version-script=link.T -fPIC
 LDLIBS  += -lz
 
 all: $(TARGET)

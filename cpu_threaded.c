@@ -23,18 +23,27 @@
 
 #include "common.h"
 
+#ifdef __LIBRETRO__
+u8* rom_translation_cache;
+u8* ram_translation_cache;
+u8* bios_translation_cache;
+u8 *rom_translation_ptr;
+u8 *ram_translation_ptr;
+u8 *bios_translation_ptr;
+#else
 u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
-u8 *rom_translation_ptr = rom_translation_cache;
-
 u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
+u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
+u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
+u8 *bios_translation_ptr = bios_translation_cache;
+#endif
+
 u32 iwram_code_min = 0xFFFFFFFF;
 u32 iwram_code_max = 0xFFFFFFFF;
 u32 ewram_code_min = 0xFFFFFFFF;
 u32 ewram_code_max = 0xFFFFFFFF;
 
-u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
-u8 *bios_translation_ptr = bios_translation_cache;
 
 u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
 
