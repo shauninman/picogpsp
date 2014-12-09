@@ -72,6 +72,7 @@ else ifeq ($(platform), ios)
 	TARGET := $(TARGET_NAME)_libretro_ios.dylib
 	fpic := -fPIC
 	SHARED := -dynamiclib
+	CPU_ARCH := arm
 
 	ifeq ($(IOSSDK),)
 		IOSSDK := $(shell xcrun -sdk iphoneos -show-sdk-path)
@@ -210,6 +211,10 @@ include Makefile.common
 OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
 
 DEFINES = -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline -DPC_BUILD -Wall
+
+ifeq ($(CPU_ARCH), arm)
+DEFINES += -DARM_ARCH
+endif
 
 WARNINGS_DEFINES =
 CODE_DEFINES =

@@ -23,7 +23,7 @@ SOURCES_ASM += $(CORE_DIR)/x86/x86_stub.S
 endif
 ifeq ($(CPU_ARCH), arm)
 SOURCES_ASM += $(CORE_DIR)/arm/arm_stub.S \
-					$(CORE_DIR)/arm/video_blend.S
+	$(CORE_DIR)/arm/video_blend.S
 endif
 
 INCFLAGS := -I$(CORE_DIR)
