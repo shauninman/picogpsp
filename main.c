@@ -79,7 +79,6 @@ u32 oam_update_count = 0;
 u32 synchronize_flag = 1;
 
 u32 update_backup_flag = 1;
-u32 clock_speed = 333;
 char main_path[512];
 
 void trigger_ext_event();

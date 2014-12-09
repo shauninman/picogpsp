@@ -86,7 +86,6 @@ extern u64 base_timestamp;
 extern char main_path[512];
 
 extern u32 update_backup_flag;
-extern u32 clock_speed;
 
 u32 update_gba();
 void reset_gba();
