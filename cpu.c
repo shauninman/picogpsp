@@ -4176,35 +4176,7 @@ void function_cc step_debug(u32 pc, u32 cycles)
     if(current_debug_state != STEP_RUN)
     {
 
-#ifdef STDIO_DEBUG
       key = getchar();
-#else
-
-      gui_action_type next_input = CURSOR_NONE;
-      while(next_input == CURSOR_NONE)
-      {
-        next_input = get_gui_input();
-
-        switch(next_input)
-        {
-          case CURSOR_BACK:
-            key = 'b';
-            break;
-
-          case CURSOR_UP:
-            key = 'r';
-            break;
-
-          case CURSOR_EXIT:
-            key = 'q';
-            break;
-
-          default:
-            key = 'n';
-            break;
-        }
-      }
-#endif
     }
 
     switch(key)

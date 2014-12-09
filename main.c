@@ -280,11 +280,6 @@ void trigger_ext_event()
   event_number++;
 }
 
-#ifndef __LIBRETRO__
-static u32 fps = 60;
-static u32 frames_drawn = 60;
-#endif
-
 u32 update_gba()
 {
   irq_type irq_raised = IRQ_NONE;
@@ -383,7 +378,6 @@ u32 update_gba()
           dispstat &= ~0x01;
           frame_ticks++;
 
-  #ifdef PC_BUILD
 /*        printf("frame update (%x), %d instructions total, %d RAM flushes\n",
            reg[REG_PC], instruction_count - last_frame, flush_ram_count);
           last_frame = instruction_count;
@@ -393,7 +387,6 @@ u32 update_gba()
           gbc_update_count = 0;
           oam_update_count = 0;
           flush_ram_count = 0;
-  #endif
 
 #ifdef __LIBRETRO__
           switch_to_main_thread();
@@ -405,11 +398,6 @@ u32 update_gba()
             continue;
 
           update_gbc_sound(cpu_ticks);
-
-#if 0
-          if(!synchronize_flag)
-            print_string("-FF-", 0xFFFF, 0x000, 216, 0);
-#endif
 
           update_screen();
 
@@ -545,95 +533,6 @@ void synchronize()
     print_string(char_buffer, 0xFFFF, 0x0000, 0, 0);
 */
 }
-
-#elif defined(__LIBRETRO__)
-
-#else
-
-u32 real_frame_count = 0;
-u32 virtual_frame_count = 0;
-u32 num_skipped_frames = 0;
-u32 interval_skipped_frames;
-u32 frames;
-
-const u32 frame_interval = 60;
-
-void synchronize()
-{
-  u64 new_ticks;
-  u64 time_delta;
-
-  get_ticks_us(&new_ticks);
-
-  skip_next_frame = 0;
-  virtual_frame_count++;
-
-  real_frame_count = (new_ticks * 3) / 50000;
-
-  if(real_frame_count >= virtual_frame_count)
-  {
-    if((real_frame_count > virtual_frame_count) &&
-     (current_frameskip_type == auto_frameskip) &&
-     (num_skipped_frames < frameskip_value))
-    {
-      skip_next_frame = 1;
-      num_skipped_frames++;
-    }
-    else
-    {
-      virtual_frame_count = real_frame_count;
-      num_skipped_frames = 0;
-    }
-  }
-  else if (synchronize_flag)
-  {
-    delay_us((u64)virtual_frame_count * 50000 / 3 - new_ticks + 2);
-  }
-
-  frames++;
-
-  if(frames == frame_interval)
-  {
-    u32 new_fps;
-    u32 new_frames_drawn;
-
-    time_delta = new_ticks - last_frame_interval_timestamp;
-    new_fps = (u64)((u64)1000000 * (u64)frame_interval) / time_delta;
-    new_frames_drawn =
-     (frame_interval - interval_skipped_frames) * (60 / frame_interval);
-
-    // Left open for rolling averages
-    fps = new_fps;
-    frames_drawn = new_frames_drawn;
-
-    last_frame_interval_timestamp = new_ticks;
-    interval_skipped_frames = 0;
-    frames = 0;
-  }
-
-  if(current_frameskip_type == manual_frameskip)
-  {
-    frameskip_counter = (frameskip_counter + 1) %
-     (frameskip_value + 1);
-    if(random_skip)
-    {
-      if(frameskip_counter != (rand() % (frameskip_value + 1)))
-        skip_next_frame = 1;
-    }
-    else
-    {
-      if(frameskip_counter)
-        skip_next_frame = 1;
-    }
-  }
-
-  interval_skipped_frames += skip_next_frame;
-
-  char char_buffer[64];
-  sprintf(char_buffer, "gpSP: %2d (%2d) fps", fps, frames_drawn);
-  SDL_WM_SetCaption(char_buffer, "gpSP");
-}
-
 #endif
 
 void quit()
@@ -642,26 +541,6 @@ void quit()
     update_backup_force();
 
   sound_exit();
-
-#ifndef __LIBRETRO__
-
-#ifdef REGISTER_USAGE_ANALYZE
-  print_register_usage();
-#endif
-
-#ifdef PSP_BUILD
-  sceKernelExitGame();
-#else
-  SDL_Quit();
-
-#ifndef PC_BUILD
-  gpsp_plat_quit();
-#endif
-
-  exit(0);
-#endif
-
-#endif
 }
 
 void reset_gba()
@@ -706,39 +585,6 @@ u32 file_length(const char *dummy, FILE *fp)
 
   return length;
 }
-
-#ifdef __LIBRETRO__
-
-#elif defined(PC_BUILD)
-
-void delay_us(u32 us_count)
-{
-  SDL_Delay(us_count / 1000);
-}
-
-void get_ticks_us(u64 *ticks_return)
-{
-  *ticks_return = (u64)SDL_GetTicks() * 1000;
-}
-
-#else
-
-void delay_us(u32 us_count)
-{
-  //usleep(us_count);
-  SDL_Delay(us_count / 1000);
-}
-
-void get_ticks_us(u64 *ticks_return)
-{
-  struct timeval current_time;
-  gettimeofday(&current_time, NULL);
-
-  *ticks_return =
-   (u64)current_time.tv_sec * 1000000 + current_time.tv_usec;
-}
-
-#endif
 
 #endif
 

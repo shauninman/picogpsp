@@ -3677,8 +3677,6 @@ void blit_to_screen(u16 *src, u32 w, u32 h, u32 dest_x, u32 dest_y)
 u32 debug_cursor_x = 0;
 u32 debug_cursor_y = 0;
 
-#ifdef STDIO_DEBUG
-
 void debug_screen_clear()
 {
 }
@@ -3708,57 +3706,6 @@ void debug_screen_newline(u32 count)
 {
   printf("\n");
 }
-
-
-#else
-
-void debug_screen_clear()
-{
-  debug_cursor_x = 0;
-  debug_cursor_y = 0;
-  clear_screen(0x0000);
-}
-
-void debug_screen_start()
-{
-  video_resolution_large();
-  debug_screen_clear();
-}
-
-void debug_screen_end()
-{
-  video_resolution_small();
-}
-
-void debug_screen_update()
-{
-  flip_screen();
-}
-
-void debug_screen_printf(const char *format, ...)
-{
-  char str_buffer[512];
-  u32 str_buffer_length;
-  va_list ap;
-
-  va_start(ap, format);
-  str_buffer_length = vsnprintf(str_buffer, 512, format, ap);
-  va_end(ap);
-
-  printf("printing debug string %s at %d %d\n", str_buffer,
-   debug_cursor_x, debug_cursor_y);
-
-  print_string(str_buffer, 0xFFFF, 0x0000, debug_cursor_x, debug_cursor_y);
-  debug_cursor_x += FONT_WIDTH * str_buffer_length;
-}
-
-void debug_screen_newline(u32 count)
-{
-  debug_cursor_x = 0;
-  debug_cursor_y += FONT_HEIGHT * count;
-}
-
-#endif
 
 void debug_screen_printl(const char *format, ...)
 {

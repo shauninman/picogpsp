@@ -77,8 +77,6 @@ typedef enum
 
 void init_input();
 u32 update_input();
-gui_action_type get_gui_input();
-gui_action_type get_gui_input_fs_hold(u32 button_id);
 void input_write_mem_savestate(file_tag_type savestate_file);
 void input_read_savestate(file_tag_type savestate_file);
 

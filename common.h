@@ -239,9 +239,4 @@ typedef u32 fixed8_24;
   #define printf pspDebugScreenPrintf
 #endif
 
-#ifdef PC_BUILD
-  #define STDIO_DEBUG
-  //#define REGISTER_USAGE_ANALYZE
-#endif
-
 #endif
