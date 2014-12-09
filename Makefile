@@ -56,6 +56,9 @@ endif
 cpu.o: cpu.c
 	$(CC) -c -o $@ $< $(CFLAGS) -Wno-unused-variable -Wno-unused-label $(OPTIMIZE_SAFE) $(INCDIRS)
 
+cpu_threaded.o: cpu_threaded.c
+	$(CC) -c -o $@ $< $(CFLAGS) -Wno-unused-variable -Wno-unused-label $(OPTIMIZE_SAFE) $(INCDIRS)
+
 %.o: %.S
 	$(CC) -c -o $@ $< $(ASFLAGS) $(OPTIMIZE)
 

@@ -514,8 +514,10 @@ void trigger_ext_event()
   event_number++;
 }
 
+#ifndef __LIBRETRO__
 static u32 fps = 60;
 static u32 frames_drawn = 60;
+#endif
 
 u32 update_gba()
 {
