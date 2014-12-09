@@ -3397,8 +3397,6 @@ void init_video()
 video_scale_type screen_scale = scaled_aspect;
 video_scale_type current_scale = scaled_aspect;
 video_filter_type screen_filter = filter_bilinear;
-video_filter_type2 screen_filter2 = filter2_none;
-
 
 #ifdef PSP_BUILD
 
