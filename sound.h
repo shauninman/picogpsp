@@ -23,20 +23,13 @@
 #define BUFFER_SIZE        (1 << 16)
 #define BUFFER_SIZE_MASK   (BUFFER_SIZE - 1)
 
-#ifdef __LIBRETRO__
 #define GBA_SOUND_FREQUENCY   (64 * 1024)
-#endif
 
 
 #define GBA_XTAL      16777216.0f
 #define GBA_60HZ_RATE 16853760.0f /* 228*(272+960)*60 */
 
-#if !defined(PSP_BUILD) && !defined(__LIBRETRO__)
-// run GBA at 60Hz (~0.5% faster) to better match host display
-#define GBC_BASE_RATE GBA_60HZ_RATE
-#else
 #define GBC_BASE_RATE GBA_XTAL
-#endif
 
 typedef enum
 {
@@ -122,10 +115,6 @@ extern u32 global_enable_audio;
 extern u32 enable_low_pass_filter;
 extern u32 audio_buffer_size_number;
 
-#ifndef __LIBRETRO__
-extern SDL_mutex* sound_mutex;
-#endif
-
 void sound_timer_queue8(u32 channel, u8 value);
 void sound_timer_queue16(u32 channel, u16 value);
 void sound_timer_queue32(u32 channel, u32 value);
@@ -136,10 +125,7 @@ void init_sound(int need_reset);
 void sound_write_mem_savestate(file_tag_type savestate_file);
 void sound_read_savestate(file_tag_type savestate_file);
 
-#ifdef __LIBRETRO__
 void render_audio(void);
-#endif
-
 
 #ifdef IN_MEMORY_C
 

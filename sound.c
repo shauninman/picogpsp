@@ -19,24 +19,12 @@
 
 
 #include "common.h"
-#ifndef __LIBRETRO__
-#include <SDL.h>
-#endif
 u32 global_enable_audio = 1;
 
 direct_sound_struct direct_sound_channel[2];
 gbc_sound_struct gbc_sound_channel[4];
 
-#ifdef __LIBRETRO__
 u32 sound_frequency = GBA_SOUND_FREQUENCY;
-#else
-u32 sound_frequency = 44100;
-#endif
-
-#ifndef __LIBRETRO__
-SDL_mutex *sound_mutex;
-static SDL_cond *sound_cv;
-#endif
 
 #ifdef PSP_BUILD
 u32 audio_buffer_size_number = 1;
@@ -51,10 +39,6 @@ static u32 sound_buffer_base;
 
 static u32 sound_last_cpu_ticks;
 static fixed16_16 gbc_sound_tick_step;
-
-#ifndef __LIBRETRO__
-static u32 sound_exit_flag;
-#endif
 
 // Queue 1, 2, or 4 samples to the top of the DS FIFO, wrap around circularly
 
@@ -457,48 +441,6 @@ void update_gbc_sound(u32 cpu_ticks)
     gbc_sound_partial_ticks &= 0xFFFF;
   }
 
-#ifndef __LIBRETRO__
-  SDL_LockMutex(sound_mutex);
-  if(synchronize_flag)
-  {
-    if(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >=
-     (audio_buffer_size * 2))
-    {
-      while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) >
-       (audio_buffer_size * 3 / 2))
-      {
-        SDL_CondWait(sound_cv, sound_mutex);
-      }
-
-#ifdef PSP_BUILD
-      if(current_frameskip_type == auto_frameskip)
-      {
-        sceDisplayWaitVblankStart();
-        real_frame_count = 0;
-        virtual_frame_count = 0;
-      }
-#else
-      if(current_frameskip_type == auto_frameskip)
-      {
-/*
-        u64 current_ticks;
-        u64 next_ticks;
-        get_ticks_us(&current_ticks);
-
-        next_ticks = ((current_ticks + 16666) / 16667) * 16667;
-        delay_us(next_ticks - current_ticks);
-
-        get_ticks_us(&frame_count_initial_timestamp);
-*/
-        /* prevent frameskip, or it will cause more audio,
-	 * then more waiting here, then frame skip again, ... */
-        num_skipped_frames = 100;
-      }
-#endif
-
-    }
-  }
-#endif
   if(sound_on == 1)
   {
     gs = gbc_sound_channel + 0;
@@ -573,12 +515,6 @@ void update_gbc_sound(u32 cpu_ticks)
   gbc_sound_last_cpu_ticks = cpu_ticks;
   gbc_sound_buffer_index =
    (gbc_sound_buffer_index + (buffer_ticks * 2)) % BUFFER_SIZE;
-
-#ifndef __LIBRETRO__
-  SDL_UnlockMutex(sound_mutex);
-
-  SDL_CondSignal(sound_cv);
-#endif
 }
 
 #define sound_copy_normal()                                                   \
@@ -607,63 +543,6 @@ void update_gbc_sound(u32 cpu_ticks)
     stream_base[i] = 0;                                                       \
     source[i] = 0;                                                            \
   }                                                                           \
-
-#ifndef __LIBRETRO__
-void sound_callback(void *userdata, u8 *stream, int length)
-{
-  u32 sample_length = length / 2;
-  u32 _length;
-  u32 i;
-  s16 *stream_base = (s16 *)stream;
-  s16 *source;
-  s32 current_sample;
-
-  SDL_LockMutex(sound_mutex);
-
-  while(((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) <
-   length && !sound_exit_flag)
-  {
-    SDL_CondWait(sound_cv, sound_mutex);
-  }
-
-  if(global_enable_audio)
-  {
-    if((sound_buffer_base + sample_length) >= BUFFER_SIZE)
-    {
-      u32 partial_length = (BUFFER_SIZE - sound_buffer_base) * 2;
-      sound_copy(sound_buffer_base, partial_length, normal);
-      source = (s16 *)sound_buffer;
-      sound_copy(0, length - partial_length, normal);
-      sound_buffer_base = (length - partial_length) / 2;
-    }
-    else
-    {
-      sound_copy(sound_buffer_base, length, normal);
-      sound_buffer_base += sample_length;
-    }
-  }
-  else
-  {
-    if((sound_buffer_base + sample_length) >= BUFFER_SIZE)
-    {
-      u32 partial_length = (BUFFER_SIZE - sound_buffer_base) * 2;
-      sound_copy_null(sound_buffer_base, partial_length);
-      source = (s16 *)sound_buffer;
-      sound_copy(0, length - partial_length, normal);
-      sound_buffer_base = (length - partial_length) / 2;
-    }
-    else
-    {
-      sound_copy_null(sound_buffer_base, length);
-      sound_buffer_base += sample_length;
-    }
-  }
-
-  SDL_CondSignal(sound_cv);
-
-  SDL_UnlockMutex(sound_mutex);
-}
-#endif
 
 // Special thanks to blarrg for the LSFR frequency used in Meridian, as posted
 // on the forum at http://meridian.overclocked.org:
@@ -704,10 +583,6 @@ void reset_sound()
   gbc_sound_struct *gs = gbc_sound_channel;
   u32 i;
 
-#ifndef __LIBRETRO__
-  SDL_LockMutex(sound_mutex);
-#endif
-
   sound_on = 0;
   sound_buffer_base = 0;
   sound_last_cpu_ticks = 0;
@@ -739,70 +614,16 @@ void reset_sound()
     gs->sample_data = square_pattern_duty[2];
     gs->active_flag = 0;
   }
-
-#ifndef __LIBRETRO__
-  SDL_UnlockMutex(sound_mutex);
-#endif
 }
 
 void sound_exit()
 {
   gbc_sound_buffer_index =
    (sound_buffer_base + audio_buffer_size) % BUFFER_SIZE;
-#ifndef __LIBRETRO__
-  SDL_PauseAudio(1);
-  sound_exit_flag = 1;
-  SDL_CondSignal(sound_cv);
-  SDL_CloseAudio();
-  SDL_Delay(200);
-  SDL_DestroyMutex(sound_mutex);
-  sound_mutex = NULL;
-  SDL_DestroyCond(sound_cv);
-  sound_cv = NULL;
-#endif
 }
 
 void init_sound(int need_reset)
 {
-#ifndef __LIBRETRO__
-  SDL_AudioSpec sound_settings;
-
-  sound_exit_flag = 0;
-#ifdef PSP_BUILD
-  audio_buffer_size = (audio_buffer_size_number * 1024) + 3072;
-#else
-  audio_buffer_size = 16 << audio_buffer_size_number;
-//  audio_buffer_size = 16384;
-#endif
-
-  SDL_AudioSpec desired_spec =
-  {
-    sound_frequency,
-    AUDIO_S16,
-    2,
-    0,
-    audio_buffer_size / 4,
-    0,
-    0,
-    sound_callback,
-    NULL
-  };
-
-  sound_mutex = SDL_CreateMutex();
-  sound_cv = SDL_CreateCond();
-
-  SDL_OpenAudio(&desired_spec, &sound_settings);
-  sound_frequency = sound_settings.freq;
-  audio_buffer_size = sound_settings.size;
-  u32 i = audio_buffer_size / 16;
-  for (audio_buffer_size_number = 0; i && (i & 1) == 0; i >>= 1)
-    audio_buffer_size_number++;
-#ifndef PSP_BUILD
-  printf("audio: freq %d, size %d\n", sound_frequency, audio_buffer_size);
-#endif
-
-#endif
-
   gbc_sound_tick_step =
    float_to_fp16_16(256.0f / sound_frequency);
 
@@ -811,10 +632,6 @@ void init_sound(int need_reset)
 
   if (need_reset)
     reset_sound();
-
-#ifndef __LIBRETRO__
-  SDL_PauseAudio(0);
-#endif
 }
 
 #define sound_savestate_builder(type)                                       \
@@ -838,7 +655,6 @@ sound_savestate_builder(read);
 sound_savestate_builder(write_mem);
 
 
-#ifdef __LIBRETRO__
 #include "libretro.h"
 
 static retro_audio_sample_batch_t audio_batch_cb;
@@ -860,5 +676,3 @@ void render_audio(void)
       sound_buffer_base &= BUFFER_SIZE_MASK;
    }
 }
-#endif
-
