@@ -639,9 +639,9 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     }                                                                         \
   }                                                                           \
 
-u8 *last_rom_translation_ptr = rom_translation_cache;
-u8 *last_ram_translation_ptr = ram_translation_cache;
-u8 *last_bios_translation_ptr = bios_translation_cache;
+u8 *last_rom_translation_ptr = NULL;
+u8 *last_ram_translation_ptr = NULL;
+u8 *last_bios_translation_ptr = NULL;
 
 #define translate_invalidate_dcache_one(which)                                \
   if (which##_translation_ptr > last_##which##_translation_ptr)               \
