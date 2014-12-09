@@ -36,7 +36,7 @@ OBJS += libretro.o
 
 ASFLAGS = $(CFLAGS)
 INCDIRS := -I.
-LDFLAGS += -shared -m32
+LDFLAGS += -shared -m32 -Wl,--no-undefined -Wl,--version-script=link.T
 LDLIBS  += -lz
 
 
