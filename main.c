@@ -21,12 +21,7 @@
 #include <ctype.h>
 
 #ifdef PSP_BUILD
-
-//PSP_MODULE_INFO("gpSP", 0x1000, 0, 6);
-//PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
-
 void vblank_interrupt_handler(u32 sub, u32 *parg);
-
 #endif
 
 timer_type timer[4];

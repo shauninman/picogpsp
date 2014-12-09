@@ -27,7 +27,6 @@
 
 
 #define GBA_XTAL      16777216.0f
-#define GBA_60HZ_RATE 16853760.0f /* 228*(272+960)*60 */
 
 #define GBC_BASE_RATE GBA_XTAL
 
@@ -113,7 +112,6 @@ extern u32 sound_on;
 
 extern u32 global_enable_audio;
 extern u32 enable_low_pass_filter;
-extern u32 audio_buffer_size_number;
 
 void sound_timer_queue8(u32 channel, u8 value);
 void sound_timer_queue16(u32 channel, u16 value);

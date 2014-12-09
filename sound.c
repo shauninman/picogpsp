@@ -26,12 +26,6 @@ gbc_sound_struct gbc_sound_channel[4];
 
 u32 sound_frequency = GBA_SOUND_FREQUENCY;
 
-#ifdef PSP_BUILD
-u32 audio_buffer_size_number = 1;
-#else
-u32 audio_buffer_size_number = 8;
-#endif
-
 u32 sound_on;
 static u32 audio_buffer_size;
 static s16 sound_buffer[BUFFER_SIZE];
