@@ -37,12 +37,11 @@ ifeq ($(STATIC_LINKING), 1)
 TARGET := $(TARGET).a
 else
 TARGET := $(TARGET).so
-CFLAGS += -fPIC
 endif
 
 ASFLAGS = $(CFLAGS)
 INCDIRS := -I.
-LDFLAGS += -shared -m32 -Wl,--no-undefined -Wl,--version-script=link.T -fPIC
+LDFLAGS += -shared -m32 -Wl,--no-undefined -Wl,--version-script=link.T
 LDLIBS  += -lz
 
 all: $(TARGET)
@@ -67,7 +66,7 @@ cpu_threaded.o: cpu_threaded.c
 	$(CC) -c -o $@ $< $(ASFLAGS) $(OPTIMIZE)
 
 clean:
-#	rm -f main.o memory.o input.o sound.o cpu_threaded.o x86_stub.o cheats.o zip.o libretro.o
+#	rm -f main.o memory.o input.o sound.o x86_stub.o cheats.o zip.o libretro.o
 	rm -f $(OBJS)
 	rm -f $(TARGET)
 
