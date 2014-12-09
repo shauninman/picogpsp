@@ -464,14 +464,8 @@ void update_gbc_sound(u32 cpu_ticks)
     gs = gbc_sound_channel + 2;
     if(gbc_sound_wave_update)
     {
-      if(gs->wave_bank == 1)
-      {
-        gbc_sound_load_wave_ram(1);
-      }
-      else
-      {
-        gbc_sound_load_wave_ram(0);
-      }
+      unsigned to_load_wave_bank = (gs->wave_bank == 1) ? 1 : 0;
+      gbc_sound_load_wave_ram(to_load_wave_bank);
 
       gbc_sound_wave_update = 0;
     }
