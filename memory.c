@@ -3160,7 +3160,7 @@ void bios_region_read_protect()
   sound_##type##_savestate(savestate_file);                                   \
   video_##type##_savestate(savestate_file)                                    \
 
-void load_state(char *savestate_filename)
+void gba_load_state(char *savestate_filename)
 {
   file_open(savestate_file, savestate_filename, read);
   if(file_check_valid(savestate_file))
@@ -3196,7 +3196,7 @@ void load_state(char *savestate_filename)
         {
           reset_gba();
           // Okay, so this takes a while, but for now it works.
-          load_state(savestate_filename);
+          gba_load_state(savestate_filename);
         }
         else
         {
@@ -3229,7 +3229,7 @@ void load_state(char *savestate_filename)
 u8 savestate_write_buffer[506947];
 u8 *write_mem_ptr;
 
-void save_state(char *savestate_filename, u16 *screen_capture)
+void gba_save_state(char *savestate_filename, u16 *screen_capture)
 {
   write_mem_ptr = savestate_write_buffer;
   file_open(savestate_file, savestate_filename, write);

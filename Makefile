@@ -1,10 +1,10 @@
-TARGET      := gpsp_libretro.so
+TARGET   := gpsp_libretro
 
 CC  = gcc
 AR  = psp-ar
 STATIC_LINKING = 0
 
-CFLAGS   += -fPIC -Werror-implicit-function-declaration
+CFLAGS   += -Werror-implicit-function-declaration
 CFLAGS   += -DPC_BUILD -Wall -m32
 CFLAGS   += -D__LIBRETRO__
 
@@ -33,13 +33,17 @@ OBJS += zip.o
 OBJS += libretro.o
 OBJS += libco/libco.o
 
-
+ifeq ($(STATIC_LINKING), 1)
+TARGET := $(TARGET).a
+else
+TARGET := $(TARGET).so
+CFLAGS += -fPIC
+endif
 
 ASFLAGS = $(CFLAGS)
 INCDIRS := -I.
 LDFLAGS += -shared -m32 -Wl,--no-undefined -Wl,--version-script=link.T
 LDLIBS  += -lz
-
 
 all: $(TARGET)
 

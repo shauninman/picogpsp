@@ -439,7 +439,7 @@ void trigger_ext_event()
 
   get_savestate_filename_noshot(savestate_slot,
    current_savestate_filename);
-  load_state(current_savestate_filename);
+  gba_load_state(current_savestate_filename);
 
   switch(event_number)
   {

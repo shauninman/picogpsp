@@ -4274,7 +4274,7 @@ void function_cc step_debug(u32 pc, u32 cycles)
         u16 *current_screen = copy_screen();
         get_savestate_filename_noshot(savestate_slot,
          current_savestate_filename);
-        save_state(current_savestate_filename, current_screen);
+        gba_save_state(current_savestate_filename, current_screen);
         free(current_screen);
         break;
       }

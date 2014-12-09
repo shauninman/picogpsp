@@ -227,17 +227,25 @@ bool retro_load_game(const struct retro_game_info *info)
 
 //   strncat(dir_save, "/",sizeof(dir_save));
 
-   strncat(main_path, "/",sizeof(main_path));
+//   strncat(main_path, "/",sizeof(main_path));
 
-   if (load_bios(filename_bios) < 0)
+   if (load_bios(filename_bios) != 0)
    {
      error_msg("Could not load BIOS image file.\n");
      return false;
    }
 
+   if(bios_rom[0] != 0x18)
+   {
+     info_msg("You have an incorrect BIOS image.\n");
+     info_msg("While many games will work fine, some will not. It\n");
+     info_msg("is strongly recommended that you obtain the\n");
+     info_msg("correct BIOS file.\n");
+   }
+
    gamepak_filename[0] = 0;
 
-   if (load_gamepak(info->path) < 0)
+   if (load_gamepak(info->path) != 0)
    {
      error_msg("Could not load the game file.\n");
      return false;

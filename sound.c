@@ -852,6 +852,8 @@ void render_audio(void)
    u32 i;
    s32 current_sample;
 
+   return;
+
    while (((gbc_sound_buffer_index - sound_buffer_base) % BUFFER_SIZE) > 512)   {
       sound_copy(sound_buffer_base, 512, normal);
       audio_batch_cb(stream_base, 256);
