@@ -82,7 +82,6 @@ gui_action_type get_gui_input_fs_hold(u32 button_id);
 void input_write_mem_savestate(file_tag_type savestate_file);
 void input_read_savestate(file_tag_type savestate_file);
 
-#ifdef __LIBRETRO__
 #include "libretro.h"
 
 typedef struct
@@ -102,11 +101,9 @@ static const map btn_map[] = {
    { RETRO_DEVICE_ID_JOYPAD_B,      BUTTON_B },
    { RETRO_DEVICE_ID_JOYPAD_A,      BUTTON_A }
 };
-#endif
 
 extern u32 gamepad_config_map[];
 extern u32 global_enable_analog;
 extern u32 analog_sensitivity_level;
 
 #endif
-
