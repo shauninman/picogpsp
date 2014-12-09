@@ -406,15 +406,6 @@ u32 gbc_sound_master_volume;
   gs->sample_index = sample_index;                                            \
   gs->tick_counter = tick_counter;                                            \
 
-#define gbc_sound_load_wave_ram(bank)                                         \
-  wave_bank = wave_samples + (bank * 32);                                     \
-  for(i = 0, i2 = 0; i < 16; i++, i2 += 2)                                    \
-  {                                                                           \
-    current_sample = wave_ram[i];                                             \
-    wave_bank[i2] = (((current_sample >> 4) & 0x0F) - 8);                     \
-    wave_bank[i2 + 1] = ((current_sample & 0x0F) - 8);                        \
-  }                                                                           \
-
 void update_gbc_sound(u32 cpu_ticks)
 {
   fixed16_16 buffer_ticks = float_to_fp16_16((float)(cpu_ticks -
@@ -464,10 +455,17 @@ void update_gbc_sound(u32 cpu_ticks)
     gs = gbc_sound_channel + 2;
     if(gbc_sound_wave_update)
     {
-      unsigned to_load_wave_bank = (gs->wave_bank == 1) ? 1 : 0;
-      gbc_sound_load_wave_ram(to_load_wave_bank);
+       unsigned bank = (gs->wave_bank == 1) ? 1 : 0;
 
-      gbc_sound_wave_update = 0;
+       wave_bank = wave_samples + (bank * 32);
+       for(i = 0, i2 = 0; i < 16; i++, i2 += 2)
+       {
+          current_sample = wave_ram[i];
+          wave_bank[i2] = (((current_sample >> 4) & 0x0F) - 8);
+          wave_bank[i2 + 1] = ((current_sample & 0x0F) - 8);
+       }
+
+       gbc_sound_wave_update = 0;
     }
 
     if((gs->active_flag) && (gs->master_enable))
