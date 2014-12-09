@@ -129,7 +129,7 @@ void trigger_ext_event();
     }                                                                         \
   }                                                                           \
 
-static const char *file_ext[] = { ".gba", ".bin", ".zip", NULL };
+static const char *file_ext[] = { ".gba", ".bin", NULL };
 
 #ifndef PSP_BUILD
 static void ChangeWorkingDirectory(char *exe)

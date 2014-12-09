@@ -2162,14 +2162,9 @@ char gamepak_filename[512];
 
 u32 load_gamepak(const char *name)
 {
-  char *dot_position = strrchr(name, '.');
-  s32 file_size;
   char cheats_filename[256];
 
-  if(!strcmp(dot_position, ".zip"))
-    file_size = load_file_zip(name);
-  else
-    file_size = load_gamepak_raw(name);
+  s32 file_size = load_gamepak_raw(name);
 
   // A dumb April fool's joke was here once :o
 

@@ -28,7 +28,6 @@ OBJS += cpu_threaded.o
 
 OBJS += x86/x86_stub.o
 OBJS += cheats.o
-OBJS += zip.o
 
 OBJS += libretro.o
 OBJS += libco/libco.o
@@ -66,7 +65,7 @@ cpu_threaded.o: cpu_threaded.c
 	$(CC) -c -o $@ $< $(ASFLAGS) $(OPTIMIZE)
 
 clean:
-#	rm -f main.o memory.o input.o sound.o x86_stub.o cheats.o zip.o libretro.o
+#	rm -f main.o memory.o input.o sound.o x86_stub.o cheats.o libretro.o
 	rm -f $(OBJS)
 	rm -f $(TARGET)
 
