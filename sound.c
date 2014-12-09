@@ -69,34 +69,6 @@ void sound_timer_queue32(u32 channel, u32 value)
   sound_timer_queue(8, value >> 24);
 }
 
-// Unqueue 1 sample from the base of the DS FIFO and place it on the audio
-// buffer for as many samples as necessary. If the DS FIFO is 16 bytes or
-// smaller and if DMA is enabled for the sound channel initiate a DMA transfer
-// to the DS FIFO.
-
-#define render_sample_null()                                                  \
-
-#define render_sample_left()                                                  \
-  sound_buffer[buffer_index] += current_sample +                              \
-   fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8))    \
-
-#define render_sample_right()                                                 \
-  sound_buffer[buffer_index + 1] += current_sample +                          \
-   fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8))    \
-
-#define render_sample_both()                                                  \
-  dest_sample = current_sample +                                              \
-   fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8));   \
-  sound_buffer[buffer_index] += dest_sample;                                  \
-  sound_buffer[buffer_index + 1] += dest_sample                               \
-
-#define render_samples(type)                                                  \
-  while(fifo_fractional <= 0xFFFFFF)                                          \
-  {                                                                           \
-    render_sample_##type();                                                   \
-    fifo_fractional += frequency_step;                                        \
-    buffer_index = (buffer_index + 2) % BUFFER_SIZE;                          \
-  }                                                                           \
 
 void sound_timer(fixed8_24 frequency_step, u32 channel)
 {
@@ -105,7 +77,7 @@ void sound_timer(fixed8_24 frequency_step, u32 channel)
 
   fixed8_24 fifo_fractional = ds->fifo_fractional;
   u32 buffer_index = ds->buffer_index;
-  s16 current_sample, next_sample, dest_sample;
+  s16 current_sample, next_sample;
 
   current_sample = ds->fifo[ds->fifo_base] << 4;
   ds->fifo_base = (ds->fifo_base + 1) % 32;
@@ -123,22 +95,62 @@ void sound_timer(fixed8_24 frequency_step, u32 channel)
 
   }
 
+  // Unqueue 1 sample from the base of the DS FIFO and place it on the audio
+  // buffer for as many samples as necessary. If the DS FIFO is 16 bytes or
+  // smaller and if DMA is enabled for the sound channel initiate a DMA transfer
+  // to the DS FIFO.
+
   switch(sample_status)
   {
      case DIRECT_SOUND_INACTIVE:
-        render_samples(null);
+        /* render samples NULL */
+        while(fifo_fractional <= 0xFFFFFF)
+        {
+           fifo_fractional += frequency_step;
+           buffer_index = (buffer_index + 2) % BUFFER_SIZE;
+        }
         break;
 
      case DIRECT_SOUND_RIGHT:
-        render_samples(right);
+        /* render samples RIGHT */
+        while(fifo_fractional <= 0xFFFFFF)
+        {
+           s16 dest_sample = current_sample +
+              fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8));
+
+           sound_buffer[buffer_index + 1]     += dest_sample;
+
+           fifo_fractional += frequency_step;
+           buffer_index = (buffer_index + 2) % BUFFER_SIZE;
+        }
         break;
 
      case DIRECT_SOUND_LEFT:
-        render_samples(left);
+        /* render samples LEFT */
+        while(fifo_fractional <= 0xFFFFFF)
+        {
+           s16 dest_sample = current_sample +
+              fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8));
+
+           sound_buffer[buffer_index]     += dest_sample;
+
+           fifo_fractional += frequency_step;
+           buffer_index = (buffer_index + 2) % BUFFER_SIZE;
+        }
         break;
 
      case DIRECT_SOUND_LEFTRIGHT:
-        render_samples(both);
+        /* render samples LEFT and RIGHT. */
+        while(fifo_fractional <= 0xFFFFFF)
+        {
+           s16 dest_sample = current_sample +
+              fp16_16_to_u32((next_sample - current_sample) * (fifo_fractional >> 8));
+
+           sound_buffer[buffer_index]     += dest_sample;
+           sound_buffer[buffer_index + 1] += dest_sample;
+           fifo_fractional += frequency_step;
+           buffer_index = (buffer_index + 2) % BUFFER_SIZE;
+        }
         break;
   }
 
