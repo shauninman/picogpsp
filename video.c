@@ -3387,6 +3387,7 @@ void flip_screen()
 
 #endif
 
+#ifndef __LIBRETRO__
 u32 frame_to_render;
 
 void update_screen()
@@ -3394,6 +3395,7 @@ void update_screen()
   if(!skip_next_frame)
     flip_screen();
 }
+#endif
 
 #ifdef PSP_BUILD
 

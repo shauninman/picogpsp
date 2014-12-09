@@ -21,6 +21,15 @@ struct retro_perf_callback perf_cb;
 static cothread_t main_thread;
 static cothread_t cpu_thread;
 
+/* to be removed */
+u32 savestate_slot = 0;
+void get_savestate_filename_noshot(u32 slot, char *name_buffer)
+{
+  (void) slot;
+  sprintf(name_buffer, "dummy.svs");
+}
+/* ------------ */
+
 void switch_to_main_thread(void)
 {
    co_switch(main_thread);

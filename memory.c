@@ -2197,7 +2197,9 @@ u32 load_gamepak(const char *name)
     gamepak_maker[2] = 0;
 
     load_game_config(gamepak_title, gamepak_code, gamepak_maker);
+#ifndef __LIBRETRO__
     load_game_config_file();
+#endif
 
     change_ext(gamepak_filename, cheats_filename, ".cht");
     add_cheats(cheats_filename);

@@ -214,6 +214,7 @@ void init_main()
   flush_translation_cache_bios();
 }
 
+#ifndef __LIBRETRO__
 int main(int argc, char *argv[])
 {
   char bios_filename[512];
@@ -384,6 +385,7 @@ int main(int argc, char *argv[])
 #endif
   return 0;
 }
+#endif
 
 void print_memory_stats(u32 *counter, u32 *region_stats, char *stats_str)
 {
@@ -625,6 +627,12 @@ u32 update_gba()
           flush_ram_count = 0;
   #endif
 
+#ifdef __LIBRETRO__
+          switch_to_main_thread();
+
+          update_gbc_sound(cpu_ticks);
+          gbc_sound_update = 0;
+#else
           if(update_input())
             continue;
 
@@ -645,7 +653,7 @@ u32 update_gba()
 
           if(update_backup_flag)
             update_backup();
-
+#endif
           process_cheats();
 
           event_cycles++;

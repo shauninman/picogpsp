@@ -82,6 +82,28 @@ gui_action_type get_gui_input_fs_hold(u32 button_id);
 void input_write_mem_savestate(file_tag_type savestate_file);
 void input_read_savestate(file_tag_type savestate_file);
 
+#ifdef __LIBRETRO__
+#include "libretro.h"
+
+typedef struct
+{
+   unsigned retropad ;
+   input_buttons_type gba;
+} map;
+static const map btn_map[] = {
+   { RETRO_DEVICE_ID_JOYPAD_L,      BUTTON_L },
+   { RETRO_DEVICE_ID_JOYPAD_R,      BUTTON_R },
+   { RETRO_DEVICE_ID_JOYPAD_DOWN,   BUTTON_DOWN },
+   { RETRO_DEVICE_ID_JOYPAD_UP,     BUTTON_UP },
+   { RETRO_DEVICE_ID_JOYPAD_LEFT,   BUTTON_LEFT },
+   { RETRO_DEVICE_ID_JOYPAD_RIGHT,  BUTTON_RIGHT },
+   { RETRO_DEVICE_ID_JOYPAD_START,  BUTTON_START },
+   { RETRO_DEVICE_ID_JOYPAD_SELECT, BUTTON_SELECT },
+   { RETRO_DEVICE_ID_JOYPAD_B,      BUTTON_B },
+   { RETRO_DEVICE_ID_JOYPAD_A,      BUTTON_A }
+};
+#endif
+
 extern u32 gamepad_config_map[];
 extern u32 global_enable_analog;
 extern u32 analog_sensitivity_level;

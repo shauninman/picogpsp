@@ -31,6 +31,7 @@ OBJS += cheats.o
 OBJS += zip.o
 
 OBJS += libretro.o
+OBJS += libco/libco.o
 
 
 

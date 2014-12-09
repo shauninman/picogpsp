@@ -21,7 +21,9 @@
 #define VIDEO_H
 
 void update_scanline();
+#ifndef __LIBRETRO__
 void update_screen();
+#endif
 void init_video();
 void video_resolution_large();
 void video_resolution_small();
