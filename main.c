@@ -129,62 +129,6 @@ void trigger_ext_event();
     }                                                                         \
   }                                                                           \
 
-static const char *file_ext[] = { ".gba", ".bin", NULL };
-
-#ifndef PSP_BUILD
-static void ChangeWorkingDirectory(char *exe)
-{
-  char *s = strrchr(exe, '/');
-  if (s != NULL) {
-    *s = '\0';
-    chdir(exe);
-    *s = '/';
-  }
-}
-
-static void switch_to_romdir(void)
-{
-  char buff[256];
-  int r;
-  
-  file_open(romdir_file, "romdir.txt", read);
-
-  if(file_check_valid(romdir_file))
-  {
-    r = file_read(romdir_file, buff, sizeof(buff) - 1);
-    if (r > 0)
-    {
-      buff[r] = 0;
-      while (r > 0 && isspace(buff[r-1]))
-        buff[--r] = 0;
-      chdir(buff);
-    }
-    file_close(romdir_file);
-  }
-}
-
-static void save_romdir(void)
-{
-  char buff[512];
-
-  snprintf(buff, sizeof(buff), "%s" PATH_SEPARATOR "romdir.txt", main_path);
-  file_open(romdir_file, buff, write);
-
-  if(file_check_valid(romdir_file))
-  {
-    if (getcwd(buff, sizeof(buff)))
-    {
-      file_write(romdir_file, buff, strlen(buff));
-    }
-    file_close(romdir_file);
-  }
-}
-#else
-void ChangeWorkingDirectory(char *exe) {}
-static void switch_to_romdir(void) {}
-static void save_romdir(void) {}
-#endif
-
 void init_main()
 {
   u32 i;
@@ -213,179 +157,6 @@ void init_main()
   flush_translation_cache_ram();
   flush_translation_cache_bios();
 }
-
-#ifndef __LIBRETRO__
-int main(int argc, char *argv[])
-{
-  char bios_filename[512];
-  int ret;
-
-#ifdef PSP_BUILD
-  sceKernelRegisterSubIntrHandler(PSP_VBLANK_INT, 0,
-   vblank_interrupt_handler, NULL);
-  sceKernelEnableSubIntr(PSP_VBLANK_INT, 0);
-#endif
-
-  init_gamepak_buffer();
-
-  // Copy the directory path of the executable into main_path
-
-  // ChangeWorkingDirectory will null out the filename out of the path
-  ChangeWorkingDirectory(argv[0]);
-
-  getcwd(main_path, 512);
-
-#ifdef PSP_BUILD
-  delay_us(2500000);
-#endif
-
-#ifndef PC_BUILD
-  gpsp_plat_init();
-#endif
-  load_config_file();
-
-  gamepak_filename[0] = 0;
-
-  init_video();
-
-  sprintf(bios_filename, "%s" PATH_SEPARATOR "%s", main_path, "gba_bios.bin");
-  ret = load_bios(bios_filename);
-  if (ret != 0)
-    ret = load_bios("gba_bios.bin");
-  if (ret != 0)
-  {
-    gui_action_type gui_action = CURSOR_NONE;
-
-    debug_screen_start();
-    debug_screen_printl("                                                  ");
-    debug_screen_printl("Sorry, but gpSP requires a Gameboy Advance BIOS   ");
-    debug_screen_printl("image to run correctly. Make sure to get an       ");
-    debug_screen_printl("authentic one, it'll be exactly 16384 bytes large ");
-    debug_screen_printl("and should have the following md5sum value:       ");
-    debug_screen_printl("                                                  ");
-    debug_screen_printl("a860e8c0b6d573d191e4ec7db1b1e4f6                  ");
-    debug_screen_printl("                                                  ");
-    debug_screen_printl("When you do get it name it gba_bios.bin and put it");
-    debug_screen_printl("in the same directory as gpSP.                    ");
-    debug_screen_printl("                                                  ");
-    debug_screen_printl("Press any button to exit.                         ");
-
-    debug_screen_update();
-
-    while(gui_action == CURSOR_NONE)
-    {
-      gui_action = get_gui_input();
-      delay_us(15000);
-    }
-
-    debug_screen_end();
-
-    quit();
-  }
-
-  if(bios_rom[0] != 0x18)
-  {
-    gui_action_type gui_action = CURSOR_NONE;
-
-    debug_screen_start();
-    debug_screen_printl("You have an incorrect BIOS image.                 ");
-    debug_screen_printl("While many games will work fine, some will not. It");
-    debug_screen_printl("is strongly recommended that you obtain the       ");
-    debug_screen_printl("correct BIOS file. Do NOT report any bugs if you  ");
-    debug_screen_printl("are seeing this message.                          ");
-    debug_screen_printl("                                                  ");
-    debug_screen_printl("Press any button to resume, at your own risk.     ");
-
-    debug_screen_update();
-
-    while(gui_action == CURSOR_NONE)
-    {
-      gui_action = get_gui_input();
-      delay_us(15000);
-    }
-
-    debug_screen_end();
-  }
-
-  init_main();
-  init_sound(1);
-
-  init_input();
-
-  video_resolution_large();
-
-  if(argc > 1)
-  {
-    if(load_gamepak(argv[1]) == -1)
-    {
-#ifndef PSP_BUILD
-      printf("Failed to load gamepak %s, exiting.\n", argv[1]);
-#endif
-      exit(-1);
-    }
-
-    set_gba_resolution(screen_scale);
-    video_resolution_small();
-
-    init_cpu();
-    init_memory();
-  }
-  else
-  {
-    char load_filename[512];
-    switch_to_romdir();
-    if(load_file(file_ext, load_filename) == -1)
-    {
-      menu(copy_screen());
-    }
-    else
-    {
-      if(load_gamepak(load_filename) == -1)
-      {
-#ifndef PSP_BUILD
-        printf("Failed to load gamepak %s, exiting.\n", load_filename);
-#endif
-        exit(-1);
-      }
-
-      set_clock_speed();
-      set_gba_resolution(screen_scale);
-      video_resolution_small();
-
-      init_cpu();
-      init_memory();
-    }
-  }
-
-  last_frame = 0;
-
-  // We'll never actually return from here.
-
-#ifdef PSP_BUILD
-  execute_arm_translate(execute_cycles);
-#else
-
-/*  u8 current_savestate_filename[512];
-  get_savestate_filename_noshot(savestate_slot,
-   current_savestate_filename);
-  load_state(current_savestate_filename); */
-
-//  debug_on();
-
-  if(argc > 2)
-  {
-    current_debug_state = COUNTDOWN_BREAKPOINT;
-    breakpoint_value = strtol(argv[2], NULL, 16);
-  }
-
-  trigger_ext_event();
-
-  execute_arm_translate(execute_cycles);
-  execute_arm(execute_cycles);
-#endif
-  return 0;
-}
-#endif
 
 void print_memory_stats(u32 *counter, u32 *region_stats, char *stats_str)
 {
@@ -422,7 +193,6 @@ void trigger_ext_event()
   static u32 event_number = 0;
   static u64 benchmark_ticks[16];
   u64 new_ticks;
-  char current_savestate_filename[512];
 
   return;
 
@@ -436,10 +206,6 @@ void trigger_ext_event()
   current_frameskip_type = no_frameskip;
   no_alpha = 0;
   synchronize_flag = 0;
-
-  get_savestate_filename_noshot(savestate_slot,
-   current_savestate_filename);
-  gba_load_state(current_savestate_filename);
 
   switch(event_number)
   {
@@ -876,8 +642,6 @@ void synchronize()
 
 void quit()
 {
-  save_romdir();
-
   if(!update_backup_flag)
     update_backup_force();
 
@@ -1026,14 +790,5 @@ void printout(void *str, u32 val)
 
 void set_clock_speed()
 {
-  static u32 clock_speed_old = default_clock_speed;
-  if (clock_speed != clock_speed_old)
-  {
-    printf("about to set CPU clock to %iMHz\n", clock_speed);
-  #ifdef PSP_BUILD
-    scePowerSetClockFrequency(clock_speed, clock_speed, clock_speed / 2);
-  #endif
-    clock_speed_old = clock_speed;
-  }
 }
 

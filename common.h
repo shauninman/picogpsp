@@ -229,7 +229,6 @@ typedef u32 fixed8_24;
 #include "input.h"
 #include "sound.h"
 #include "main.h"
-#include "gui.h"
 #include "cheats.h"
 
 #ifdef ARM_ARCH
