@@ -67,7 +67,7 @@ cpu_threaded.o: cpu_threaded.c
 	$(CC) -c -o $@ $< $(ASFLAGS) $(OPTIMIZE)
 
 clean:
-#	rm -f main.o cpu.o memory.o video.o input.o sound.o cpu_threaded.o x86_stub.o cheats.o zip.o libretro.o
+#	rm -f main.o memory.o input.o sound.o cpu_threaded.o x86_stub.o cheats.o zip.o libretro.o
 	rm -f $(OBJS)
 	rm -f $(TARGET)
 

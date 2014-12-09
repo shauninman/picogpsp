@@ -847,16 +847,14 @@ void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_c
 
 void render_audio(void)
 {
-   static s16 stream_base[1024];
+   static s16 stream_base[512];
    u32 _length;
    s16 *source;
    u32 i;
    s32 current_sample;
 
-//   return;
-
    while (((gbc_sound_buffer_index - sound_buffer_base) & BUFFER_SIZE_MASK) > 512)   {
-      sound_copy(sound_buffer_base, 512, normal);
+      sound_copy(sound_buffer_base, 1024, normal);
       audio_batch_cb(stream_base, 256);
       sound_buffer_base += 512;
       sound_buffer_base &= BUFFER_SIZE_MASK;
