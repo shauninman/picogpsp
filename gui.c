@@ -1150,7 +1150,7 @@ u32 menu(u16 *original_screen)
     {
       get_savestate_filename_noshot(savestate_slot,
        current_savestate_filename);
-      save_state(current_savestate_filename, original_screen);
+      gba_save_state(current_savestate_filename, original_screen);
     }
     menu_change_state();
   }
@@ -1159,7 +1159,7 @@ u32 menu(u16 *original_screen)
   {
     if(!first_load)
     {
-      load_state(current_savestate_filename);
+      gba_load_state(current_savestate_filename);
       return_value = 1;
       repeat = 0;
     }
@@ -1171,7 +1171,7 @@ u32 menu(u16 *original_screen)
     char load_filename[512];
     if(load_file(file_ext, load_filename) != -1)
     {
-      load_state(load_filename);
+      gba_load_state(load_filename);
       return_value = 1;
       repeat = 0;
     }

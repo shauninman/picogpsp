@@ -152,9 +152,15 @@ s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
 
 #endif
 
+#ifdef __LIBRETRO__
+extern u8* rom_translation_cache;
+extern u8* ram_translation_cache;
+extern u8* bios_translation_cache;
+#else
 extern u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
 extern u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
 extern u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
+#endif
 extern u8 *rom_translation_ptr;
 extern u8 *ram_translation_ptr;
 extern u8 *bios_translation_ptr;

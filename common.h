@@ -104,7 +104,17 @@
   #include <time.h>
   #include <stdio.h>
 #else
+#ifdef __LIBRETRO__
+
+#define GBA_SCREEN_WIDTH  (240)
+#define GBA_SCREEN_HEIGHT (160)
+#define GBA_SCREEN_PITCH  (240)
+
+void switch_to_main_thread(void);
+
+#else
   #include "SDL.h"
+#endif
 
 #ifdef ARM_ARCH
   #define function_cc
@@ -210,7 +220,9 @@ typedef u32 fixed8_24;
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#ifndef __LIBRETRO__
 #include "SDL.h"
+#endif
 #include "cpu.h"
 #include "memory.h"
 #include "video.h"

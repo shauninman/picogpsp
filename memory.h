@@ -175,20 +175,21 @@ extern char gamepak_filename[512];
 
 cpu_alert_type dma_transfer(dma_transfer_type *dma);
 u8 *memory_region(u32 address, u32 *memory_limit);
-u32 load_gamepak(char *name);
+u32 load_gamepak(const char *name);
 u32 load_backup(char *name);
 s32 load_bios(char *name);
 void update_backup();
 void update_backup_force();
 void init_memory();
 void init_gamepak_buffer();
+void memory_term(void);
 void bios_region_read_allow();
 void bios_region_read_protect();
 u8 *load_gamepak_page(u32 physical_index);
 void memory_write_mem_savestate(file_tag_type savestate_file);
 void memory_read_savestate(file_tag_type savestate_file);
-void load_state(char *savestate_filename);
-void save_state(char *savestate_filename, u16 *screen_capture);
+void gba_load_state(char *savestate_filename);
+void gba_save_state(char *savestate_filename, u16 *screen_capture);
 
 extern u8 *gamepak_rom;
 extern u32 gamepak_ram_buffer_size;

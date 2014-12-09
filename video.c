@@ -86,8 +86,13 @@ static void Ge_Finish_Callback(int id, void *arg)
 #define get_screen_pitch()                                                    \
   screen_pitch                                                                \
 
-#else
+#elif defined(__LIBRETRO__)
+u16 gba_screen_pixels[GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT];
 
+#define get_screen_pixels()   gba_screen_pixels
+#define get_screen_pitch()    GBA_SCREEN_PITCH
+
+#else
 SDL_Surface *screen;
 const u32 video_scale = 1;
 
@@ -3303,7 +3308,7 @@ void flip_screen()
   }
 }
 
-#else
+#elif !defined(__LIBRETRO__)
 
 #define integer_scale_copy_2()                                                \
   current_scanline_ptr[x2] = current_pixel;                                   \
@@ -3381,6 +3386,7 @@ void flip_screen()
 
 #endif
 
+#ifndef __LIBRETRO__
 u32 frame_to_render;
 
 void update_screen()
@@ -3388,6 +3394,7 @@ void update_screen()
   if(!skip_next_frame)
     flip_screen();
 }
+#endif
 
 #ifdef PSP_BUILD
 
@@ -3476,7 +3483,7 @@ void init_video()
   GE_CMD(NOP, 0);
 }
 
-#else
+#elif !defined(__LIBRETRO__)
 
 void init_video()
 {
@@ -3593,7 +3600,7 @@ void clear_screen(u16 color)
   sceGuSync(0, 0); */
 }
 
-#else
+#elif !defined(__LIBRETRO__)
 
 void video_resolution_large()
 {

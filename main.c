@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#include <ctype.h>
 
 #ifdef PSP_BUILD
 
@@ -213,6 +214,7 @@ void init_main()
   flush_translation_cache_bios();
 }
 
+#ifndef __LIBRETRO__
 int main(int argc, char *argv[])
 {
   char bios_filename[512];
@@ -383,6 +385,7 @@ int main(int argc, char *argv[])
 #endif
   return 0;
 }
+#endif
 
 void print_memory_stats(u32 *counter, u32 *region_stats, char *stats_str)
 {
@@ -436,7 +439,7 @@ void trigger_ext_event()
 
   get_savestate_filename_noshot(savestate_slot,
    current_savestate_filename);
-  load_state(current_savestate_filename);
+  gba_load_state(current_savestate_filename);
 
   switch(event_number)
   {
@@ -511,8 +514,10 @@ void trigger_ext_event()
   event_number++;
 }
 
+#ifndef __LIBRETRO__
 static u32 fps = 60;
 static u32 frames_drawn = 60;
+#endif
 
 u32 update_gba()
 {
@@ -624,6 +629,12 @@ u32 update_gba()
           flush_ram_count = 0;
   #endif
 
+#ifdef __LIBRETRO__
+          switch_to_main_thread();
+
+          update_gbc_sound(cpu_ticks);
+          gbc_sound_update = 0;
+#else
           if(update_input())
             continue;
 
@@ -644,7 +655,7 @@ u32 update_gba()
 
           if(update_backup_flag)
             update_backup();
-
+#endif
           process_cheats();
 
           event_cycles++;
@@ -773,6 +784,8 @@ void synchronize()
 */
 }
 
+#elif defined(__LIBRETRO__)
+
 #else
 
 u32 real_frame_count = 0;
@@ -870,6 +883,8 @@ void quit()
 
   sound_exit();
 
+#ifndef __LIBRETRO__
+
 #ifdef REGISTER_USAGE_ANALYZE
   print_register_usage();
 #endif
@@ -884,6 +899,8 @@ void quit()
 #endif
 
   exit(0);
+#endif
+
 #endif
 }
 
@@ -919,7 +936,7 @@ void get_ticks_us(u64 *tick_return)
 
 #else
 
-u32 file_length(char *dummy, FILE *fp)
+u32 file_length(const char *dummy, FILE *fp)
 {
   u32 length;
 
@@ -930,7 +947,9 @@ u32 file_length(char *dummy, FILE *fp)
   return length;
 }
 
-#ifdef PC_BUILD
+#ifdef __LIBRETRO__
+
+#elif defined(PC_BUILD)
 
 void delay_us(u32 us_count)
 {

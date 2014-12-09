@@ -90,7 +90,12 @@ extern u32 clock_speed;
 
 u32 update_gba();
 void reset_gba();
+#ifdef __LIBRETRO__
+#define synchronize()
+void init_main();
+#else
 void synchronize();
+#endif
 void quit();
 void delay_us(u32 us_count);
 void get_ticks_us(u64 *tick_return);
@@ -105,7 +110,7 @@ u32 file_length(char *filename, s32 dummy);
 
 #else
 
-u32 file_length(char *dummy, FILE *fp);
+u32 file_length(const char *dummy, FILE *fp);
 
 #endif
 

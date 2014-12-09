@@ -343,10 +343,33 @@ void init_input()
   sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 }
 
-#endif
+#elif defined(__LIBRETRO__)
 
+static retro_input_state_t input_state_cb;
+void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
 
-#if defined(PC_BUILD)
+u32 update_input(void)
+{
+//   return;
+   unsigned i;
+   uint32_t new_key = 0;
+
+   if (!input_state_cb)
+      return 0;
+
+   for (i = 0; i < sizeof(btn_map) / sizeof(map); i++)
+      new_key |= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, btn_map[i].retropad) ? btn_map[i].gba : 0;
+
+   if ((new_key | key) != key)
+      trigger_key(new_key);
+
+   key = new_key;
+   io_registers[REG_P1] = (~key) & 0x3FF;
+
+   return 0;
+}
+
+#elif defined(PC_BUILD)
 
 u32 key_map(SDLKey key_sym)
 {

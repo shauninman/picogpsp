@@ -21,7 +21,9 @@
 #define VIDEO_H
 
 void update_scanline();
+#ifndef __LIBRETRO__
 void update_screen();
+#endif
 void init_video();
 void video_resolution_large();
 void video_resolution_small();
@@ -102,5 +104,9 @@ extern video_filter_type screen_filter;
 extern video_filter_type2 screen_filter2;
 
 void set_gba_resolution(video_scale_type scale);
+
+#ifdef __LIBRETRO__
+extern u16 gba_screen_pixels[GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT];
+#endif
 
 #endif

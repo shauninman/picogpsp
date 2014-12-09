@@ -19,16 +19,24 @@
 
 
 #include "common.h"
+#ifndef __LIBRETRO__
 #include <SDL.h>
+#endif
 u32 global_enable_audio = 1;
 
 direct_sound_struct direct_sound_channel[2];
 gbc_sound_struct gbc_sound_channel[4];
 
+#ifdef __LIBRETRO__
+u32 sound_frequency = GBA_SOUND_FREQUENCY;
+#else
 u32 sound_frequency = 44100;
+#endif
 
+#ifndef __LIBRETRO__
 SDL_mutex *sound_mutex;
 static SDL_cond *sound_cv;
+#endif
 
 #ifdef PSP_BUILD
 u32 audio_buffer_size_number = 1;
@@ -44,7 +52,9 @@ static u32 sound_buffer_base;
 static u32 sound_last_cpu_ticks;
 static fixed16_16 gbc_sound_tick_step;
 
+#ifndef __LIBRETRO__
 static u32 sound_exit_flag;
+#endif
 
 // Queue 1, 2, or 4 samples to the top of the DS FIFO, wrap around circularly
 
@@ -447,6 +457,7 @@ void update_gbc_sound(u32 cpu_ticks)
     gbc_sound_partial_ticks &= 0xFFFF;
   }
 
+#ifndef __LIBRETRO__
   SDL_LockMutex(sound_mutex);
   if(synchronize_flag)
   {
@@ -487,6 +498,7 @@ void update_gbc_sound(u32 cpu_ticks)
 
     }
   }
+#endif
   if(sound_on == 1)
   {
     gs = gbc_sound_channel + 0;
@@ -562,9 +574,11 @@ void update_gbc_sound(u32 cpu_ticks)
   gbc_sound_buffer_index =
    (gbc_sound_buffer_index + (buffer_ticks * 2)) % BUFFER_SIZE;
 
+#ifndef __LIBRETRO__
   SDL_UnlockMutex(sound_mutex);
 
   SDL_CondSignal(sound_cv);
+#endif
 }
 
 #define sound_copy_normal()                                                   \
@@ -594,8 +608,8 @@ void update_gbc_sound(u32 cpu_ticks)
     source[i] = 0;                                                            \
   }                                                                           \
 
-
-void sound_callback(void *userdata, Uint8 *stream, int length)
+#ifndef __LIBRETRO__
+void sound_callback(void *userdata, u8 *stream, int length)
 {
   u32 sample_length = length / 2;
   u32 _length;
@@ -649,6 +663,7 @@ void sound_callback(void *userdata, Uint8 *stream, int length)
 
   SDL_UnlockMutex(sound_mutex);
 }
+#endif
 
 // Special thanks to blarrg for the LSFR frequency used in Meridian, as posted
 // on the forum at http://meridian.overclocked.org:
@@ -689,7 +704,9 @@ void reset_sound()
   gbc_sound_struct *gs = gbc_sound_channel;
   u32 i;
 
+#ifndef __LIBRETRO__
   SDL_LockMutex(sound_mutex);
+#endif
 
   sound_on = 0;
   sound_buffer_base = 0;
@@ -723,13 +740,16 @@ void reset_sound()
     gs->active_flag = 0;
   }
 
+#ifndef __LIBRETRO__
   SDL_UnlockMutex(sound_mutex);
+#endif
 }
 
 void sound_exit()
 {
   gbc_sound_buffer_index =
    (sound_buffer_base + audio_buffer_size) % BUFFER_SIZE;
+#ifndef __LIBRETRO__
   SDL_PauseAudio(1);
   sound_exit_flag = 1;
   SDL_CondSignal(sound_cv);
@@ -739,10 +759,12 @@ void sound_exit()
   sound_mutex = NULL;
   SDL_DestroyCond(sound_cv);
   sound_cv = NULL;
+#endif
 }
 
 void init_sound(int need_reset)
 {
+#ifndef __LIBRETRO__
   SDL_AudioSpec sound_settings;
 
   sound_exit_flag = 0;
@@ -779,6 +801,8 @@ void init_sound(int need_reset)
   printf("audio: freq %d, size %d\n", sound_frequency, audio_buffer_size);
 #endif
 
+#endif
+
   gbc_sound_tick_step =
    float_to_fp16_16(256.0f / sound_frequency);
 
@@ -788,7 +812,9 @@ void init_sound(int need_reset)
   if (need_reset)
     reset_sound();
 
+#ifndef __LIBRETRO__
   SDL_PauseAudio(0);
+#endif
 }
 
 #define sound_savestate_builder(type)                                       \
@@ -810,4 +836,29 @@ void sound_##type##_savestate(file_tag_type savestate_file)                 \
 
 sound_savestate_builder(read);
 sound_savestate_builder(write_mem);
+
+
+#ifdef __LIBRETRO__
+#include "libretro.h"
+
+static retro_audio_sample_batch_t audio_batch_cb;
+void retro_set_audio_sample(retro_audio_sample_t cb) { }
+void retro_set_audio_sample_batch(retro_audio_sample_batch_t cb) { audio_batch_cb = cb; }
+
+void render_audio(void)
+{
+   static s16 stream_base[512];
+   u32 _length;
+   s16 *source;
+   u32 i;
+   s32 current_sample;
+
+   while (((gbc_sound_buffer_index - sound_buffer_base) & BUFFER_SIZE_MASK) > 512)   {
+      sound_copy(sound_buffer_base, 1024, normal);
+      audio_batch_cb(stream_base, 256);
+      sound_buffer_base += 512;
+      sound_buffer_base &= BUFFER_SIZE_MASK;
+   }
+}
+#endif
 
