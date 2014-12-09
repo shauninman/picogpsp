@@ -18,8 +18,6 @@
  */
 
 #include "common.h"
-#define WANT_FONT_BITS
-#include "font.h"
 
 #ifdef PSP_BUILD
 
@@ -3674,86 +3672,6 @@ void blit_to_screen(u16 *src, u32 w, u32 h, u32 dest_x, u32 dest_y)
     src_ptr += w;
     dest_ptr += pitch;
   }
-}
-
-void print_string_ext(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y, void *_dest_ptr, u32 pitch, u32 pad, u32 h_offset, u32 height)
-{
-  u16 *dest_ptr = (u16 *)_dest_ptr + (y * pitch) + x;
-  u8 current_char = str[0];
-  u32 current_row;
-  u32 glyph_offset;
-  u32 i = 0, i2, i3, h;
-  u32 str_index = 1;
-  u32 current_x = x;
-
-  if(y + height > resolution_height)
-      return;
-
-  while(current_char)
-  {
-    if(current_char == '\n')
-    {
-      y += FONT_HEIGHT;
-      current_x = x;
-      dest_ptr = get_screen_pixels() + (y * pitch) + x;
-    }
-    else
-    {
-      glyph_offset = _font_offset[current_char];
-      current_x += FONT_WIDTH;
-      glyph_offset += h_offset;
-      for(i2 = h_offset, h = 0; i2 < FONT_HEIGHT && h < height; i2++, h++, glyph_offset++)
-      {
-        current_row = _font_bits[glyph_offset];
-        for(i3 = 0; i3 < FONT_WIDTH; i3++)
-        {
-          if((current_row >> (15 - i3)) & 0x01)
-            *dest_ptr = fg_color;
-          else
-            *dest_ptr = bg_color;
-          dest_ptr++;
-        }
-        dest_ptr += (pitch - FONT_WIDTH);
-      }
-      dest_ptr = dest_ptr - (pitch * h) + FONT_WIDTH;
-    }
-
-    i++;
-
-    current_char = str[str_index];
-
-    if((i < pad) && (current_char == 0))
-    {
-      current_char = ' ';
-    }
-    else
-    {
-      str_index++;
-    }
-
-    if(current_x + FONT_WIDTH > resolution_width /* EDIT */)
-    {
-      while (current_char && current_char != '\n')
-      {
-        current_char = str[str_index++];
-      }
-    }
-  }
-}
-
-void print_string(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y)
-{
-  print_string_ext(str, fg_color, bg_color, x, y, get_screen_pixels(),
-   get_screen_pitch(), 0, 0, FONT_HEIGHT);
-}
-
-void print_string_pad(const char *str, u16 fg_color, u16 bg_color,
- u32 x, u32 y, u32 pad)
-{
-  print_string_ext(str, fg_color, bg_color, x, y, get_screen_pixels(),
-   get_screen_pitch(), pad, 0, FONT_HEIGHT);
 }
 
 u32 debug_cursor_x = 0;

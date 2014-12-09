@@ -406,14 +406,10 @@ u32 update_gba()
 
           update_gbc_sound(cpu_ticks);
 
-          if(fps_debug)
-          {
-            char print_buffer[32];
-            sprintf(print_buffer, "%2d (%2d)", fps, frames_drawn);
-            print_string(print_buffer, 0xFFFF, 0x000, 0, 0);
-          }
+#if 0
           if(!synchronize_flag)
             print_string("-FF-", 0xFFFF, 0x000, 216, 0);
+#endif
 
           update_screen();
 
