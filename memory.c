@@ -17,8 +17,266 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#define IN_MEMORY_C
 #include "common.h"
+
+/* Sound */
+#define gbc_sound_tone_control_low(channel, address)                          \
+{                                                                             \
+  u32 initial_volume = (value >> 12) & 0x0F;                                  \
+  u32 envelope_ticks = ((value >> 8) & 0x07) * 4;                             \
+  gbc_sound_channel[channel].length_ticks = 64 - (value & 0x3F);              \
+  gbc_sound_channel[channel].sample_data =                                    \
+   square_pattern_duty[(value >> 6) & 0x03];                                  \
+  gbc_sound_channel[channel].envelope_direction = (value >> 11) & 0x01;       \
+  gbc_sound_channel[channel].envelope_initial_volume = initial_volume;        \
+  gbc_sound_channel[channel].envelope_volume = initial_volume;                \
+  gbc_sound_channel[channel].envelope_initial_ticks = envelope_ticks;         \
+  gbc_sound_channel[channel].envelope_ticks = envelope_ticks;                 \
+  gbc_sound_channel[channel].envelope_status = (envelope_ticks != 0);         \
+  gbc_sound_channel[channel].envelope_volume = initial_volume;                \
+  gbc_sound_update = 1;                                                       \
+  address16(io_registers, address) = value;                                   \
+}                                                                             \
+
+#define gbc_sound_tone_control_high(channel, address)                         \
+{                                                                             \
+  u32 rate = value & 0x7FF;                                                   \
+  gbc_sound_channel[channel].rate = rate;                                     \
+  gbc_sound_channel[channel].frequency_step =                                 \
+   float_to_fp16_16(((131072.0 / (2048 - rate)) * 8.0) / sound_frequency);    \
+  gbc_sound_channel[channel].length_status = (value >> 14) & 0x01;            \
+  if(value & 0x8000)                                                          \
+  {                                                                           \
+    gbc_sound_channel[channel].active_flag = 1;                               \
+    gbc_sound_channel[channel].sample_index -= float_to_fp16_16(1.0 / 12.0);  \
+    gbc_sound_channel[channel].envelope_ticks =                               \
+     gbc_sound_channel[channel].envelope_initial_ticks;                       \
+    gbc_sound_channel[channel].envelope_volume =                              \
+     gbc_sound_channel[channel].envelope_initial_volume;                      \
+  }                                                                           \
+                                                                              \
+  gbc_sound_update = 1;                                                       \
+  address16(io_registers, address) = value;                                   \
+}                                                                             \
+
+#define gbc_sound_tone_control_sweep()                                        \
+{                                                                             \
+  u32 sweep_ticks = ((value >> 4) & 0x07) * 2;                                \
+  gbc_sound_channel[0].sweep_shift = value & 0x07;                            \
+  gbc_sound_channel[0].sweep_direction = (value >> 3) & 0x01;                 \
+  gbc_sound_channel[0].sweep_status = (value != 8);                           \
+  gbc_sound_channel[0].sweep_ticks = sweep_ticks;                             \
+  gbc_sound_channel[0].sweep_initial_ticks = sweep_ticks;                     \
+  gbc_sound_update = 1;                                                       \
+  address16(io_registers, 0x60) = value;                                      \
+}                                                                             \
+
+#define gbc_sound_wave_control()                                              \
+{                                                                             \
+  gbc_sound_channel[2].wave_type = (value >> 5) & 0x01;                       \
+  gbc_sound_channel[2].wave_bank = (value >> 6) & 0x01;                       \
+  if(value & 0x80)                                                            \
+  {                                                                           \
+    gbc_sound_channel[2].master_enable = 1;                                   \
+  }                                                                           \
+  else                                                                        \
+  {                                                                           \
+    gbc_sound_channel[2].master_enable = 0;                                   \
+  }                                                                           \
+                                                                              \
+  gbc_sound_update = 1;                                                       \
+  address16(io_registers, 0x70) = value;                                      \
+}                                                                             \
+
+static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
+
+#define gbc_sound_tone_control_low_wave()                                     \
+{                                                                             \
+  gbc_sound_channel[2].length_ticks = 256 - (value & 0xFF);                   \
+  if((value >> 15) & 0x01)                                                    \
+  {                                                                           \
+    gbc_sound_channel[2].wave_volume = 12288;                                 \
+  }                                                                           \
+  else                                                                        \
+  {                                                                           \
+    gbc_sound_channel[2].wave_volume =                                        \
+     gbc_sound_wave_volume[(value >> 13) & 0x03];                             \
+  }                                                                           \
+  gbc_sound_update = 1;                                                       \
+  address16(io_registers, 0x72) = value;                                      \
+}                                                                             \
+
+#define gbc_sound_tone_control_high_wave()                                    \
+{                                                                             \
+  u32 rate = value & 0x7FF;                                                   \
+  gbc_sound_channel[2].rate = rate;                                           \
+  gbc_sound_channel[2].frequency_step =                                       \
+   float_to_fp16_16((2097152.0 / (2048 - rate)) / sound_frequency);           \
+  gbc_sound_channel[2].length_status = (value >> 14) & 0x01;                  \
+  if(value & 0x8000)                                                          \
+  {                                                                           \
+    gbc_sound_channel[2].sample_index = 0;                                    \
+    gbc_sound_channel[2].active_flag = 1;                                     \
+  }                                                                           \
+  gbc_sound_update = 1;                                                       \
+  address16(io_registers, 0x74) = value;                                      \
+}                                                                             \
+
+#define gbc_sound_noise_control()                                             \
+{                                                                             \
+  u32 dividing_ratio = value & 0x07;                                          \
+  u32 frequency_shift = (value >> 4) & 0x0F;                                  \
+  if(dividing_ratio == 0)                                                     \
+  {                                                                           \
+    gbc_sound_channel[3].frequency_step =                                     \
+     float_to_fp16_16(1048576.0 / (1 << (frequency_shift + 1)) /              \
+     sound_frequency);                                                        \
+  }                                                                           \
+  else                                                                        \
+  {                                                                           \
+    gbc_sound_channel[3].frequency_step =                                     \
+     float_to_fp16_16(524288.0 / (dividing_ratio *                            \
+     (1 << (frequency_shift + 1))) / sound_frequency);                        \
+  }                                                                           \
+  gbc_sound_channel[3].noise_type = (value >> 3) & 0x01;                      \
+  gbc_sound_channel[3].length_status = (value >> 14) & 0x01;                  \
+  if(value & 0x8000)                                                          \
+  {                                                                           \
+    gbc_sound_channel[3].sample_index = 0;                                    \
+    gbc_sound_channel[3].active_flag = 1;                                     \
+    gbc_sound_channel[3].envelope_ticks =                                     \
+     gbc_sound_channel[3].envelope_initial_ticks;                             \
+    gbc_sound_channel[3].envelope_volume =                                    \
+     gbc_sound_channel[3].envelope_initial_volume;                            \
+  }                                                                           \
+  gbc_sound_update = 1;                                                       \
+  address16(io_registers, 0x7C) = value;                                      \
+}                                                                             \
+
+#define gbc_trigger_sound_channel(channel)                                    \
+  gbc_sound_master_volume_right = value & 0x07;                               \
+  gbc_sound_master_volume_left = (value >> 4) & 0x07;                         \
+  gbc_sound_channel[channel].status = ((value >> (channel + 8)) & 0x01) |     \
+   ((value >> (channel + 11)) & 0x03)                                         \
+
+#define gbc_trigger_sound()                                                   \
+{                                                                             \
+  gbc_trigger_sound_channel(0);                                               \
+  gbc_trigger_sound_channel(1);                                               \
+  gbc_trigger_sound_channel(2);                                               \
+  gbc_trigger_sound_channel(3);                                               \
+  address16(io_registers, 0x80) = value;                                      \
+}                                                                             \
+
+#define trigger_sound()                                                       \
+{                                                                             \
+  timer[0].direct_sound_channels = (((value >> 10) & 0x01) == 0) |            \
+   ((((value >> 14) & 0x01) == 0) << 1);                                      \
+  timer[1].direct_sound_channels = (((value >> 10) & 0x01) == 1) |            \
+   ((((value >> 14) & 0x01) == 1) << 1);                                      \
+  direct_sound_channel[0].volume = (value >> 2) & 0x01;                       \
+  direct_sound_channel[0].status = (value >> 8) & 0x03;                       \
+  direct_sound_channel[1].volume = (value >> 3) & 0x01;                       \
+  direct_sound_channel[1].status = (value >> 12) & 0x03;                      \
+  gbc_sound_master_volume = value & 0x03;                                     \
+                                                                              \
+  if((value >> 11) & 0x01)                                                    \
+    sound_reset_fifo(0);                                                      \
+  if((value >> 15) & 0x01)                                                    \
+    sound_reset_fifo(1);                                                      \
+  address16(io_registers, 0x82) = value;                                      \
+}                                                                             \
+
+#define sound_on()                                                            \
+  if(value & 0x80)                                                            \
+  {                                                                           \
+    if(sound_on != 1)                                                         \
+    {                                                                         \
+      sound_on = 1;                                                           \
+    }                                                                         \
+  }                                                                           \
+  else                                                                        \
+  {                                                                           \
+    u32 i;                                                                    \
+    for(i = 0; i < 4; i++)                                                    \
+    {                                                                         \
+      gbc_sound_channel[i].active_flag = 0;                                   \
+    }                                                                         \
+    sound_on = 0;                                                             \
+  }                                                                           \
+  address16(io_registers, 0x84) =                                             \
+    (address16(io_registers, 0x84) & 0x000F) | (value & 0xFFF0);              \
+
+#define sound_update_frequency_step(timer_number)                             \
+  timer[timer_number].frequency_step =                                        \
+   float_to_fp8_24(GBC_BASE_RATE / (timer_reload * sound_frequency))          \
+
+/* Main */
+extern timer_type timer[4];
+static u32 prescale_table[] = { 0, 6, 8, 10 };
+
+#define count_timer(timer_number)                                             \
+  timer[timer_number].reload = 0x10000 - value;                               \
+  if(timer_number < 2)                                                        \
+  {                                                                           \
+    u32 timer_reload =                                                        \
+     timer[timer_number].reload << timer[timer_number].prescale;              \
+    sound_update_frequency_step(timer_number);                                \
+  }                                                                           \
+
+#define adjust_sound_buffer(timer_number, channel)                            \
+  if(timer[timer_number].direct_sound_channels & (0x01 << channel))           \
+  {                                                                           \
+    direct_sound_channel[channel].buffer_index =                              \
+     (gbc_sound_buffer_index + buffer_adjust) % BUFFER_SIZE;                  \
+  }                                                                           \
+
+#define trigger_timer(timer_number)                                           \
+  if(value & 0x80)                                                            \
+  {                                                                           \
+    if(timer[timer_number].status == TIMER_INACTIVE)                          \
+    {                                                                         \
+      u32 prescale = prescale_table[value & 0x03];                            \
+      u32 timer_reload = timer[timer_number].reload;                          \
+                                                                              \
+      if((value >> 2) & 0x01)                                                 \
+        timer[timer_number].status = TIMER_CASCADE;                           \
+      else                                                                    \
+        timer[timer_number].status = TIMER_PRESCALE;                          \
+                                                                              \
+      timer[timer_number].prescale = prescale;                                \
+      timer[timer_number].irq = (value >> 6) & 0x01;                          \
+                                                                              \
+      address16(io_registers, 0x100 + (timer_number * 4)) =                   \
+       -timer_reload;                                                         \
+                                                                              \
+      timer_reload <<= prescale;                                              \
+      timer[timer_number].count = timer_reload;                               \
+                                                                              \
+      if(timer_reload < execute_cycles)                                       \
+        execute_cycles = timer_reload;                                        \
+                                                                              \
+      if(timer_number < 2)                                                    \
+      {                                                                       \
+        u32 buffer_adjust =                                                   \
+         (u32)(((float)(cpu_ticks - gbc_sound_last_cpu_ticks) *               \
+         sound_frequency) / GBC_BASE_RATE) * 2;                               \
+                                                                              \
+        sound_update_frequency_step(timer_number);                            \
+        adjust_sound_buffer(timer_number, 0);                                 \
+        adjust_sound_buffer(timer_number, 1);                                 \
+      }                                                                       \
+    }                                                                         \
+  }                                                                           \
+  else                                                                        \
+  {                                                                           \
+    if(timer[timer_number].status != TIMER_INACTIVE)                          \
+    {                                                                         \
+      timer[timer_number].status = TIMER_INACTIVE;                            \
+      timer[timer_number].stop_cpu_ticks = cpu_ticks;                         \
+    }                                                                         \
+  }                                                                           \
+  address16(io_registers, 0x102 + (timer_number * 4)) = value;                \
 
 // This table is configured for sequential access on system defaults
 
