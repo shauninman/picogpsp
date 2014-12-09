@@ -546,14 +546,6 @@ void reset_gba()
 }
 
 #ifdef PSP_BUILD
-
-u32 file_length(char *filename, s32 dummy)
-{
-  SceIoStat stats;
-  sceIoGetstat(filename, &stats);
-  return stats.st_size;
-}
-
 void delay_us(u32 us_count)
 {
   sceKernelDelayThread(us_count);
@@ -566,11 +558,15 @@ void get_ticks_us(u64 *tick_return)
 
   *tick_return = (ticks * 1000000) / sceRtcGetTickResolution();
 }
-
-#else
+#endif
 
 u32 file_length(const char *dummy, FILE *fp)
 {
+#ifdef PSP_BUILD
+  SceIoStat stats;
+  sceIoGetstat(filename, &stats);
+  return stats.st_size;
+#else
   u32 length;
 
   fseek(fp, 0, SEEK_END);
@@ -578,9 +574,8 @@ u32 file_length(const char *dummy, FILE *fp)
   fseek(fp, 0, SEEK_SET);
 
   return length;
-}
-
 #endif
+}
 
 void change_ext(const char *src, char *buffer, const char *extension)
 {
@@ -595,8 +590,7 @@ void change_ext(const char *src, char *buffer, const char *extension)
 // make path: <main_path>/<romname>.<ext>
 void make_rpath(char *buff, size_t size, const char *ext)
 {
-  char *p;
-  p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
+  char *p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
   if (p == NULL)
     p = gamepak_filename;
 
