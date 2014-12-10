@@ -3384,12 +3384,14 @@ void gba_load_state(const void* src)
    state_mem_read_ptr = src;
    savestate_block(read);
 
+#ifdef HAVE_DYNAREC
    if (dynarec_enable)
    {
       flush_translation_cache_ram();
       flush_translation_cache_rom();
       flush_translation_cache_bios();
    }
+#endif
 
    oam_update = 1;
    gbc_sound_update = 1;
