@@ -27,6 +27,13 @@ CORE_DIR := ..
 SOURCES_C   :=
 SOURCES_ASM :=
 
+ifeq ($(HAVE_DYNAREC),1)
+LOCAL_CFLAGS += -DHAVE_DYNAREC
+endif
+
+ifeq ($(CPU_ARCH),arm)
+LOCAL_CFLAGS  += -DARM_ARCH
+endif
 
 include $(CORE_DIR)/Makefile.common
 
