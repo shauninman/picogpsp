@@ -224,7 +224,7 @@ typedef u32 fixed8_24;
 #include "SDL.h"
 #endif
 #include "cpu.h"
-#include "memory.h"
+#include "gba_memory.h"
 #include "video.h"
 #include "input.h"
 #include "sound.h"
