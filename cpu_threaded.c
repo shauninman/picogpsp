@@ -216,7 +216,7 @@ extern u8 bit_count[256];
     pc_region = new_pc_region;                                                \
     pc_address_block = memory_map_read[new_pc_region];                        \
                                                                               \
-    if(pc_address_block == NULL)                                              \
+    if(!pc_address_block)                                                     \
       pc_address_block = load_gamepak_page(pc_region & 0x3FF);                \
   }                                                                           \
 
@@ -2798,7 +2798,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
         block_ptr = (u32 *)block_ptr[1];                                      \
       }                                                                       \
                                                                               \
-      if(block_ptr == NULL)                                                   \
+      if(!block_ptr)                                                          \
       {                                                                       \
         __label__ redo;                                                       \
         s32 translation_result;                                               \
@@ -3208,7 +3208,7 @@ s32 translate_block_arm(u32 pc, translation_region_type
   generate_block_extra_vars_arm();                                         
   arm_fix_pc();                                                            
                                                                               
-  if(pc_address_block == NULL)                                                
+  if(!pc_address_block)                                                
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);                  
                                                                               
   switch(translation_region)                                                  
@@ -3389,7 +3389,7 @@ s32 translate_block_arm(u32 pc, translation_region_type
   {                                                                           
     branch_target = external_block_exits[i].branch_target;                    
     arm_link_block();                                                      
-    if(translation_target == NULL)                                            
+    if(!translation_target)                                            
       return -1;                                                              
     generate_branch_patch_unconditional(                                      
      external_block_exits[i].branch_source, translation_target);              
@@ -3425,7 +3425,7 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   generate_block_extra_vars_thumb();                                         
   thumb_fix_pc();                                                            
                                                                               
-  if(pc_address_block == NULL)                                                
+  if(!pc_address_block)                                                
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);                  
                                                                               
   switch(translation_region)                                                  
@@ -3606,7 +3606,7 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   {                                                                           
     branch_target = external_block_exits[i].branch_target;                    
     thumb_link_block();                                                      
-    if(translation_target == NULL)                                            
+    if(!translation_target)                                            
       return -1;                                                              
     generate_branch_patch_unconditional(                                      
      external_block_exits[i].branch_source, translation_target);              

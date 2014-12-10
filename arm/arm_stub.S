@@ -740,7 +740,7 @@ execute_ewram_ptr:
 @  u32 gamepak_index = address >> 15;
 @  u8 *map = memory_map_read[gamepak_index];
 
-@  if(map == NULL)
+@  if(!map)
 @    map = load_gamepak_page(gamepak_index & 0x3FF);
 
 @  value = address##type(map, address & 0x7FFF)

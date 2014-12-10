@@ -80,7 +80,7 @@ static int manual_insmod_26(const char *fname, const char *opts)
 	FILE *f;
 
 	f = fopen(fname, "rb");
-	if (f == NULL)
+	if (!f)
 		return -1;
 
 	fseek(f, 0, SEEK_END);
@@ -88,7 +88,7 @@ static int manual_insmod_26(const char *fname, const char *opts)
 	fseek(f, 0, SEEK_SET);
 
 	buff = malloc(len);
-	if (buff == NULL)
+	if (!buff)
 		goto fail0;
 
 	read_len = fread(buff, 1, len, f);

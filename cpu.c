@@ -689,7 +689,7 @@ void print_register_usage(void)
     pc_region = new_pc_region;                                                \
     pc_address_block = memory_map_read[new_pc_region];                        \
                                                                               \
-    if(pc_address_block == NULL)                                              \
+    if(!pc_address_block)                                                     \
       pc_address_block = load_gamepak_page(pc_region & 0x3FF);                \
   }                                                                           \
 
@@ -4069,7 +4069,7 @@ void execute_arm(u32 cycles)
 
   u32 old_pc;
 
-  if(pc_address_block == NULL)
+  if(!pc_address_block)
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);
 
   while(1)
