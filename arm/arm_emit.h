@@ -45,9 +45,6 @@ void execute_swi_thumb(u32 pc);
 
 void function_cc execute_store_u32_safe(u32 address, u32 source);
 
-void step_debug_arm(u32 pc);
-
-
 #define write32(value)                                                        \
   *((u32 *)translation_ptr) = value;                                          \
   translation_ptr += 4                                                        \
@@ -1957,10 +1954,6 @@ void execute_swi_hle_div_c()
 #define generate_translation_gate(type)                                       \
   generate_update_pc(pc);                                                     \
   generate_indirect_branch_no_cycle_update(type)                              \
-
-#define generate_step_debug()                                                 \
-  generate_function_call(step_debug_arm);                                     \
-  write32(pc)                                                                 \
 
 #endif
 

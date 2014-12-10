@@ -30,8 +30,6 @@ void x86_indirect_branch_dual(u32 address);
 
 void function_cc execute_store_cpsr(u32 new_cpsr, u32 store_mask);
 
-void step_debug_x86(u32 pc);
-
 typedef enum
 {
   x86_reg_number_eax,
@@ -2319,9 +2317,5 @@ void function_cc swi_hle_div()
 #define generate_translation_gate(type)                                       \
   generate_update_pc(pc);                                                     \
   generate_indirect_branch_no_cycle_update(type)                              \
-
-#define generate_step_debug()                                                 \
-  generate_load_imm(a0, pc);                                                  \
-  generate_function_call(step_debug_x86)                                      \
 
 #endif

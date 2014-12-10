@@ -123,6 +123,5 @@ void sound_read_savestate(void);
 void render_audio(void);
 
 void reset_sound();
-void sound_exit();
 
 #endif

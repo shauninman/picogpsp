@@ -26,25 +26,10 @@ void vblank_interrupt_handler(u32 sub, u32 *parg);
 
 timer_type timer[4];
 
-//debug_state current_debug_state = COUNTDOWN_BREAKPOINT;
-//debug_state current_debug_state = PC_BREAKPOINT;
-u32 breakpoint_value = 0x7c5000;
-debug_state current_debug_state = RUN;
-//debug_state current_debug_state = STEP_RUN;
-
-//u32 breakpoint_value = 0;
-
 frameskip_type current_frameskip_type = auto_frameskip;
 u32 global_cycles_per_instruction = 1;
 
-u32 random_skip = 0;
-u32 fps_debug = 0;
-
-u32 frameskip_value = 2;
-
 u64 last_frame_interval_timestamp;
-
-u32 skip_next_frame = 0;
 
 u32 frameskip_counter = 0;
 
@@ -71,9 +56,6 @@ u32 flush_ram_count = 0;
 u32 gbc_update_count = 0;
 u32 oam_update_count = 0;
 
-u32 synchronize_flag = 1;
-
-u32 update_backup_flag = 1;
 char main_path[512];
 char save_path[512];
 
@@ -128,8 +110,6 @@ void init_main()
 {
   u32 i;
 
-  skip_next_frame = 0;
-
   for(i = 0; i < 4; i++)
   {
     dma[i].start_type = DMA_INACTIVE;
@@ -179,101 +159,7 @@ void print_memory_stats(u32 *counter, u32 *region_stats, char *stats_str)
   memset(region_stats, 0, sizeof(u32) * 16);
 }
 
-u32 event_cycles = 0;
-const u32 event_cycles_trigger = 60 * 5;
 u32 no_alpha = 0;
-
-void trigger_ext_event()
-{
-  static u32 event_number = 0;
-  static u64 benchmark_ticks[16];
-  u64 new_ticks;
-
-  return;
-
-  if(event_number)
-  {
-    get_ticks_us(&new_ticks);
-    benchmark_ticks[event_number - 1] =
-     new_ticks - benchmark_ticks[event_number - 1];
-  }
-
-  current_frameskip_type = no_frameskip;
-  no_alpha = 0;
-  synchronize_flag = 0;
-
-  switch(event_number)
-  {
-    case 0:
-      // Full benchmark, run normally
-      break;
-
-    case 1:
-      // No alpha blending
-      no_alpha = 1;
-      break;
-
-    case 2:
-      // No video benchmark
-      // Set frameskip really high + manual
-      current_frameskip_type = manual_frameskip;
-      frameskip_value = 1000000;
-      break;
-
-    case 3:
-      // No CPU benchmark
-      // Put CPU in halt mode, put it in IRQ mode with interrupts off
-      reg[CPU_HALT_STATE] = CPU_HALT;
-      reg[REG_CPSR] = 0xD2;
-      break;
-
-    case 4:
-      // No CPU or video benchmark
-      reg[CPU_HALT_STATE] = CPU_HALT;
-      reg[REG_CPSR] = 0xD2;
-      current_frameskip_type = manual_frameskip;
-      frameskip_value = 1000000;
-      break;
-
-    case 5:
-    {
-      // Done
-      char *print_strings[] =
-      {
-        "Full test   ",
-        "No blending ",
-        "No video    ",
-        "No CPU      ",
-        "No CPU/video",
-        "CPU speed   ",
-        "Video speed ",
-        "Alpha cost  "
-      };
-      u32 i;
-
-      benchmark_ticks[6] = benchmark_ticks[0] - benchmark_ticks[2];
-      benchmark_ticks[5] = benchmark_ticks[0] - benchmark_ticks[4] -
-       benchmark_ticks[6];
-      benchmark_ticks[7] = benchmark_ticks[0] - benchmark_ticks[1];
-
-      printf("Benchmark results (%d frames): \n", event_cycles_trigger);
-      for(i = 0; i < 8; i++)
-      {
-        printf("   %s: %d ms (%f ms per frame)\n",
-         print_strings[i], (u32)benchmark_ticks[i] / 1000,
-         (float)(benchmark_ticks[i] / (1000.0 * event_cycles_trigger)));
-        if(i == 4)
-          printf("\n");
-      }
-      quit();
-    }
-  }
-
-  event_cycles = 0;
-
-  get_ticks_us(benchmark_ticks + event_number);
-  event_number++;
-}
 
 u32 update_gba()
 {
@@ -383,32 +269,12 @@ u32 update_gba()
           oam_update_count = 0;
           flush_ram_count = 0;
 
-#ifdef __LIBRETRO__
           switch_to_main_thread();
 
           update_gbc_sound(cpu_ticks);
           gbc_sound_update = 0;
-#else
-          if(update_input())
-            continue;
 
-          update_gbc_sound(cpu_ticks);
-
-          update_screen();
-
-          synchronize();
-
-          if(update_backup_flag)
-            update_backup();
-#endif
           process_cheats();
-
-          event_cycles++;
-          if(event_cycles == event_cycles_trigger)
-          {
-            trigger_ext_event();
-            continue;
-          }
 
           vcount = 0;
         }
@@ -444,98 +310,6 @@ u32 update_gba()
   } while(reg[CPU_HALT_STATE] != CPU_ACTIVE);
 
   return execute_cycles;
-}
-
-#ifdef PSP_BUILD
-
-u32 real_frame_count = 0;
-u32 virtual_frame_count = 0;
-u32 num_skipped_frames = 0;
-
-void vblank_interrupt_handler(u32 sub, u32 *parg)
-{
-  real_frame_count++;
-}
-
-void synchronize()
-{
-  char char_buffer[64];
-  u64 new_ticks, time_delta;
-  s32 used_frameskip = frameskip_value;
-
-  if(!synchronize_flag)
-  {
-    used_frameskip = 4;
-    virtual_frame_count = real_frame_count - 1;
-  }
-
-  skip_next_frame = 0;
-
-  virtual_frame_count++;
-
-  if(real_frame_count >= virtual_frame_count)
-  {
-    if((real_frame_count > virtual_frame_count) &&
-     (current_frameskip_type == auto_frameskip) &&
-     (num_skipped_frames < frameskip_value))
-    {
-      skip_next_frame = 1;
-      num_skipped_frames++;
-    }
-    else
-    {
-      virtual_frame_count = real_frame_count;
-      num_skipped_frames = 0;
-    }
-
-    // Here so that the home button return will eventually work.
-    // If it's not running fullspeed anyway this won't really hurt
-    // it much more.
-
-    delay_us(1);
-  }
-  else
-  {
-    if(synchronize_flag)
-      sceDisplayWaitVblankStart();
-  }
-
-  if(current_frameskip_type == manual_frameskip)
-  {
-    frameskip_counter = (frameskip_counter + 1) %
-     (used_frameskip + 1);
-    if(random_skip)
-    {
-      if(frameskip_counter != (rand() % (used_frameskip + 1)))
-        skip_next_frame = 1;
-    }
-    else
-    {
-      if(frameskip_counter)
-        skip_next_frame = 1;
-    }
-  }
-
-/*  sprintf(char_buffer, "%08d %08d %d %d %d\n",
-   real_frame_count, virtual_frame_count, num_skipped_frames,
-   real_frame_count - virtual_frame_count, skip_next_frame);
-  print_string(char_buffer, 0xFFFF, 0x0000, 0, 10); */
-
-/*
-    sprintf(char_buffer, "%02d %02d %06d %07d", frameskip, (u32)ms_needed,
-     ram_translation_ptr - ram_translation_cache, rom_translation_ptr -
-     rom_translation_cache);
-    print_string(char_buffer, 0xFFFF, 0x0000, 0, 0);
-*/
-}
-#endif
-
-void quit()
-{
-  if(!update_backup_flag)
-    update_backup();
-
-  sound_exit();
 }
 
 void reset_gba()

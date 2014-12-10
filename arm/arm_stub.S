@@ -37,9 +37,6 @@
 .global execute_bios_ptr_protected
 .global execute_bios_rom_ptr
 
-
-.global step_debug_arm
-
 .global invalidate_icache_region
 .global invalidate_cache_region
 
@@ -933,35 +930,6 @@ execute_patch_bios_protect:
   type##_reg_scratch(9)                                                       ;\
   type##_reg_scratch(12)                                                      ;\
   type##_reg_scratch(14)                                                      ;\
-
-
-step_debug_arm:
-  save_flags()
-  collapse_flags(r0)
-
-  ldr r0, [reg_base, #REG_CPSR]           @ r1 = cpsr
-  tst r0, #0x20                           @ see if Thumb bit is set
-
-  ldr r0, [lr]                            @ load PC
-  mvn r1, reg_cycles                      @ load cycle counter
-
-  beq 1f                                  @ if not goto ARM mode
-
-  scratch_regs_thumb(save)
-
-  store_registers_thumb()                 @ write back Thumb regs
-  call_c_function(step_debug)             @ call debug step
-  scratch_regs_thumb(restore)
-  restore_flags()
-  add pc, lr, #4                          @ return
-
-1:
-  scratch_regs_arm(save)
-  store_registers_arm()                   @ write back ARM regs
-  call_c_function(step_debug)             @ call debug step
-  scratch_regs_arm(restore)
-  restore_flags()
-  add pc, lr, #4                          @ return, skipping PC
 
 .pool
 

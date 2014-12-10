@@ -28,7 +28,6 @@
 #define _execute_store_u32 execute_store_u32
 #define _execute_store_cpsr execute_store_cpsr
 #define _execute_arm_translate execute_arm_translate
-#define _step_debug_x86 step_debug_x86
 #define _memory_map_read memory_map_read
 #define _memory_map_write memory_map_write
 #define _reg reg
@@ -41,7 +40,6 @@
 #define _io_registers io_registers
 #define _spsr spsr
 
-#define _step_debug step_debug
 #define _update_gba update_gba
 #define _block_lookup_address_arm block_lookup_address_arm
 #define _block_lookup_address_thumb block_lookup_address_thumb
@@ -67,7 +65,6 @@
 .global _execute_store_u32
 .global _execute_store_cpsr
 .global _execute_arm_translate
-.global _step_debug_x86
 
 .global _memory_map_read
 .global _memory_map_write
@@ -527,12 +524,6 @@ _execute_arm_translate:
 1:
   call _block_lookup_address_thumb
   jmp *%eax
-
-_step_debug_x86:
-  collapse_flags
-#  mov $100, %edi
-  mov %edi, %edx
-  jmp _step_debug
 
 .comm _memory_map_read 0x8000
 .comm _memory_map_write 0x8000

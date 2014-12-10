@@ -66,10 +66,7 @@ extern u32 frame_ticks;
 extern u32 execute_cycles;
 extern frameskip_type current_frameskip_type;
 extern u32 frameskip_value;
-extern u32 random_skip;
 extern u32 global_cycles_per_instruction;
-extern u32 synchronize_flag;
-extern u32 skip_next_frame;
 
 extern u32 cycle_memory_access;
 extern u32 cycle_pc_relative_access;
@@ -86,17 +83,11 @@ extern u64 base_timestamp;
 extern char main_path[512];
 extern char save_path[512];
 
-extern u32 update_backup_flag;
-
 u32 update_gba();
 void reset_gba();
-#ifdef __LIBRETRO__
-#define synchronize()
+
 void init_main();
-#else
-void synchronize();
-#endif
-void quit();
+
 void delay_us(u32 us_count);
 void get_ticks_us(u64 *tick_return);
 void game_name_ext(char *src, char *buffer, char *extension);

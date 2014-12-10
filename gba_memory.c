@@ -3418,7 +3418,6 @@ void gba_load_state(const void* src)
    for(i = 0; i < 4; i++)
       gbc_sound_channel[i].sample_data = square_pattern_duty[2];
 
-   current_debug_state = STEP;
    instruction_count = 0;
 
    reg[CHANGED_PC_STATUS] = 1;

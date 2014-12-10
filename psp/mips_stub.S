@@ -45,7 +45,6 @@
 .global execute_arm_translate
 .global invalidate_icache_region
 .global invalidate_all_cache
-.global step_debug_mips
 .global reg_check
 
 .global memory_map_read
@@ -3402,19 +3401,6 @@ iac_loop:
 
   jr $ra                          # return
   nop
-
-
-step_debug_mips:
-  addiu $sp, $sp, -4
-  sw $ra, ($sp)
-  collapse_flags
-  save_registers
-  jal step_debug
-  addiu $5, $17, 0
-  restore_registers
-  lw $ra, ($sp)
-  jr $ra
-  addiu $sp, $sp, 4
 
 memory_map_read:
   .space 0x8000

@@ -47,8 +47,6 @@ u32 execute_ror_flags_reg(u32 value, u32 shift);
 void execute_aligned_store32(u32 address, u32 value);
 u32 execute_aligned_load32(u32 address);
 
-void step_debug_mips(u32 pc);
-
 void reg_check();
 
 typedef enum
@@ -2519,10 +2517,6 @@ u8 swi_hle_handle[256] =
 #define generate_translation_gate(type)                                       \
   generate_load_pc(reg_a0, pc);                                               \
   generate_indirect_branch_no_cycle_update(type)                              \
-
-#define generate_step_debug()                                                 \
-  generate_load_imm(reg_a0, pc);                                              \
-  generate_function_call(step_debug_mips)                                     \
 
 #define generate_update_pc_reg()                                              \
   generate_load_pc(reg_a0, pc);                                               \

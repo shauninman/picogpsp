@@ -87,34 +87,17 @@ typedef enum
 
 typedef enum
 {
-  STEP,
-  PC_BREAKPOINT,
-  VCOUNT_BREAKPOINT,
-  Z_BREAKPOINT,
-  COUNTDOWN_BREAKPOINT,
-  COUNTDOWN_BREAKPOINT_B,
-  COUNTDOWN_BREAKPOINT_C,
-  STEP_RUN,
-  RUN
-} debug_state;
-
-typedef enum
-{
   TRANSLATION_REGION_RAM,
   TRANSLATION_REGION_ROM,
   TRANSLATION_REGION_BIOS
 } translation_region_type;
 
-extern debug_state current_debug_state;
 extern u32 instruction_count;
 extern u32 last_instruction;
 
 void execute_arm(u32 cycles);
 void raise_interrupt(irq_type irq_raised);
 void set_cpu_mode(cpu_mode_type new_mode);
-
-void debug_on();
-void debug_off(debug_state new_debug_state);
 
 u32 function_cc execute_load_u8(u32 address);
 u32 function_cc execute_load_u16(u32 address);
@@ -194,8 +177,6 @@ extern u32 spsr[6];
 
 extern u32 cpu_modes[32];
 extern const u32 psr_masks[16];
-
-extern u32 breakpoint_value;
 
 extern u32 memory_region_access_read_u8[16];
 extern u32 memory_region_access_read_s8[16];

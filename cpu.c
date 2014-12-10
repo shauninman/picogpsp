@@ -1670,7 +1670,6 @@ char *cpu_mode_names[] =
                                                                               \
     case 0xF:                                                                 \
       /* Reserved - treat as "never" */                                       \
-      quit();                                                                 \
       arm_next_instruction();                                                 \
       break;                                                                  \
   }                                                                           \
@@ -3988,69 +3987,6 @@ char *cpu_mode_names[] =
     }                                                                         \
   }                                                                           \
 
-void print_arm_registers()
-{
-  u32 i, i2, i3;
-
-  for(i = 0, i3 = 0; i < 4; i++)
-  {
-    debug_screen_printf(" ");
-    for(i2 = 0; i2 < 4; i2++, i3++)
-    {
-      debug_screen_printf("R%02d %08x ", i3, reg[i3]);
-    }
-    debug_screen_newline(1);
-  }
-}
-
-void print_thumb_instruction()
-{
-  debug_screen_printf("Thumb instruction at PC: %04x",
-   read_memory16(reg[REG_PC]));
-  debug_screen_newline(1);
-}
-
-void print_arm_instruction()
-{
-  debug_screen_printf("ARM instruction at PC: %08x",
-   read_memory32(reg[REG_PC]));
-  debug_screen_newline(1);
-}
-
-void print_flags()
-{
-  u32 cpsr = reg[REG_CPSR];
-  debug_screen_newline(1);
-  debug_screen_printf(
-   " N: %d  Z: %d  C: %d  V: %d  CPSR: %08x  SPSR: %08x  mode: %s",
-   (cpsr >> 31) & 0x01, (cpsr >> 30) & 0x01, (cpsr >> 29) & 0x01,
-   (cpsr >> 28) & 0x01, cpsr, spsr[reg[CPU_MODE]],
-   cpu_mode_names[reg[CPU_MODE]]);
-  debug_screen_newline(2);
-}
-
-const u32 stack_print_lines = 2;
-
-void print_stack()
-{
-  u32 i, i2, i3;
-
-  debug_screen_printf("Stack:");
-  debug_screen_newline(1);
-
-  for(i = 0, i3 = reg[REG_SP]; i < stack_print_lines; i++)
-  {
-    for(i2 = 0; i2 < 5; i2++, i3 += 4)
-    {
-      debug_screen_printf(" %08x", read_memory32(i3));
-    }
-    if(i != stack_print_lines)
-      debug_screen_newline(1);
-  }
-
-  debug_screen_newline(1);
-}
-
 u32 instruction_count = 0;
 
 u32 output_field = 0;
@@ -4059,199 +3995,6 @@ const u32 num_output_fields = 2;
 u32 last_instruction = 0;
 
 u32 in_interrupt = 0;
-
-void debug_on()
-{
-  current_debug_state = STEP;
-  debug_screen_start();
-}
-
-void debug_off(debug_state new_debug_state)
-{
-  current_debug_state = new_debug_state;
-  debug_screen_end();
-}
-
-void function_cc step_debug(u32 pc, u32 cycles)
-{
-  u32 thumb = 0;
-
-  reg[REG_PC] = pc;
-
-  if(reg[REG_CPSR] & 0x20)
-    thumb = 1;
-
-  instruction_count++;
-
-  switch(current_debug_state)
-  {
-    case PC_BREAKPOINT:
-      if(reg[REG_PC] == breakpoint_value)
-        debug_on();
-
-      break;
-
-    case Z_BREAKPOINT:
-      if(reg[REG_Z_FLAG] == 1)
-        debug_on();
-
-      break;
-
-    case VCOUNT_BREAKPOINT:
-      if(io_registers[REG_VCOUNT] == breakpoint_value)
-        debug_on();
-
-      break;
-
-    case COUNTDOWN_BREAKPOINT:
-      if(breakpoint_value == 0)
-        debug_on();
-      else
-        breakpoint_value--;
-
-      break;
-
-    case COUNTDOWN_BREAKPOINT_B:
-      if(breakpoint_value == instruction_count)
-        debug_on();
-
-      break;
-
-    case COUNTDOWN_BREAKPOINT_C:
-    {
-      if(pc == 0x18)
-        in_interrupt++;
-
-      if((breakpoint_value == 0) && (in_interrupt == 0))
-      {
-        debug_on();
-      }
-      else
-
-      if(in_interrupt == 0)
-        breakpoint_value--;
-
-      if(in_interrupt && (pc == 0x13c))
-        in_interrupt--;
-
-      break;
-    }
-
-    default:
-      break;
-  }
-
-  if((current_debug_state == STEP) ||
-   (current_debug_state == STEP_RUN))
-  {
-    u32 key = 0;
-
-    if(output_field >= num_output_fields)
-    {
-      output_field = 0;
-      debug_screen_clear();
-    }
-
-    if(thumb)
-      print_thumb_instruction(cycles);
-    else
-      print_arm_instruction(cycles);
-
-    print_arm_registers();
-    print_flags();
-    print_stack();
-
-
-    printf("%x instructions in, VCOUNT %d, cycles remaining: %d \n",
-     instruction_count, io_registers[REG_VCOUNT], cycles);
-
-    debug_screen_update();
-    output_field++;
-
-    if(current_debug_state != STEP_RUN)
-    {
-
-      key = getchar();
-    }
-
-    switch(key)
-    {
-      case 'd':
-        dump_translation_cache();
-        break;
-
-      case 'z':
-        debug_off(Z_BREAKPOINT);
-        break;
-
-#ifdef STDIO_DEBUG
-      case 'x':
-        printf("break at PC (hex): ");
-        scanf("%08x", &breakpoint_value);
-        debug_off(PC_BREAKPOINT);
-        break;
-
-      case 'c':
-        printf("break after N instructions (hex): ");
-        scanf("%08x", &breakpoint_value);
-        breakpoint_value -= 1;
-        debug_off(COUNTDOWN_BREAKPOINT);
-        break;
-
-      case 'f':
-        printf("break after N instructions, skip in IRQ (hex): ");
-        scanf("%08x", &breakpoint_value);
-        breakpoint_value -= 1;
-        debug_off(COUNTDOWN_BREAKPOINT_C);
-        break;
-
-      case 'g':
-        printf("break after N instructions (since start): ");
-        scanf("%d", &breakpoint_value);
-        debug_off(COUNTDOWN_BREAKPOINT_B);
-        break;
-
-      case 'v':
-        printf("break at VCOUNT: ");
-        scanf("%d", &breakpoint_value);
-        debug_off(VCOUNT_BREAKPOINT);
-        break;
-#endif
-
-      case 's':
-        current_debug_state = STEP_RUN;
-        break;
-
-      case 'r':
-        debug_off(RUN);
-        break;
-
-      case 'b':
-        debug_off(PC_BREAKPOINT);
-        break;
-
-      case 't':
-        global_cycles_per_instruction = 0;
-        debug_off(RUN);
-        break;
-
-      case 'a':
-      {
-        break;
-      }
-
-      case 'q':
-        quit();
-    }
-  }
-
-  last_instruction = reg[REG_PC];
-
-  if(thumb)
-    reg[REG_PC] = pc + 2;
-  else
-    reg[REG_PC] = pc + 4;
-}
 
 void set_cpu_mode(cpu_mode_type new_mode)
 {
@@ -4347,7 +4090,6 @@ void execute_arm(u32 cycles)
       arm_loop:
 
       collapse_flags();
-      step_debug(pc, cycles_remaining);
       cycles_per_instruction = global_cycles_per_instruction;
 
       old_pc = pc;
@@ -4364,7 +4106,6 @@ void execute_arm(u32 cycles)
       thumb_loop:
 
       collapse_flags();
-      step_debug(pc, cycles_remaining);
 
       old_pc = pc;
       execute_thumb_instruction();

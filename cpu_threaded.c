@@ -2846,7 +2846,6 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
         sprintf(buffer, "bad jump %x (%x) (%x)\n", pc, reg[REG_PC],           \
          last_instruction);                                                   \
         printf("%s", buffer);                                                 \
-        quit();                                                               \
       }                                                                       \
       block_address = (u8 *)(-1);                                             \
       break;                                                                  \
@@ -3285,8 +3284,7 @@ s32 translate_block_arm(u32 pc, translation_region_type
   while(pc != block_end_pc)                                                   
   {                                                                           
     block_data[block_data_position].block_offset = translation_ptr;           
-    arm_base_cycles();                                                     
-    /*generate_step_debug();*/                                                
+    arm_base_cycles();
                                                                               
     translate_arm_instruction();                                         
     block_data_position++;                                                    
@@ -3503,8 +3501,7 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   while(pc != block_end_pc)                                                   
   {                                                                           
     block_data[block_data_position].block_offset = translation_ptr;           
-    thumb_base_cycles();                                                     
-    /*generate_step_debug();*/                                                
+    thumb_base_cycles();
                                                                               
     translate_thumb_instruction();                                         
     block_data_position++;                                                    

@@ -21,26 +21,12 @@
 #define VIDEO_H
 
 void update_scanline();
-#ifndef __LIBRETRO__
-void update_screen();
-#endif
 void init_video();
 void video_resolution_large();
 void video_resolution_small();
 void clear_screen(u16 color);
-void blit_to_screen(u16 *src, u32 w, u32 h, u32 x, u32 y);
-u16 *copy_screen();
-void flip_screen();
 void video_write_savestate(void);
 void video_read_savestate(void);
-
-void debug_screen_clear();
-void debug_screen_start();
-void debug_screen_end();
-void debug_screen_printf(const char *format, ...);
-void debug_screen_printl(const char *format, ...);
-void debug_screen_newline(u32 count);
-void debug_screen_update();
 
 extern u32 frame_speed;
 
