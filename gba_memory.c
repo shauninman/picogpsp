@@ -2233,11 +2233,13 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
   char config_path[512];
   FILE *config_file;
 
+#ifdef HAVE_DYNAREC
   idle_loop_target_pc = 0xFFFFFFFF;
   iwram_stack_optimize = 1;
+  translation_gate_targets = 0;
+#endif
   bios_rom[0x39] = 0x00;
   bios_rom[0x2C] = 0x00;
-  translation_gate_targets = 0;
   flash_device_id = FLASH_DEVICE_MACRONIX_64KB;
 
   sprintf(config_path, "%s" PATH_SEPARATOR "%s", main_path, CONFIG_FILENAME);
@@ -2280,6 +2282,7 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
               return 0;
             }
 
+#ifdef HAVE_DYNAREC
             if (dynarec_enable)
             {
                if(!strcmp(current_variable, "idle_loop_eliminate_target"))
@@ -2301,6 +2304,7 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
                   iwram_stack_optimize = 0;
                }
             }
+#endif
 
             if(!strcmp(current_variable, "flash_rom_type") &&
               !strcmp(current_value, "128KB"))
