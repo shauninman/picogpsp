@@ -2242,6 +2242,8 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
 
   sprintf(config_path, "%s" PATH_SEPARATOR "%s", main_path, CONFIG_FILENAME);
 
+  printf("config_path is : %s\n", config_path);
+
   config_file = fopen(config_path, "rb");
 
   if(config_file)
