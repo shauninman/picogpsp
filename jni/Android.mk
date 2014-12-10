@@ -9,11 +9,13 @@ ifeq ($(TARGET_ARCH),arm)
 LOCAL_CFLAGS += -DANDROID_ARM -DARM_ARCH
 LOCAL_ARM_MODE := arm
 CPU_ARCH := arm
+HAVE_DYNAREC := 1
 endif
 
 ifeq ($(TARGET_ARCH),x86)
 LOCAL_CFLAGS +=  -DANDROID_X86
 CPU_ARCH := x86_32
+HAVE_DYNAREC := 1
 endif
 
 #ifeq ($(TARGET_ARCH),mips)

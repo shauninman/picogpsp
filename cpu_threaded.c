@@ -48,11 +48,13 @@ u32 ewram_code_max = 0xFFFFFFFF;
 u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
 
 // Default
+#ifdef HAVE_DYNAREC
 u32 idle_loop_target_pc = 0xFFFFFFFF;
+u32 iwram_stack_optimize = 1;
+#endif
 u32 force_pc_update_target = 0xFFFFFFFF;
 u32 translation_gate_target_pc[MAX_TRANSLATION_GATES];
 u32 translation_gate_targets = 0;
-u32 iwram_stack_optimize = 1;
 u32 allow_smc_ram_u8 = 1;
 u32 allow_smc_ram_u16 = 1;
 u32 allow_smc_ram_u32 = 1;

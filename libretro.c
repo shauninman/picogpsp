@@ -20,6 +20,7 @@ struct retro_perf_callback perf_cb;
 
 static cothread_t main_thread;
 static cothread_t cpu_thread;
+int dynarec_enable;
 
 void switch_to_main_thread(void)
 {
@@ -33,7 +34,10 @@ static inline void switch_to_cpu_thread(void)
 
 static void cpu_thread_entry(void)
 {
-   execute_arm_translate(execute_cycles);
+#ifdef HAVE_DYNAREC
+   if (dynarec_enable)
+      execute_arm_translate(execute_cycles);
+#endif
    execute_arm(execute_cycles);
 }
 
@@ -97,7 +101,10 @@ void retro_init()
    init_gamepak_buffer();
    init_sound(1);
 
-#ifdef HAVE_MMAP
+#if defined(HAVE_DYNAREC)
+   dynarec_enable = 1;
+#if defined(HAVE_MMAP)
+
    rom_translation_cache = mmap(NULL, ROM_TRANSLATION_CACHE_SIZE,
                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
    ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
@@ -109,6 +116,9 @@ void retro_init()
    ram_translation_ptr = ram_translation_cache;
    bios_translation_ptr = bios_translation_cache;
 #endif
+#else
+   dynarec_enable = 0;
+#endif
 }
 
 void retro_deinit()
@@ -116,7 +126,7 @@ void retro_deinit()
    perf_cb.perf_log();
    memory_term();
 
-#ifdef HAVE_MMAP
+#if defined(HAVE_MMAP) && defined(HAVE_DYNAREC)
    munmap(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE);
    munmap(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE);
    munmap(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE);

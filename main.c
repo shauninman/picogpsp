@@ -117,9 +117,11 @@ void init_main(void)
   execute_cycles = 960;
   video_count = 960;
 
+#ifdef HAVE_DYNAREC
   flush_translation_cache_rom();
   flush_translation_cache_ram();
   flush_translation_cache_bios();
+#endif
 }
 
 u32 no_alpha = 0;

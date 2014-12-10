@@ -2280,23 +2280,26 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
               return 0;
             }
 
-            if(!strcmp(current_variable, "idle_loop_eliminate_target"))
-              idle_loop_target_pc = strtol(current_value, NULL, 16);
-
-            if(!strcmp(current_variable, "translation_gate_target"))
+            if (dynarec_enable)
             {
-              if(translation_gate_targets < MAX_TRANSLATION_GATES)
-              {
-                translation_gate_target_pc[translation_gate_targets] =
-                 strtol(current_value, NULL, 16);
-                translation_gate_targets++;
-              }
-            }
+               if(!strcmp(current_variable, "idle_loop_eliminate_target"))
+                  idle_loop_target_pc = strtol(current_value, NULL, 16);
 
-            if(!strcmp(current_variable, "iwram_stack_optimize") &&
-              !strcmp(current_value, "no\0")) /* \0 for broken toolchain workaround */
-            {
-                iwram_stack_optimize = 0;
+               if(!strcmp(current_variable, "translation_gate_target"))
+               {
+                  if(translation_gate_targets < MAX_TRANSLATION_GATES)
+                  {
+                     translation_gate_target_pc[translation_gate_targets] =
+                        strtol(current_value, NULL, 16);
+                     translation_gate_targets++;
+                  }
+               }
+
+               if(!strcmp(current_variable, "iwram_stack_optimize") &&
+                     !strcmp(current_value, "no\0")) /* \0 for broken toolchain workaround */
+               {
+                  iwram_stack_optimize = 0;
+               }
             }
 
             if(!strcmp(current_variable, "flash_rom_type") &&
@@ -3381,9 +3384,12 @@ void gba_load_state(const void* src)
    state_mem_read_ptr = src;
    savestate_block(read);
 
-   flush_translation_cache_ram();
-   flush_translation_cache_rom();
-   flush_translation_cache_bios();
+   if (dynarec_enable)
+   {
+      flush_translation_cache_ram();
+      flush_translation_cache_rom();
+      flush_translation_cache_bios();
+   }
 
    oam_update = 1;
    gbc_sound_update = 1;

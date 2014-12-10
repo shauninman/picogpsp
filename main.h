@@ -97,6 +97,7 @@ extern u32 real_frame_count;
 extern u32 virtual_frame_count;
 extern u32 max_frameskip;
 extern u32 num_skipped_frames;
+extern int dynarec_enable;
 
 void change_ext(const char *src, char *buffer, const char *extension);
 

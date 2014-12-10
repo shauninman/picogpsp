@@ -48,6 +48,7 @@ ifeq ($(platform), unix)
 	fpic := -fPIC
 	FORCE_32BIT := -m32
 	CPU_ARCH := x86_32
+	HAVE_DYNAREC := 1
 	SHARED := -shared $(FORCE_32BIT) -Wl,--version-script=link.T
 	ifneq ($(findstring Haiku,$(shell uname -a)),)
 		LIBM :=
@@ -214,6 +215,10 @@ include Makefile.common
 OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
 
 DEFINES = -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline -DPC_BUILD -Wall -Werror=implicit-function-declaration
+
+ifeq ($(HAVE_DYNAREC), 1)
+DEFINES += -DHAVE_DYNAREC
+endif
 
 ifeq ($(CPU_ARCH), arm)
 DEFINES += -DARM_ARCH

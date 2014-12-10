@@ -18,6 +18,8 @@ SOURCES_C := $(CORE_DIR)/main.c \
 
 endif
 
+ifeq ($(HAVE_DYNAREC), 1)
+
 ifeq ($(CPU_ARCH), x86_32)
 SOURCES_ASM += $(CORE_DIR)/x86/x86_stub.S
 endif
@@ -25,6 +27,8 @@ ifeq ($(CPU_ARCH), arm)
 SOURCES_C   += $(CORE_DIR)/arm/warm.c
 SOURCES_ASM += $(CORE_DIR)/arm/arm_stub.S \
 	$(CORE_DIR)/arm/video_blend.S
+endif
+
 endif
 
 INCFLAGS := -I$(CORE_DIR)
