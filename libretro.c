@@ -22,6 +22,11 @@ static cothread_t main_thread;
 static cothread_t cpu_thread;
 int dynarec_enable;
 
+u32 idle_loop_target_pc = 0xFFFFFFFF;
+u32 iwram_stack_optimize = 1;
+u32 translation_gate_target_pc[MAX_TRANSLATION_GATES];
+u32 translation_gate_targets = 0;
+
 void switch_to_main_thread(void)
 {
    co_switch(main_thread);
