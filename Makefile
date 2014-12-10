@@ -235,13 +235,15 @@ ifeq ($(FRONTEND_SUPPORTS_RGB565), 1)
 	CFLAGS += -DFRONTEND_SUPPORTS_RGB565
 endif
 
+LDFLAGS := -Wl,--no-undefined
+
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CC) $(fpic) $(SHARED) $(INCFLAGS) $(OPTIMIZE) -o $@ $(OBJECTS) $(LIBM)
+	$(CC) $(fpic) $(SHARED) $(INCFLAGS) $(OPTIMIZE) -o $@ $(OBJECTS) $(LIBM) $(LDFLAGS)
 endif
 
 cpu.o: cpu.c
