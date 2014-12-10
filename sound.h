@@ -25,10 +25,7 @@
 
 #define GBA_SOUND_FREQUENCY   (64 * 1024)
 
-
-#define GBA_XTAL      16777216.0f
-
-#define GBC_BASE_RATE GBA_XTAL
+#define GBC_BASE_RATE ((float)(16 * 1024 * 1024))
 
 typedef enum
 {
@@ -120,8 +117,8 @@ void sound_timer(fixed8_24 frequency_step, u32 channel);
 void sound_reset_fifo(u32 channel);
 void update_gbc_sound(u32 cpu_ticks);
 void init_sound(int need_reset);
-void sound_write_mem_savestate(file_tag_type savestate_file);
-void sound_read_savestate(file_tag_type savestate_file);
+void sound_write_savestate(void);
+void sound_read_savestate(void);
 
 void render_audio(void);
 

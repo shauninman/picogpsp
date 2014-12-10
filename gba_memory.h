@@ -186,10 +186,6 @@ void memory_term(void);
 void bios_region_read_allow();
 void bios_region_read_protect();
 u8 *load_gamepak_page(u32 physical_index);
-void memory_write_mem_savestate(file_tag_type savestate_file);
-void memory_read_savestate(file_tag_type savestate_file);
-void gba_load_state(char *savestate_filename);
-void gba_save_state(char *savestate_filename, u16 *screen_capture);
 
 extern u8 *gamepak_rom;
 extern u32 gamepak_ram_buffer_size;
@@ -197,8 +193,6 @@ extern u32 oam_update;
 extern u32 gbc_sound_update;
 extern u32 gbc_sound_wave_update;
 extern dma_transfer_type dma[4];
-
-extern u8 *write_mem_ptr;
 
 extern u16 palette_ram[512];
 extern u16 oam_ram[512];
@@ -216,5 +210,33 @@ extern u32 *reg;
 extern u8 *memory_map_write[8 * 1024];
 
 extern flash_device_id_type flash_device_id;
+
+extern const u8 *state_mem_read_ptr;
+extern u8 *state_mem_write_ptr;
+
+static inline void state_mem_write(const void* src, size_t size)
+{
+  memcpy(state_mem_write_ptr, src, size);
+  state_mem_write_ptr += size;
+}
+
+#define GBA_STATE_MEM_SIZE                    429640
+
+#define state_mem_write_array(array)          state_mem_write(array,     sizeof(array))
+#define state_mem_write_variable(variable)    state_mem_write(&variable, sizeof(variable))
+
+static inline void state_mem_read(void* dst, size_t size)
+{
+  memcpy(dst, state_mem_read_ptr, size);
+  state_mem_read_ptr += size;
+}
+
+#define state_mem_read_array(array)           state_mem_read(array,     sizeof(array))
+#define state_mem_read_variable(variable)     state_mem_read(&variable, sizeof(variable))
+
+void memory_write_savestate(void);
+void memory_read_savestate(void);
+void gba_load_state(const void *src);
+void gba_save_state(void *dst);
 
 #endif

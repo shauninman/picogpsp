@@ -88,12 +88,11 @@ u32 update_input(void)
    return 0;
 }
 
-#define input_savestate_builder(type)                                         \
-void input_##type##_savestate(file_tag_type savestate_file)                   \
-{                                                                             \
-  file_##type##_variable(savestate_file, key);                                \
-}                                                                             \
+#define input_savestate_builder(type) \
+void input_##type##_savestate(void)   \
+{                                     \
+  state_mem_##type##_variable(key);   \
+}
 
-input_savestate_builder(read);
-input_savestate_builder(write_mem);
-
+input_savestate_builder(read)
+input_savestate_builder(write)

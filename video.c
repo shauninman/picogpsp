@@ -3570,14 +3570,14 @@ void debug_screen_printl(const char *format, ...)
 }
 
 
-#define video_savestate_builder(type)                                         \
-void video_##type##_savestate(file_tag_type savestate_file)                   \
-{                                                                             \
-  file_##type##_array(savestate_file, affine_reference_x);                    \
-  file_##type##_array(savestate_file, affine_reference_y);                    \
-}                                                                             \
+#define video_savestate_builder(type)           \
+void video_##type##_savestate(void)             \
+{                                               \
+  state_mem_##type##_array(affine_reference_x); \
+  state_mem_##type##_array(affine_reference_y); \
+}
 
-video_savestate_builder(read);
-video_savestate_builder(write_mem);
+video_savestate_builder(read)
+video_savestate_builder(write)
 
 

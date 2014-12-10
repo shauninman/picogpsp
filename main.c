@@ -600,17 +600,17 @@ void make_rpath(char *buff, size_t size, const char *ext)
     strcpy(p, ext);
 }
 
-#define main_savestate_builder(type)                                          \
-void main_##type##_savestate(file_tag_type savestate_file)                    \
-{                                                                             \
-  file_##type##_variable(savestate_file, cpu_ticks);                          \
-  file_##type##_variable(savestate_file, execute_cycles);                     \
-  file_##type##_variable(savestate_file, video_count);                        \
-  file_##type##_array(savestate_file, timer);                                 \
-}                                                                             \
+#define main_savestate_builder(type)            \
+void main_##type##_savestate(void)              \
+{                                               \
+  state_mem_##type##_variable(cpu_ticks);       \
+  state_mem_##type##_variable(execute_cycles);  \
+  state_mem_##type##_variable(video_count);     \
+  state_mem_##type##_array(timer);              \
+}
 
-main_savestate_builder(read);
-main_savestate_builder(write_mem);
+main_savestate_builder(read)
+main_savestate_builder(write)
 
 
 void printout(void *str, u32 val)

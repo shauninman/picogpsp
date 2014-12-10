@@ -4428,14 +4428,13 @@ void move_reg(u32 *new_reg)
 }
 
 
-#define cpu_savestate_builder(type)                                           \
-void cpu_##type##_savestate(file_tag_type savestate_file)                     \
-{                                                                             \
-  file_##type(savestate_file, reg, 0x100);                                    \
-  file_##type##_array(savestate_file, spsr);                                  \
-  file_##type##_array(savestate_file, reg_mode);                              \
-}                                                                             \
+#define cpu_savestate_builder(type)   \
+void cpu_##type##_savestate(void)     \
+{                                     \
+  state_mem_##type(reg, 0x100);       \
+  state_mem_##type##_array(spsr);     \
+  state_mem_##type##_array(reg_mode); \
+}
 
-cpu_savestate_builder(read);
-cpu_savestate_builder(write_mem);
-
+cpu_savestate_builder(read)
+cpu_savestate_builder(write)

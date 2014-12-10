@@ -21,15 +21,6 @@ struct retro_perf_callback perf_cb;
 static cothread_t main_thread;
 static cothread_t cpu_thread;
 
-/* to be removed */
-u32 savestate_slot = 0;
-void get_savestate_filename_noshot(u32 slot, char* name_buffer)
-{
-   (void) slot;
-   sprintf(name_buffer, "dummy.svs");
-}
-/* ------------ */
-
 void switch_to_main_thread(void)
 {
    co_switch(main_thread);
@@ -95,7 +86,7 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
    info->geometry.max_height = GBA_SCREEN_HEIGHT;
    info->geometry.aspect_ratio = 0;
    // 59.72750057 hz
-   info->timing.fps = ((float)(16 * 1024 * 1024)) / (308 * 228 * 4);
+   info->timing.fps = ((float) GBC_BASE_RATE) / (308 * 228 * 4);
    info->timing.sample_rate = GBA_SOUND_FREQUENCY;
 }
 
@@ -167,28 +158,28 @@ void retro_reset()
 
 size_t retro_serialize_size()
 {
-   //   return SAVESTATE_SIZE;
-   return 0;
+   return GBA_STATE_MEM_SIZE;
 }
 
 bool retro_serialize(void* data, size_t size)
 {
-   //   if (size < SAVESTATE_SIZE)
-   return false;
+   if (size != GBA_STATE_MEM_SIZE)
+      return false;
 
-   //   gba_save_state(data);
+   memset (data,0, GBA_STATE_MEM_SIZE);
+   gba_save_state(data);
 
-   //   return true;
+   return true;
 }
 
 bool retro_unserialize(const void* data, size_t size)
 {
-   //   if (size < SAVESTATE_SIZE)
-   return false;
+   if (size != GBA_STATE_MEM_SIZE)
+      return false;
 
-   //   gba_load_state(data);
+   gba_load_state(data);
 
-   //   return true;
+   return true;
 }
 
 void retro_cheat_reset() {}

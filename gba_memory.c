@@ -3405,152 +3405,104 @@ void bios_region_read_protect()
 }
 
 
-#define savestate_block(type)                                                 \
-  cpu_##type##_savestate(savestate_file);                                     \
-  input_##type##_savestate(savestate_file);                                   \
-  main_##type##_savestate(savestate_file);                                    \
-  memory_##type##_savestate(savestate_file);                                  \
-  sound_##type##_savestate(savestate_file);                                   \
-  video_##type##_savestate(savestate_file)                                    \
+#define savestate_block(type)   \
+  cpu_##type##_savestate();     \
+  input_##type##_savestate();   \
+  main_##type##_savestate();    \
+  memory_##type##_savestate();  \
+  sound_##type##_savestate();   \
+  video_##type##_savestate()
 
-void gba_load_state(char *savestate_filename)
+
+const u8 *state_mem_read_ptr;
+u8 *state_mem_write_ptr;
+
+void gba_load_state(const void* src)
 {
-  file_open(savestate_file, savestate_filename, read);
-  if(file_check_valid(savestate_file))
-  {
-    char current_gamepak_filename[512];
-    u32 i;
-    u32 current_color;
+   u32 i;
+   u32 current_color;
 
-    file_seek(savestate_file, (240 * 160 * 2) + sizeof(time_t), SEEK_SET);
+   state_mem_read_ptr = src;
+   savestate_block(read);
 
-    strcpy(current_gamepak_filename, gamepak_filename);
+   flush_translation_cache_ram();
+   flush_translation_cache_rom();
+   flush_translation_cache_bios();
 
-    savestate_block(read);
+   oam_update = 1;
+   gbc_sound_update = 1;
 
-    file_close(savestate_file);
-
-    flush_translation_cache_ram();
-    flush_translation_cache_rom();
-    flush_translation_cache_bios();
-
-    oam_update = 1;
-    gbc_sound_update = 1;
-    if(strcmp(current_gamepak_filename, gamepak_filename))
-    {
-      u32 dot_position = strcspn(current_gamepak_filename, ".");
-
-      // We'll let it slide if the filenames of the savestate and
-      // the gamepak are similar enough.
-      strcpy(gamepak_filename, current_gamepak_filename);
-      if(strncmp(savestate_filename, current_gamepak_filename, dot_position))
-      {
-        if(load_gamepak(gamepak_filename) != -1)
-        {
-          reset_gba();
-          // Okay, so this takes a while, but for now it works.
-          gba_load_state(savestate_filename);
-        }
-        else
-        {
-          quit();
-        }
-
-        return;
-      }
-    }
-
-    for(i = 0; i < 512; i++)
-    {
+   for(i = 0; i < 512; i++)
+   {
       current_color = palette_ram[i];
       palette_ram_converted[i] =
        convert_palette(current_color);
-    }
+   }
 
-    // Oops, these contain raw pointers
-    for(i = 0; i < 4; i++)
-    {
+   // Oops, these contain raw pointers
+   for(i = 0; i < 4; i++)
       gbc_sound_channel[i].sample_data = square_pattern_duty[2];
-    }
-    current_debug_state = STEP;
-    instruction_count = 0;
 
-    reg[CHANGED_PC_STATUS] = 1;
-  }
+   current_debug_state = STEP;
+   instruction_count = 0;
+
+   reg[CHANGED_PC_STATUS] = 1;
 }
 
-u8 savestate_write_buffer[506947];
-u8 *write_mem_ptr;
-
-void gba_save_state(char *savestate_filename, u16 *screen_capture)
+void gba_save_state(void* dst)
 {
-  write_mem_ptr = savestate_write_buffer;
-  file_open(savestate_file, savestate_filename, write);
-  if(file_check_valid(savestate_file))
-  {
-    time_t current_time;
-    file_write_mem(savestate_file, screen_capture, 240 * 160 * 2);
-
-    time(&current_time);
-    file_write_mem_variable(savestate_file, current_time);
-
-    savestate_block(write_mem);
-    file_write(savestate_file, savestate_write_buffer,
-     sizeof(savestate_write_buffer));
-
-    file_close(savestate_file);
-  }
+  state_mem_write_ptr = dst;
+  savestate_block(write);
 }
 
 
-#define memory_savestate_builder(type)                                        \
-void memory_##type##_savestate(file_tag_type savestate_file)                  \
-{                                                                             \
-  u32 i;                                                                      \
-                                                                              \
-  file_##type##_variable(savestate_file, backup_type);                        \
-  file_##type##_variable(savestate_file, sram_size);                          \
-  file_##type##_variable(savestate_file, flash_mode);                         \
-  file_##type##_variable(savestate_file, flash_command_position);             \
-  file_##type##_variable(savestate_file, flash_bank_ptr);                     \
-  file_##type##_variable(savestate_file, flash_device_id);                    \
-  file_##type##_variable(savestate_file, flash_manufacturer_id);              \
-  file_##type##_variable(savestate_file, flash_size);                         \
-  file_##type##_variable(savestate_file, eeprom_size);                        \
-  file_##type##_variable(savestate_file, eeprom_mode);                        \
-  file_##type##_variable(savestate_file, eeprom_address_length);              \
-  file_##type##_variable(savestate_file, eeprom_address);                     \
-  file_##type##_variable(savestate_file, eeprom_counter);                     \
-  file_##type##_variable(savestate_file, rtc_state);                          \
-  file_##type##_variable(savestate_file, rtc_write_mode);                     \
-  file_##type##_array(savestate_file, rtc_registers);                         \
-  file_##type##_variable(savestate_file, rtc_command);                        \
-  file_##type##_array(savestate_file, rtc_data);                              \
-  file_##type##_variable(savestate_file, rtc_status);                         \
-  file_##type##_variable(savestate_file, rtc_data_bytes);                     \
-  file_##type##_variable(savestate_file, rtc_bit_count);                      \
-  file_##type##_array(savestate_file, eeprom_buffer);                         \
-  file_##type##_array(savestate_file, gamepak_filename);                      \
-  file_##type##_array(savestate_file, dma);                                   \
-                                                                              \
-  file_##type(savestate_file, iwram + 0x8000, 0x8000);                        \
-  for(i = 0; i < 8; i++)                                                      \
-  {                                                                           \
-    file_##type(savestate_file, ewram + (i * 0x10000) + 0x8000, 0x8000);      \
-  }                                                                           \
-  file_##type(savestate_file, vram, 0x18000);                                 \
-  file_##type(savestate_file, oam_ram, 0x400);                                \
-  file_##type(savestate_file, palette_ram, 0x400);                            \
-  file_##type(savestate_file, io_registers, 0x8000);                          \
-                                                                              \
-  /* This is a hack, for now. */                                              \
-  if((flash_bank_ptr < gamepak_backup) ||                                     \
-   (flash_bank_ptr > (gamepak_backup + (1024 * 64))))                         \
-  {                                                                           \
-    flash_bank_ptr = gamepak_backup;                                          \
-  }                                                                           \
-}                                                                             \
+#define memory_savestate_builder(type)                         \
+void memory_##type##_savestate(void)                           \
+{                                                              \
+  u32 i;                                                       \
+                                                               \
+  state_mem_##type##_variable(backup_type);                    \
+  state_mem_##type##_variable(sram_size);                      \
+  state_mem_##type##_variable(flash_mode);                     \
+  state_mem_##type##_variable(flash_command_position);         \
+  state_mem_##type##_variable(flash_bank_ptr);                 \
+  state_mem_##type##_variable(flash_device_id);                \
+  state_mem_##type##_variable(flash_manufacturer_id);          \
+  state_mem_##type##_variable(flash_size);                     \
+  state_mem_##type##_variable(eeprom_size);                    \
+  state_mem_##type##_variable(eeprom_mode);                    \
+  state_mem_##type##_variable(eeprom_address_length);          \
+  state_mem_##type##_variable(eeprom_address);                 \
+  state_mem_##type##_variable(eeprom_counter);                 \
+  state_mem_##type##_variable(rtc_state);                      \
+  state_mem_##type##_variable(rtc_write_mode);                 \
+  state_mem_##type##_array(rtc_registers);                     \
+  state_mem_##type##_variable(rtc_command);                    \
+  state_mem_##type##_array(rtc_data);                          \
+  state_mem_##type##_variable(rtc_status);                     \
+  state_mem_##type##_variable(rtc_data_bytes);                 \
+  state_mem_##type##_variable(rtc_bit_count);                  \
+  state_mem_##type##_array(eeprom_buffer);                     \
+  state_mem_##type##_array(dma);                               \
+                                                               \
+  state_mem_##type(iwram + 0x8000, 0x8000);                    \
+  for(i = 0; i < 8; i++)                                       \
+  {                                                            \
+    state_mem_##type(ewram + (i * 0x10000) + 0x8000, 0x8000);  \
+  }                                                            \
+  state_mem_##type(vram, 0x18000);                             \
+  state_mem_##type(oam_ram, 0x400);                            \
+  state_mem_##type(palette_ram, 0x400);                        \
+  state_mem_##type(io_registers, 0x8000);                      \
+                                                               \
+  /* This is a hack, for now. */                               \
+  if((flash_bank_ptr < gamepak_backup) ||                      \
+   (flash_bank_ptr > (gamepak_backup + (1024 * 64))))          \
+  {                                                            \
+    flash_bank_ptr = gamepak_backup;                           \
+  }                                                            \
+}
 
-memory_savestate_builder(read);
-memory_savestate_builder(write_mem);
+memory_savestate_builder(read)
+memory_savestate_builder(write)
 

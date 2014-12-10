@@ -605,25 +605,25 @@ void init_sound(int need_reset)
     reset_sound();
 }
 
-#define sound_savestate_builder(type)                                       \
-void sound_##type##_savestate(file_tag_type savestate_file)                 \
-{                                                                           \
-  file_##type##_variable(savestate_file, sound_on);                         \
-  file_##type##_variable(savestate_file, sound_buffer_base);                \
-  file_##type##_variable(savestate_file, sound_last_cpu_ticks);             \
-  file_##type##_variable(savestate_file, gbc_sound_buffer_index);           \
-  file_##type##_variable(savestate_file, gbc_sound_last_cpu_ticks);         \
-  file_##type##_variable(savestate_file, gbc_sound_partial_ticks);          \
-  file_##type##_variable(savestate_file, gbc_sound_master_volume_left);     \
-  file_##type##_variable(savestate_file, gbc_sound_master_volume_right);    \
-  file_##type##_variable(savestate_file, gbc_sound_master_volume);          \
-  file_##type##_array(savestate_file, wave_samples);                        \
-  file_##type##_array(savestate_file, direct_sound_channel);                \
-  file_##type##_array(savestate_file, gbc_sound_channel);                   \
-}                                                                           \
+#define sound_savestate_builder(type)                         \
+void sound_##type##_savestate(void)                           \
+{                                                             \
+  state_mem_##type##_variable(sound_on);                      \
+  state_mem_##type##_variable(sound_buffer_base);             \
+  state_mem_##type##_variable(sound_last_cpu_ticks);          \
+  state_mem_##type##_variable(gbc_sound_buffer_index);        \
+  state_mem_##type##_variable(gbc_sound_last_cpu_ticks);      \
+  state_mem_##type##_variable(gbc_sound_partial_ticks);       \
+  state_mem_##type##_variable(gbc_sound_master_volume_left);  \
+  state_mem_##type##_variable(gbc_sound_master_volume_right); \
+  state_mem_##type##_variable(gbc_sound_master_volume);       \
+  state_mem_##type##_array(wave_samples);                     \
+  state_mem_##type##_array(direct_sound_channel);             \
+  state_mem_##type##_array(gbc_sound_channel);                \
+}
 
-sound_savestate_builder(read);
-sound_savestate_builder(write_mem);
+sound_savestate_builder(read)
+sound_savestate_builder(write)
 
 
 #include "libretro.h"

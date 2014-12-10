@@ -49,18 +49,6 @@
 // Huge thanks to pollux for the heads up on using native file I/O
 // functions on PSP for vastly improved memstick performance.
 
-#define file_write_mem(filename_tag, buffer, size)                            \
-{                                                                             \
-  memcpy(write_mem_ptr, buffer, size);                                        \
-  write_mem_ptr += size;                                                      \
-}                                                                             \
-
-#define file_write_mem_array(filename_tag, array)                             \
-  file_write_mem(filename_tag, array, sizeof(array))                          \
-
-#define file_write_mem_variable(filename_tag, variable)                       \
-  file_write_mem(filename_tag, &variable, sizeof(variable))                   \
-
 #ifdef PSP_BUILD
   #define fastcall
 

@@ -77,8 +77,8 @@ typedef enum
 
 void init_input();
 u32 update_input();
-void input_write_mem_savestate(file_tag_type savestate_file);
-void input_read_savestate(file_tag_type savestate_file);
+void input_write_savestate(void);
+void input_read_savestate(void);
 
 #include "libretro.h"
 

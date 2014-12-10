@@ -126,8 +126,8 @@ void function_cc execute_store_u16(u32 address, u32 source);
 void function_cc execute_store_u32(u32 address, u32 source);
 u32 function_cc execute_arm_translate(u32 cycles);
 void init_translater();
-void cpu_write_mem_savestate(file_tag_type savestate_file);
-void cpu_read_savestate(file_tag_type savestate_file);
+void cpu_write_savestate(void);
+void cpu_read_savestate(void);
 
 u8 function_cc *block_lookup_address_arm(u32 pc);
 u8 function_cc *block_lookup_address_thumb(u32 pc);
