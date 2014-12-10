@@ -39,8 +39,9 @@ else ifneq ($(findstring Darwin,$(shell uname -a)),)
 endif
 
 TARGET_NAME	:= gpsp
-LIBM		= -lm
-CORE_DIR := .
+LIBM		   := -lm
+CORE_DIR    := .
+LDFLAGS     :=
 
 # Unix
 ifeq ($(platform), unix)
@@ -54,6 +55,7 @@ ifeq ($(platform), unix)
 		LIBM :=
 	endif
 	CFLAGS += $(FORCE_32BIT) -DHAVE_MMAP
+	LDFLAGS := -Wl,--no-undefined
 # OS X
 else ifeq ($(platform), osx)
 	TARGET := $(TARGET_NAME)_libretro.dylib
@@ -235,7 +237,6 @@ ifeq ($(FRONTEND_SUPPORTS_RGB565), 1)
 	CFLAGS += -DFRONTEND_SUPPORTS_RGB565
 endif
 
-LDFLAGS := -Wl,--no-undefined
 
 all: $(TARGET)
 
