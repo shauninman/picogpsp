@@ -27,7 +27,6 @@ gbc_sound_struct gbc_sound_channel[4];
 u32 sound_frequency = GBA_SOUND_FREQUENCY;
 
 u32 sound_on;
-static u32 audio_buffer_size;
 static s16 sound_buffer[BUFFER_SIZE];
 static u32 sound_buffer_base;
 
