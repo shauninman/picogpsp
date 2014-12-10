@@ -20,21 +20,11 @@
 #include "common.h"
 #include <ctype.h>
 
-#ifdef PSP_BUILD
-void vblank_interrupt_handler(u32 sub, u32 *parg);
-#endif
-
 timer_type timer[4];
 
-frameskip_type current_frameskip_type = auto_frameskip;
 u32 global_cycles_per_instruction = 1;
 
-u64 last_frame_interval_timestamp;
-
-u32 frameskip_counter = 0;
-
 u32 cpu_ticks = 0;
-u32 frame_ticks = 0;
 
 u32 execute_cycles = 960;
 s32 video_count = 960;
@@ -123,7 +113,6 @@ void init_main()
   timer[1].direct_sound_channels = TIMER_DS_CHANNEL_NONE;
 
   cpu_ticks = 0;
-  frame_ticks = 0;
 
   execute_cycles = 960;
   video_count = 960;
@@ -131,32 +120,6 @@ void init_main()
   flush_translation_cache_rom();
   flush_translation_cache_ram();
   flush_translation_cache_bios();
-}
-
-void print_memory_stats(u32 *counter, u32 *region_stats, char *stats_str)
-{
-  u32 other_region_counter = region_stats[0x1] + region_stats[0xE] +
-   region_stats[0xF];
-  u32 rom_region_counter = region_stats[0x8] + region_stats[0x9] +
-   region_stats[0xA] + region_stats[0xB] + region_stats[0xC] +
-   region_stats[0xD];
-  u32 _counter = *counter;
-
-  printf("memory access stats: %s (out of %d)\n", stats_str, _counter);
-  printf("bios: %f%%\tiwram: %f%%\tewram: %f%%\tvram: %f\n",
-   region_stats[0x0] * 100.0 / _counter, region_stats[0x3] * 100.0 /
-   _counter,
-   region_stats[0x2] * 100.0 / _counter, region_stats[0x6] * 100.0 /
-   _counter);
-
-  printf("oam: %f%%\tpalette: %f%%\trom: %f%%\tother: %f%%\n",
-   region_stats[0x7] * 100.0 / _counter, region_stats[0x5] * 100.0 /
-   _counter,
-   rom_region_counter * 100.0 / _counter, other_region_counter * 100.0 /
-   _counter);
-
-  *counter = 0;
-  memset(region_stats, 0, sizeof(u32) * 16);
 }
 
 u32 no_alpha = 0;
@@ -257,7 +220,6 @@ u32 update_gba()
         {
           // Transition from vblank to next screen
           dispstat &= ~0x01;
-          frame_ticks++;
 
 /*        printf("frame update (%x), %d instructions total, %d RAM flushes\n",
            reg[REG_PC], instruction_count - last_frame, flush_ram_count);
@@ -319,21 +281,6 @@ void reset_gba()
   init_cpu();
   reset_sound();
 }
-
-#ifdef PSP_BUILD
-void delay_us(u32 us_count)
-{
-  sceKernelDelayThread(us_count);
-}
-
-void get_ticks_us(u64 *tick_return)
-{
-  u64 ticks;
-  sceRtcGetCurrentTick(&ticks);
-
-  *tick_return = (ticks * 1000000) / sceRtcGetTickResolution();
-}
-#endif
 
 u32 file_length(const char *dummy, FILE *fp)
 {

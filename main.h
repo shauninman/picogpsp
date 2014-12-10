@@ -54,18 +54,8 @@ typedef struct
   timer_status_type status;
 } timer_type;
 
-typedef enum
-{
-  auto_frameskip,
-  manual_frameskip,
-  no_frameskip
-} frameskip_type;
-
 extern u32 cpu_ticks;
-extern u32 frame_ticks;
 extern u32 execute_cycles;
-extern frameskip_type current_frameskip_type;
-extern u32 frameskip_value;
 extern u32 global_cycles_per_instruction;
 
 extern u32 cycle_memory_access;
@@ -88,8 +78,6 @@ void reset_gba();
 
 void init_main();
 
-void delay_us(u32 us_count);
-void get_ticks_us(u64 *tick_return);
 void game_name_ext(char *src, char *buffer, char *extension);
 void main_write_savestate(void);
 void main_read_savestate(void);

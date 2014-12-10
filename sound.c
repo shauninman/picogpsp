@@ -587,12 +587,6 @@ void reset_sound()
   }
 }
 
-void sound_exit()
-{
-  gbc_sound_buffer_index =
-   (sound_buffer_base + audio_buffer_size) % BUFFER_SIZE;
-}
-
 void init_sound(int need_reset)
 {
   gbc_sound_tick_step =

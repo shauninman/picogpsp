@@ -3140,10 +3140,6 @@ render_scanline_window_builder(bitmap);
 
 static const u32 active_layers[6] = { 0x1F, 0x17, 0x1C, 0x14, 0x14, 0x14 };
 
-u32 small_resolution_width = 240;
-u32 small_resolution_height = 160;
-u32 resolution_width, resolution_height;
-
 void update_scanline()
 {
   u32 pitch = get_screen_pitch();
@@ -3194,11 +3190,6 @@ void update_scanline()
   affine_reference_x[1] += (s16)io_registers[REG_BG3PB];
   affine_reference_y[1] += (s16)io_registers[REG_BG3PD];
 }
-
-video_scale_type screen_scale = scaled_aspect;
-video_scale_type current_scale = scaled_aspect;
-video_filter_type screen_filter = filter_bilinear;
-
 
 #define video_savestate_builder(type)           \
 void video_##type##_savestate(void)             \

@@ -214,8 +214,4 @@ typedef u32 fixed8_24;
   #include "arm/warm.h"
 #endif
 
-#ifdef PSP_BUILD
-  #define printf pspDebugScreenPrintf
-#endif
-
 #endif

@@ -21,16 +21,8 @@
 #define VIDEO_H
 
 void update_scanline();
-void init_video();
-void video_resolution_large();
-void video_resolution_small();
-void clear_screen(u16 color);
 void video_write_savestate(void);
 void video_read_savestate(void);
-
-extern u32 frame_speed;
-
-extern u32 resolution_width, resolution_height;
 
 extern s32 affine_reference_x[2];
 extern s32 affine_reference_y[2];
@@ -58,25 +50,10 @@ typedef struct
 
 typedef enum
 {
-  unscaled,
-  scaled_aspect,
-  fullscreen,
-} video_scale_type;
-
-typedef enum
-{
   filter_nearest,
   filter_bilinear
 } video_filter_type;
 
-extern video_scale_type screen_scale;
-extern video_scale_type current_scale;
-extern video_filter_type screen_filter;
-
-void set_gba_resolution(video_scale_type scale);
-
-#ifdef __LIBRETRO__
 extern u16 gba_screen_pixels[GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT];
-#endif
 
 #endif
