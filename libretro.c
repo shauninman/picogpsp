@@ -101,32 +101,14 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
 
 #include <sys/mman.h>
 
-void retro_init()
+void retro_init(void)
 {
    init_gamepak_buffer();
    init_sound(1);
 
-#if defined(HAVE_DYNAREC)
-   dynarec_enable = 1;
-#if defined(HAVE_MMAP)
-
-   rom_translation_cache = mmap(NULL, ROM_TRANSLATION_CACHE_SIZE,
-                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
-   ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
-                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
-   bios_translation_cache = mmap(NULL, BIOS_TRANSLATION_CACHE_SIZE,
-                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
-
-   rom_translation_ptr = rom_translation_cache;
-   ram_translation_ptr = ram_translation_cache;
-   bios_translation_ptr = bios_translation_cache;
-#endif
-#else
-   dynarec_enable = 0;
-#endif
 }
 
-void retro_deinit()
+void retro_deinit(void)
 {
    perf_cb.perf_log();
    memory_term();
@@ -142,6 +124,13 @@ void retro_set_environment(retro_environment_t cb)
 {
    struct retro_log_callback log;
 
+   static const struct retro_variable vars[] = {
+#ifdef HAVE_DYNAREC
+      { "gpsp_drc", "Dynamic recompiler (restart); enabled|disabled" },
+#endif
+      { NULL, NULL },
+   };
+
    environ_cb = cb;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
@@ -150,7 +139,7 @@ void retro_set_environment(retro_environment_t cb)
       log_cb = NULL;
 
    environ_cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf_cb);
-
+   environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
 }
 
 void retro_set_video_refresh(retro_video_refresh_t cb)
@@ -164,7 +153,7 @@ void retro_set_input_poll(retro_input_poll_t cb)
 
 void retro_set_controller_port_device(unsigned port, unsigned device) {}
 
-void retro_reset()
+void retro_reset(void)
 {
    deinit_context_switch();
 
@@ -175,7 +164,7 @@ void retro_reset()
 }
 
 
-size_t retro_serialize_size()
+size_t retro_serialize_size(void)
 {
    return GBA_STATE_MEM_SIZE;
 }
@@ -201,7 +190,9 @@ bool retro_unserialize(const void* data, size_t size)
    return true;
 }
 
-void retro_cheat_reset() {}
+void retro_cheat_reset(void)
+{
+}
 void retro_cheat_set(unsigned index, bool enabled, const char* code) {}
 
 void error_msg(const char* text)
@@ -229,8 +220,56 @@ static void extract_directory(char* buf, const char* path, size_t size)
       strncpy(buf, ".", size);
 }
 
+static void check_variables(int started_from_load)
+{
+   struct retro_variable var;
+
+#ifdef HAVE_DYNAREC
+   var.key = "gpsp_drc";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (started_from_load)
+      {
+         if (strcmp(var.value, "disabled") == 0)
+            dynarec_enable = 0;
+         else if (strcmp(var.value, "enabled") == 0)
+            dynarec_enable = 1;
+      }
+   }
+   else
+      dynarec_enable = 1;
+#endif
+}
+
 bool retro_load_game(const struct retro_game_info* info)
 {
+   check_variables(1);
+
+#if defined(HAVE_DYNAREC)
+   if (dynarec_enable)
+   {
+#if defined(HAVE_MMAP)
+
+   rom_translation_cache = mmap(NULL, ROM_TRANSLATION_CACHE_SIZE,
+                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
+   ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
+                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
+   bios_translation_cache = mmap(NULL, BIOS_TRANSLATION_CACHE_SIZE,
+                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
+
+   rom_translation_ptr = rom_translation_cache;
+   ram_translation_ptr = ram_translation_cache;
+   bios_translation_ptr = bios_translation_cache;
+#endif
+   }
+   else
+      dynarec_enable = 0;
+#else
+   dynarec_enable = 0;
+#endif
+
    char filename_bios[MAX_PATH];
    const char* dir = NULL;
 
@@ -288,13 +327,13 @@ bool retro_load_game_special(unsigned game_type,
    return false;
 }
 
-void retro_unload_game()
+void retro_unload_game(void)
 {
    deinit_context_switch();
    update_backup();
 }
 
-unsigned retro_get_region()
+unsigned retro_get_region(void)
 {
    return RETRO_REGION_NTSC;
 }
@@ -337,12 +376,7 @@ size_t retro_get_memory_size(unsigned id)
    return 0;
 }
 
-static void check_variables(void)
-{
-
-}
-
-void retro_run()
+void retro_run(void)
 {
    bool updated = false;
 
@@ -358,11 +392,11 @@ void retro_run()
             GBA_SCREEN_PITCH * 2);
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
-      check_variables();
+      check_variables(0);
 
 }
 
-unsigned retro_api_version()
+unsigned retro_api_version(void)
 {
    return RETRO_API_VERSION;
 }
