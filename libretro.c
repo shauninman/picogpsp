@@ -188,13 +188,13 @@ void retro_cheat_set(unsigned index, bool enabled, const char* code) {}
 void error_msg(const char* text)
 {
    if (log_cb)
-      log_cb(RETRO_LOG_ERROR, text);
+      log_cb(RETRO_LOG_ERROR, "[gpSP]: %s\n", text);
 }
 
 void info_msg(const char* text)
 {
    if (log_cb)
-      log_cb(RETRO_LOG_INFO, text);
+      log_cb(RETRO_LOG_INFO, "[gpSP]: %s\n", text);
 }
 
 static void extract_directory(char* buf, const char* path, size_t size)
@@ -217,11 +217,7 @@ bool retro_load_game(const struct retro_game_info* info)
 
    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
-   {
-      if (log_cb)
-         log_cb(RETRO_LOG_INFO, "[TempGBA]: 0RGB1555 is not supported.\n");
-      return false;
-   }
+      info_msg("RGB565 is not supported.");
 
    extract_directory(main_path, info->path, sizeof(main_path));
 
@@ -233,34 +229,29 @@ bool retro_load_game(const struct retro_game_info* info)
    strncat(filename_bios, "/gba_bios.bin", sizeof(filename_bios));
 
 
-   //   if (environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &dir) && dir)
-   //      strncpy(dir_save, dir, sizeof(dir_save));
-   //   else
-   //      strncpy(dir_save, main_path, sizeof(dir_save));
-
-   //   strncat(dir_save, "/",sizeof(dir_save));
-
-   //   strncat(main_path, "/",sizeof(main_path));
+   if (environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &dir) && dir)
+      strncpy(save_path, dir, sizeof(save_path));
+   else
+      strncpy(save_path, main_path, sizeof(save_path));
 
    if (load_bios(filename_bios) != 0)
    {
-      error_msg("Could not load BIOS image file.\n");
+      error_msg("Could not load BIOS image file.");
       return false;
    }
 
    if (bios_rom[0] != 0x18)
    {
-      info_msg("You have an incorrect BIOS image.\n");
-      info_msg("While many games will work fine, some will not. It\n");
-      info_msg("is strongly recommended that you obtain the\n");
-      info_msg("correct BIOS file.\n");
+      info_msg("You have an incorrect BIOS image.");
+      info_msg("While many games will work fine, some will not.");
+      info_msg("It is strongly recommended that you obtain the correct BIOS file.");
    }
 
    gamepak_filename[0] = 0;
 
    if (load_gamepak(info->path) != 0)
    {
-      error_msg("Could not load the game file.\n");
+      error_msg("Could not load the game file.");
       return false;
    }
 

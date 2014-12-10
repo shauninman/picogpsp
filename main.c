@@ -75,6 +75,7 @@ u32 synchronize_flag = 1;
 
 u32 update_backup_flag = 1;
 char main_path[512];
+char save_path[512];
 
 void trigger_ext_event();
 
@@ -532,7 +533,7 @@ void synchronize()
 void quit()
 {
   if(!update_backup_flag)
-    update_backup_force();
+    update_backup();
 
   sound_exit();
 }
@@ -585,19 +586,6 @@ void change_ext(const char *src, char *buffer, const char *extension)
 
   if(dot_position)
     strcpy(dot_position, extension);
-}
-
-// make path: <main_path>/<romname>.<ext>
-void make_rpath(char *buff, size_t size, const char *ext)
-{
-  char *p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
-  if (p == NULL)
-    p = gamepak_filename;
-
-  snprintf(buff, size, "%s/%s", main_path, p);
-  p = strrchr(buff, '.');
-  if (p != NULL)
-    strcpy(p, ext);
 }
 
 #define main_savestate_builder(type)            \

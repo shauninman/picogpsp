@@ -376,14 +376,6 @@ u32 gbc_sound_update = 0;
 // If the GBC audio waveform is modified:
 u32 gbc_sound_wave_update = 0;
 
-// If the backup space is written (only update once this hits 0)
-u32 backup_update = 0;
-
-// Write out backup file this many cycles after the most recent
-// backup write.
-const u32 write_backup_delay = 10;
-
-
 typedef enum
 {
   BACKUP_SRAM,
@@ -569,7 +561,6 @@ void function_cc write_eeprom(u32 address, u32 value)
       eeprom_counter++;
       if(eeprom_counter == 64)
       {
-        backup_update = write_backup_delay;
         eeprom_counter = 0;
         eeprom_mode = EEPROM_WRITE_FOOTER_MODE;
       }
@@ -1619,7 +1610,6 @@ void function_cc write_backup(u32 address, u32 value)
               memset(gamepak_backup, 0xFF, 1024 * 64);
             else
               memset(gamepak_backup, 0xFF, 1024 * 128);
-            backup_update = write_backup_delay;
             flash_mode = FLASH_BASE_MODE;
           }
           break;
@@ -1646,7 +1636,6 @@ void function_cc write_backup(u32 address, u32 value)
     {
       // Erase sector
       memset(flash_bank_ptr + (address & 0xF000), 0xFF, 1024 * 4);
-      backup_update = write_backup_delay;
       flash_mode = FLASH_BASE_MODE;
       flash_command_position = 0;
     }
@@ -1664,7 +1653,6 @@ void function_cc write_backup(u32 address, u32 value)
     if((flash_command_position == 0) && (flash_mode == FLASH_WRITE_MODE))
     {
       // Write value to flash ROM
-      backup_update = write_backup_delay;
       flash_bank_ptr[address] = value;
       flash_mode = FLASH_BASE_MODE;
     }
@@ -1673,7 +1661,6 @@ void function_cc write_backup(u32 address, u32 value)
     if(backup_type == BACKUP_SRAM)
     {
       // Write value to SRAM
-      backup_update = write_backup_delay;
       // Hit 64KB territory?
       if(address >= 0x8000)
         sram_size = SRAM_SIZE_64KB;
@@ -2206,18 +2193,6 @@ u32 save_backup(char *name)
 
 void update_backup()
 {
-  if(backup_update != (write_backup_delay + 1))
-    backup_update--;
-
-  if(backup_update == 0)
-  {
-    save_backup(backup_filename);
-    backup_update = write_backup_delay + 1;
-  }
-}
-
-void update_backup_force()
-{
   save_backup(backup_filename);
 }
 
@@ -2421,6 +2396,7 @@ char gamepak_filename[512];
 u32 load_gamepak(const char *name)
 {
   char cheats_filename[256];
+  char *p;
 
   s32 file_size = load_gamepak_raw(name);
 
@@ -2433,14 +2409,16 @@ u32 load_gamepak(const char *name)
     strncpy(gamepak_filename, name, sizeof(gamepak_filename));
     gamepak_filename[sizeof(gamepak_filename) - 1] = 0;
 
-    make_rpath(backup_filename, sizeof(backup_filename), ".sav");
-    if (!load_backup(backup_filename))
-    {
-      // try path used by older versions
-      strcpy(backup_filename, name);
-      change_ext(gamepak_filename, backup_filename, ".sav");
-      load_backup(backup_filename);
-    }
+    p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
+    if (p == NULL)
+      p = gamepak_filename;
+
+    snprintf(backup_filename, sizeof(backup_filename), "%s/%s", save_path, p);
+    p = strrchr(backup_filename, '.');
+    if (p != NULL)
+      strcpy(p, ".sav");
+
+    load_backup(backup_filename);
 
     memcpy(gamepak_title, gamepak_rom + 0xA0, 12);
     memcpy(gamepak_code, gamepak_rom + 0xAC, 4);
@@ -2450,9 +2428,6 @@ u32 load_gamepak(const char *name)
     gamepak_maker[2] = 0;
 
     load_game_config(gamepak_title, gamepak_code, gamepak_maker);
-#ifndef __LIBRETRO__
-    load_game_config_file();
-#endif
 
     change_ext(gamepak_filename, cheats_filename, ".cht");
     add_cheats(cheats_filename);

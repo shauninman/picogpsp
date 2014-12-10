@@ -179,7 +179,6 @@ u32 load_gamepak(const char *name);
 u32 load_backup(char *name);
 s32 load_bios(char *name);
 void update_backup();
-void update_backup_force();
 void init_memory();
 void init_gamepak_buffer();
 void memory_term(void);

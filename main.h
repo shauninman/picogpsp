@@ -84,6 +84,7 @@ extern u32 flush_ram_count;
 extern u64 base_timestamp;
 
 extern char main_path[512];
+extern char save_path[512];
 
 extern u32 update_backup_flag;
 
@@ -119,7 +120,6 @@ extern u32 max_frameskip;
 extern u32 num_skipped_frames;
 
 void change_ext(const char *src, char *buffer, const char *extension);
-void make_rpath(char *buff, size_t size, const char *ext);
 
 #endif
 
