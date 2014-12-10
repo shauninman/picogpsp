@@ -81,7 +81,7 @@ else ifeq ($(platform), ios)
 	endif
 
 	CC = clang -arch armv7 -isysroot $(IOSSDK)
-	CFLAGS += -DIOS -DHAVE_MMAP
+	CFLAGS += -DIOS -DHAVE_MMAP -DHAVE_POSIX_MEMALIGN -marm
 	OSXVER = `sw_vers -productVersion | cut -d. -f 2`
 	OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
 	ifeq ($(OSX_LT_MAVERICKS),"YES")
