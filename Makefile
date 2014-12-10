@@ -216,7 +216,7 @@ include Makefile.common
 
 OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
 
-DEFINES := -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline -DPC_BUILD -Wall -Werror=implicit-function-declaration
+DEFINES := -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline -Wall -Werror=implicit-function-declaration
 
 ifeq ($(HAVE_DYNAREC), 1)
 DEFINES += -DHAVE_DYNAREC
