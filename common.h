@@ -31,7 +31,6 @@
   #define PATH_SEPARATOR_CHAR '/'
 #endif
 
-// These includes must be used before SDL is included.
 #ifdef ARM_ARCH
 
 #define _BSD_SOURCE // sync
@@ -111,9 +110,6 @@
 #define GBA_SCREEN_PITCH  (240)
 
 void switch_to_main_thread(void);
-
-#else
-  #include "SDL.h"
 #endif
 
 #ifdef ARM_ARCH
@@ -220,9 +216,6 @@ typedef u32 fixed8_24;
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#ifndef __LIBRETRO__
-#include "SDL.h"
-#endif
 #include "cpu.h"
 #include "gba_memory.h"
 #include "video.h"
