@@ -163,7 +163,6 @@ void retro_reset(void)
    init_context_switch();
 }
 
-
 size_t retro_serialize_size(void)
 {
    return GBA_STATE_MEM_SIZE;
