@@ -1141,7 +1141,7 @@ typedef enum
 #define rm_op_imm imm
 
 #define arm_data_proc_reg_flags()                                             \
-  arm_decode_data_proc_reg();                                                 \
+  arm_decode_data_proc_reg(opcode);                                                 \
   if(flag_status & 0x02)                                                      \
   {                                                                           \
     generate_load_rm_sh(flags)                                                \
@@ -1152,16 +1152,16 @@ typedef enum
   }                                                                           \
 
 #define arm_data_proc_reg()                                                   \
-  arm_decode_data_proc_reg();                                                 \
+  arm_decode_data_proc_reg(opcode);                                           \
   generate_load_rm_sh(no_flags)                                               \
 
 #define arm_data_proc_imm()                                                   \
-  arm_decode_data_proc_imm();                                                 \
+  arm_decode_data_proc_imm(opcode);                                           \
   ror(imm, imm, imm_ror);                                                     \
   generate_load_imm(a0, imm)                                                  \
 
 #define arm_data_proc_imm_flags()                                             \
-  arm_decode_data_proc_imm();                                                 \
+  arm_decode_data_proc_imm(opcode);                                           \
   if((flag_status & 0x02) && (imm_ror != 0))                                  \
   {                                                                           \
     /* Generate carry flag from integer rotation */                           \
@@ -1319,7 +1319,7 @@ void function_cc execute_store_spsr(u32 new_spsr, u32 store_mask)
 
 #define arm_psr(op_type, transfer_type, psr_reg)                              \
 {                                                                             \
-  arm_decode_psr_##op_type();                                                 \
+  arm_decode_psr_##op_type(opcode);                                           \
   arm_psr_##transfer_type(op_type, psr_reg);                                  \
 }                                                                             \
 
@@ -2196,7 +2196,7 @@ static void function_cc execute_swi(u32 pc)
   generate_branch()                                                           \
 
 #define arm_bx()                                                              \
-  arm_decode_branchx();                                                       \
+  arm_decode_branchx(opcode);                                                 \
   generate_load_reg(a0, rn);                                                  \
   generate_indirect_branch_dual();                                            \
 

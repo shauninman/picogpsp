@@ -1097,7 +1097,7 @@ u32 function_cc execute_spsr_restore_body(u32 pc)
 
 #define arm_generate_op_reg(name, load_op, store_op, flags_op)                \
   u32 shift_type = (opcode >> 5) & 0x03;                                      \
-  arm_decode_data_proc_reg();                                                 \
+  arm_decode_data_proc_reg(opcode);                                           \
   prepare_load_rn_##load_op();                                                \
   prepare_store_rd_##store_op();                                              \
                                                                               \
@@ -1122,7 +1122,7 @@ u32 function_cc execute_spsr_restore_body(u32 pc)
 // imm will be loaded by the called function if necessary.
 
 #define arm_generate_op_imm(name, load_op, store_op, flags_op)                \
-  arm_decode_data_proc_imm();                                                 \
+  arm_decode_data_proc_imm(opcode);                                           \
   prepare_load_rn_##load_op();                                                \
   prepare_store_rd_##store_op();                                              \
   generate_op_##name##_imm(_rd, _rn);                                         \
@@ -1274,7 +1274,7 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 
 #define arm_psr(op_type, transfer_type, psr_reg)                              \
 {                                                                             \
-  arm_decode_psr_##op_type();                                                 \
+  arm_decode_psr_##op_type(opcode);                                           \
   arm_psr_##transfer_type(op_type, psr_reg);                                  \
 }                                                                             \
 
@@ -1835,7 +1835,7 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   generate_branch(arm)                                                        \
 
 #define arm_bx()                                                              \
-  arm_decode_branchx();                                                       \
+  arm_decode_branchx(opcode);                                                 \
   generate_load_reg(reg_a0, rn);                                              \
   generate_indirect_branch_dual();                                            \
 

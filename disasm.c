@@ -18,29 +18,29 @@
  */
 
 
-#define arm_decode_data_proc_reg()                                            \
+#define arm_decode_data_proc_reg(opcode)                                      \
   u32 rn = (opcode >> 16) & 0x0F;                                             \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 rm = opcode & 0x0F                                                      \
 
-#define arm_decode_data_proc_imm()                                            \
+#define arm_decode_data_proc_imm(opcode)                                      \
   u32 rn = (opcode >> 16) & 0x0F;                                             \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 imm;                                                                    \
   ror(imm, opcode & 0xFF, ((opcode >> 8) & 0x0F) * 2)                         \
 
-#define arm_decode_psr_reg()                                                  \
+#define arm_decode_psr_reg(opcode)                                            \
   u32 psr_field = (opcode >> 16) & 0x0F;                                      \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 rm = opcode & 0x0F                                                      \
 
-#define arm_decode_psr_imm()                                                  \
+#define arm_decode_psr_imm(opcode)                                            \
   u32 psr_field = (opcode >> 16) & 0x0F;                                      \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 imm;                                                                    \
   ror(imm, opcode & 0xFF, ((opcode >> 8) & 0x0F) * 2)                         \
 
-#define arm_decode_branchx()                                                  \
+#define arm_decode_branchx(opcode)                                            \
   u32 rn = opcode & 0x0F                                                      \
 
 #define arm_decode_multiply()                                                 \

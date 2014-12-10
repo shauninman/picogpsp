@@ -159,7 +159,7 @@ void print_register_usage()
 #endif
 
 
-#define arm_decode_data_proc_reg()                                            \
+#define arm_decode_data_proc_reg(opcode)                                      \
   u32 rn = (opcode >> 16) & 0x0F;                                             \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 rm = opcode & 0x0F;                                                     \
@@ -167,7 +167,7 @@ void print_register_usage()
   using_register(arm, rn, op_src);                                            \
   using_register(arm, rm, op_src)                                             \
 
-#define arm_decode_data_proc_imm()                                            \
+#define arm_decode_data_proc_imm(opcode)                                      \
   u32 rn = (opcode >> 16) & 0x0F;                                             \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 imm;                                                                    \
@@ -175,21 +175,21 @@ void print_register_usage()
   using_register(arm, rd, op_dest);                                           \
   using_register(arm, rn, op_src)                                             \
 
-#define arm_decode_psr_reg()                                                  \
+#define arm_decode_psr_reg(opcode)                                            \
   u32 psr_field = (opcode >> 16) & 0x0F;                                      \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 rm = opcode & 0x0F;                                                     \
   using_register(arm, rd, op_dest);                                           \
   using_register(arm, rm, op_src)                                             \
 
-#define arm_decode_psr_imm()                                                  \
+#define arm_decode_psr_imm(opcode)                                            \
   u32 psr_field = (opcode >> 16) & 0x0F;                                      \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 imm;                                                                    \
   ror(imm, opcode & 0xFF, ((opcode >> 8) & 0x0F) * 2);                        \
   using_register(arm, rd, op_dest)                                            \
 
-#define arm_decode_branchx()                                                  \
+#define arm_decode_branchx(opcode)                                            \
   u32 rn = opcode & 0x0F;                                                     \
   using_register(arm, rn, branch_target)                                      \
 
@@ -748,18 +748,18 @@ u32 high_frequency_branch_targets = 0;
   }                                                                           \
 
 #define arm_data_proc_flags_reg()                                             \
-  arm_decode_data_proc_reg();                                                 \
+  arm_decode_data_proc_reg(opcode);                                           \
   calculate_reg_sh_flags()                                                    \
 
 #define arm_data_proc_reg()                                                   \
-  arm_decode_data_proc_reg();                                                 \
+  arm_decode_data_proc_reg(opcode);                                           \
   calculate_reg_sh()                                                          \
 
 #define arm_data_proc_flags_imm()                                             \
-  arm_decode_data_proc_imm()                                                  \
+  arm_decode_data_proc_imm(opcode)                                            \
 
 #define arm_data_proc_imm()                                                   \
-  arm_decode_data_proc_imm()                                                  \
+  arm_decode_data_proc_imm(opcode)                                            \
 
 #define arm_data_proc(expr, type)                                             \
 {                                                                             \
@@ -921,7 +921,7 @@ const u32 psr_masks[16] =
 
 #define arm_psr(op_type, transfer_type, psr_reg)                              \
 {                                                                             \
-  arm_decode_psr_##op_type();                                                 \
+  arm_decode_psr_##op_type(opcode);                                           \
   arm_pc_offset(4);                                                           \
   arm_psr_##transfer_type(arm_psr_src_##op_type, psr_reg);                    \
 }                                                                             \
@@ -2143,7 +2143,7 @@ char *cpu_mode_names[] =
         if(opcode & 0x10)                                                     \
         {                                                                     \
           /* BX rn */                                                         \
-          arm_decode_branchx();                                               \
+          arm_decode_branchx(opcode);                                         \
           u32 src = reg[rn];                                                  \
           if(src & 0x01)                                                      \
           {                                                                   \

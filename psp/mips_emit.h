@@ -1535,7 +1535,7 @@ typedef enum
 #define arm_op_check_no()                                                     \
 
 #define arm_generate_op_reg_flags(name, load_op)                              \
-  arm_decode_data_proc_reg();                                                 \
+  arm_decode_data_proc_reg(opcode);                                           \
   if(check_generate_c_flag)                                                   \
   {                                                                           \
     rm = generate_load_rm_sh_flags(rm);                                       \
@@ -1550,14 +1550,14 @@ typedef enum
    arm_to_mips_reg[rm])                                                       \
 
 #define arm_generate_op_reg(name, load_op)                                    \
-  arm_decode_data_proc_reg();                                                 \
+  arm_decode_data_proc_reg(opcode);                                           \
   rm = generate_load_rm_sh_no_flags(rm);                                      \
   arm_op_check_##load_op();                                                   \
   generate_op_##name##_reg(arm_to_mips_reg[rd], arm_to_mips_reg[rn],          \
    arm_to_mips_reg[rm])                                                       \
 
 #define arm_generate_op_imm(name, load_op)                                    \
-  arm_decode_data_proc_imm();                                                 \
+  arm_decode_data_proc_imm(opcode);                                           \
   arm_op_check_##load_op();                                                   \
   generate_op_##name##_imm(arm_to_mips_reg[rd], arm_to_mips_reg[rn])          \
 
@@ -1662,7 +1662,7 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 
 #define arm_psr(op_type, transfer_type, psr_reg)                              \
 {                                                                             \
-  arm_decode_psr_##op_type();                                                 \
+  arm_decode_psr_##op_type(opcode);                                           \
   arm_psr_##transfer_type(op_type, psr_reg);                                  \
 }                                                                             \
 
@@ -2400,7 +2400,7 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   generate_branch()                                                           \
 
 #define arm_bx()                                                              \
-  arm_decode_branchx();                                                       \
+  arm_decode_branchx(opcode);                                                 \
   generate_load_reg(reg_a0, rn);                                              \
   /*generate_load_pc(reg_a2, pc);*/                                           \
   generate_indirect_branch_dual()                                             \
