@@ -22,9 +22,9 @@ CORE_DIR := ..
 SOURCES_C   :=
 SOURCES_ASM :=
 
-include $(CORE_DIR)/Makefile.common
-
 CPU_ARCH := arm
+
+include $(CORE_DIR)/Makefile.common
 
 LOCAL_SRC_FILES := $(SOURCES_C) $(SOURCES_ASM)
 LOCAL_CFLAGS += -O2 -DARM_ARCH -DNDEBUG -DINLINE=inline -D__LIBRETRO__ -DFRONTEND_SUPPORTS_RGB565 $(INCFLAGS)
