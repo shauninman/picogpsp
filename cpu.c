@@ -4146,11 +4146,6 @@ void function_cc step_debug(u32 pc, u32 cycles)
   {
     u32 key = 0;
 
-#ifndef __LIBRETRO__
-    SDL_LockMutex(sound_mutex);
-    SDL_PauseAudio(1);
-#endif
-
     if(output_field >= num_output_fields)
     {
       output_field = 0;
@@ -4248,11 +4243,6 @@ void function_cc step_debug(u32 pc, u32 cycles)
       case 'q':
         quit();
     }
-
-#ifndef __LIBRETRO__
-    SDL_PauseAudio(0);
-    SDL_UnlockMutex(sound_mutex);
-#endif
   }
 
   last_instruction = reg[REG_PC];
