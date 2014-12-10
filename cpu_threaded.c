@@ -3612,10 +3612,10 @@ s32 translate_block_thumb(u32 pc, translation_region_type
      external_block_exits[i].branch_source, translation_target);              
   }                                                                           
                                                                               
-  return 0;                                                                   
-}                                                                             
+  return 0;
+}
 
-void flush_translation_cache_ram()
+void flush_translation_cache_ram(void)
 {
   flush_ram_count++;
 /*  printf("ram flush %d (pc %x), %x to %x, %x to %x\n",
@@ -3677,7 +3677,7 @@ void flush_translation_cache_ram()
   ewram_code_max = 0xFFFFFFFF;
 }
 
-void flush_translation_cache_rom()
+void flush_translation_cache_rom(void)
 {
 #ifndef PC_BUILD
   invalidate_icache_region(rom_translation_cache,
@@ -3691,7 +3691,7 @@ void flush_translation_cache_rom()
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
 }
 
-void flush_translation_cache_bios()
+void flush_translation_cache_bios(void)
 {
 #ifndef PC_BUILD
   invalidate_icache_region(bios_translation_cache,
@@ -3708,7 +3708,7 @@ void flush_translation_cache_bios()
 
 #define cache_dump_prefix ""
 
-void dump_translation_cache()
+void dump_translation_cache(void)
 {
   file_open(ram_cache, cache_dump_prefix "ram_cache.bin", write);
   file_write(ram_cache, ram_translation_cache,

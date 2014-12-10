@@ -75,14 +75,9 @@
 {                                                                             \
   gbc_sound_channel[2].wave_type = (value >> 5) & 0x01;                       \
   gbc_sound_channel[2].wave_bank = (value >> 6) & 0x01;                       \
+  gbc_sound_channel[2].master_enable = 0;                                     \
   if(value & 0x80)                                                            \
-  {                                                                           \
     gbc_sound_channel[2].master_enable = 1;                                   \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    gbc_sound_channel[2].master_enable = 0;                                   \
-  }                                                                           \
                                                                               \
   gbc_sound_update = 1;                                                       \
   address16(io_registers, 0x70) = value;                                      \
@@ -94,14 +89,10 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
 {                                                                             \
   gbc_sound_channel[2].length_ticks = 256 - (value & 0xFF);                   \
   if((value >> 15) & 0x01)                                                    \
-  {                                                                           \
     gbc_sound_channel[2].wave_volume = 12288;                                 \
-  }                                                                           \
   else                                                                        \
-  {                                                                           \
     gbc_sound_channel[2].wave_volume =                                        \
      gbc_sound_wave_volume[(value >> 13) & 0x03];                             \
-  }                                                                           \
   gbc_sound_update = 1;                                                       \
   address16(io_registers, 0x72) = value;                                      \
 }                                                                             \
@@ -191,17 +182,13 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
   if(value & 0x80)                                                            \
   {                                                                           \
     if(sound_on != 1)                                                         \
-    {                                                                         \
       sound_on = 1;                                                           \
-    }                                                                         \
   }                                                                           \
   else                                                                        \
   {                                                                           \
     u32 i;                                                                    \
     for(i = 0; i < 4; i++)                                                    \
-    {                                                                         \
       gbc_sound_channel[i].active_flag = 0;                                   \
-    }                                                                         \
     sound_on = 0;                                                             \
   }                                                                           \
   address16(io_registers, 0x84) =                                             \
@@ -588,7 +575,7 @@ void function_cc write_eeprom(u32 address, u32 value)
   u32 gamepak_index = address >> 15;                                          \
   u8 *map = memory_map_read[gamepak_index];                                   \
                                                                               \
-  if(map == NULL)                                                             \
+  if(!map)                                                             \
     map = load_gamepak_page(gamepak_index & 0x3FF);                           \
                                                                               \
   value = address##type(map, address & 0x7FFF)                                \
@@ -724,9 +711,7 @@ u32 function_cc read_eeprom()
         read_memory_gamepak(type);                                            \
       }                                                                       \
       else                                                                    \
-      {                                                                       \
         value = read_eeprom();                                                \
-      }                                                                       \
                                                                               \
       break;                                                                  \
                                                                               \
@@ -1734,7 +1719,7 @@ u32 encode_bcd(u8 value)
   rtc_page_index = update_address >> 15;                                      \
   map = memory_map_read[rtc_page_index];                                      \
                                                                               \
-  if(map == NULL)                                                             \
+  if(!map)                                                                    \
     map = load_gamepak_page(rtc_page_index & 0x3FF);                          \
                                                                               \
   address16(map, update_address & 0x7FFF) = _value                            \
@@ -2215,7 +2200,7 @@ s32 parse_config_line(char *current_line, char *current_variable, char *current_
     return -1;
 
   line_ptr_new = strchr(line_ptr, ' ');
-  if(line_ptr_new == NULL)
+  if(!line_ptr_new)
     return -1;
 
   *line_ptr_new = 0;
@@ -2410,12 +2395,12 @@ u32 load_gamepak(const char *name)
     gamepak_filename[sizeof(gamepak_filename) - 1] = 0;
 
     p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
-    if (p == NULL)
+    if (!p)
       p = gamepak_filename;
 
     snprintf(backup_filename, sizeof(backup_filename), "%s/%s", save_path, p);
     p = strrchr(backup_filename, '.');
-    if (p != NULL)
+    if (p)
       strcpy(p, ".sav");
 
     load_backup(backup_filename);
@@ -3088,9 +3073,7 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
 #define map_null(type, start, end)                                            \
   for(map_offset = start / 0x8000; map_offset < (end / 0x8000);               \
    map_offset++)                                                              \
-  {                                                                           \
     memory_map_##type[map_offset] = NULL;                                     \
-  }                                                                           \
 
 #define map_ram_region(type, start, end, mirror_blocks, region)               \
   for(map_offset = (start) / 0x8000; map_offset <                             \
@@ -3171,9 +3154,7 @@ u8 *load_gamepak_page(u32 physical_index)
 
   // If RTC is active page the RTC register bytes so they can be read
   if((rtc_state != RTC_DISABLED) && (physical_index == 0))
-  {
     memcpy(swap_location + 0xC4, rtc_registers, sizeof(rtc_registers));
-  }
 
   return swap_location;
 }
@@ -3206,7 +3187,7 @@ void init_memory_gamepak()
   }
 }
 
-void init_gamepak_buffer()
+void init_gamepak_buffer(void)
 {
   // Try to initialize 32MB (this is mainly for non-PSP platforms)
   gamepak_rom = NULL;
@@ -3214,13 +3195,13 @@ void init_gamepak_buffer()
   gamepak_ram_buffer_size = 32 * 1024 * 1024;
   gamepak_rom = malloc(gamepak_ram_buffer_size);
 
-  if(gamepak_rom == NULL)
+  if(!gamepak_rom)
   {
     // Try 16MB, for PSP, then lower in 2MB increments
     gamepak_ram_buffer_size = 16 * 1024 * 1024;
     gamepak_rom = malloc(gamepak_ram_buffer_size);
 
-    while(gamepak_rom == NULL)
+    while(!gamepak_rom)
     {
       gamepak_ram_buffer_size -= (2 * 1024 * 1024);
       gamepak_rom = malloc(gamepak_ram_buffer_size);
@@ -3234,7 +3215,7 @@ void init_gamepak_buffer()
    gamepak_ram_pages);
 }
 
-void init_memory()
+void init_memory(void)
 {
   u32 map_offset = 0;
 
@@ -3356,25 +3337,25 @@ void memory_term(void)
     file_close(gamepak_file_large);
   }
 
-  if (gamepak_memory_map != NULL)
+  if (gamepak_memory_map)
   {
     free(gamepak_memory_map);
     gamepak_memory_map = NULL;
   }
 
-  if (gamepak_rom != NULL)
+  if (gamepak_rom)
   {
     free(gamepak_rom);
     gamepak_rom = NULL;
   }
 }
 
-void bios_region_read_allow()
+void bios_region_read_allow(void)
 {
   memory_map_read[0] = bios_rom;
 }
 
-void bios_region_read_protect()
+void bios_region_read_protect(void)
 {
   memory_map_read[0] = NULL;
 }
@@ -3472,9 +3453,7 @@ void memory_##type##_savestate(void)                           \
   /* This is a hack, for now. */                               \
   if((flash_bank_ptr < gamepak_backup) ||                      \
    (flash_bank_ptr > (gamepak_backup + (1024 * 64))))          \
-  {                                                            \
     flash_bank_ptr = gamepak_backup;                           \
-  }                                                            \
 }
 
 memory_savestate_builder(read)

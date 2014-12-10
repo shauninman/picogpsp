@@ -73,10 +73,10 @@ extern u64 base_timestamp;
 extern char main_path[512];
 extern char save_path[512];
 
-u32 update_gba();
-void reset_gba();
+u32 update_gba(void);
+void reset_gba(void);
 
-void init_main();
+void init_main(void);
 
 void game_name_ext(char *src, char *buffer, char *extension);
 void main_write_savestate(void);

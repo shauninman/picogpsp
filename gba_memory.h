@@ -178,12 +178,12 @@ u8 *memory_region(u32 address, u32 *memory_limit);
 u32 load_gamepak(const char *name);
 u32 load_backup(char *name);
 s32 load_bios(char *name);
-void update_backup();
-void init_memory();
-void init_gamepak_buffer();
+void update_backup(void);
+void init_memory(void);
+void init_gamepak_buffer(void);
 void memory_term(void);
-void bios_region_read_allow();
-void bios_region_read_protect();
+void bios_region_read_allow(void);
+void bios_region_read_protect(void);
 u8 *load_gamepak_page(u32 physical_index);
 
 extern u8 *gamepak_rom;

@@ -301,9 +301,7 @@ u32 gbc_sound_master_volume;
       gs->envelope_ticks = gs->envelope_initial_ticks;                        \
     }                                                                         \
     else                                                                      \
-    {                                                                         \
       gs->envelope_ticks = envelope_ticks;                                    \
-    }                                                                         \
   }                                                                           \
 
 #define update_tone_noenvelope()                                              \
@@ -547,7 +545,7 @@ void init_noise_table(u32 *table, u32 period, u32 bit_length)
   }
 }
 
-void reset_sound()
+void reset_sound(void)
 {
   direct_sound_struct *ds = direct_sound_channel;
   gbc_sound_struct *gs = gbc_sound_channel;

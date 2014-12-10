@@ -49,7 +49,7 @@ u32 oam_update_count = 0;
 char main_path[512];
 char save_path[512];
 
-void trigger_ext_event();
+void trigger_ext_event(void);
 
 #define check_count(count_var)                                                \
   if(count_var < execute_cycles)                                              \
@@ -96,7 +96,7 @@ void trigger_ext_event();
     }                                                                         \
   }                                                                           \
 
-void init_main()
+void init_main(void)
 {
   u32 i;
 
@@ -124,7 +124,7 @@ void init_main()
 
 u32 no_alpha = 0;
 
-u32 update_gba()
+u32 update_gba(void)
 {
   irq_type irq_raised = IRQ_NONE;
 
@@ -274,7 +274,7 @@ u32 update_gba()
   return execute_cycles;
 }
 
-void reset_gba()
+void reset_gba(void)
 {
   init_main();
   init_memory();

@@ -3140,7 +3140,7 @@ render_scanline_window_builder(bitmap);
 
 static const u32 active_layers[6] = { 0x1F, 0x17, 0x1C, 0x14, 0x14, 0x14 };
 
-void update_scanline()
+void update_scanline(void)
 {
   u32 pitch = get_screen_pitch();
   u32 dispcnt = io_registers[REG_DISPCNT];

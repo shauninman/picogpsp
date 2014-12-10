@@ -99,7 +99,7 @@ int sort_tagged_element(const void *_a, const void *_b)
   return (int)(b[1] - a[1]);
 }
 
-void print_register_usage()
+void print_register_usage(void)
 {
   u32 i;
   u64 arm_reg_freq_tagged[32];
@@ -4001,36 +4001,32 @@ void set_cpu_mode(cpu_mode_type new_mode)
   u32 i;
   cpu_mode_type cpu_mode = reg[CPU_MODE];
 
-  if(cpu_mode != new_mode)
+  if(cpu_mode == new_mode)
+     return;
+
+  if(new_mode == MODE_FIQ)
   {
-    if(new_mode == MODE_FIQ)
-    {
-      for(i = 8; i < 15; i++)
-      {
+     for(i = 8; i < 15; i++)
         reg_mode[cpu_mode][i - 8] = reg[i];
-      }
-    }
-    else
-    {
-      reg_mode[cpu_mode][5] = reg[REG_SP];
-      reg_mode[cpu_mode][6] = reg[REG_LR];
-    }
-
-    if(cpu_mode == MODE_FIQ)
-    {
-      for(i = 8; i < 15; i++)
-      {
-        reg[i] = reg_mode[new_mode][i - 8];
-      }
-    }
-    else
-    {
-      reg[REG_SP] = reg_mode[new_mode][5];
-      reg[REG_LR] = reg_mode[new_mode][6];
-    }
-
-    reg[CPU_MODE] = new_mode;
   }
+  else
+  {
+     reg_mode[cpu_mode][5] = reg[REG_SP];
+     reg_mode[cpu_mode][6] = reg[REG_LR];
+  }
+
+  if(cpu_mode == MODE_FIQ)
+  {
+     for(i = 8; i < 15; i++)
+        reg[i] = reg_mode[new_mode][i - 8];
+  }
+  else
+  {
+     reg[REG_SP] = reg_mode[new_mode][5];
+     reg[REG_LR] = reg_mode[new_mode][6];
+  }
+
+  reg[CPU_MODE] = new_mode;
 }
 
 void raise_interrupt(irq_type irq_raised)
@@ -4119,29 +4115,23 @@ void execute_arm(u32 cycles)
     alert:
 
     if(cpu_alert == CPU_ALERT_IRQ)
-    {
       cycles = cycles_remaining;
-    }
     else
     {
       collapse_flags();
 
       while(reg[CPU_HALT_STATE] != CPU_ACTIVE)
-      {
         cycles = update_gba();
-      }
     }
   }
 }
 
-void init_cpu()
+void init_cpu(void)
 {
   u32 i;
 
   for(i = 0; i < 16; i++)
-  {
     reg[i] = 0;
-  }
 
   reg[REG_SP] = 0x03007F00;
   reg[REG_PC] = 0x08000000;
@@ -4161,9 +4151,7 @@ void move_reg(u32 *new_reg)
   u32 i;
 
   for(i = 0; i < 32; i++)
-  {
     new_reg[i] = reg[i];
-  }
 
   reg = new_reg;
 }

@@ -35,7 +35,7 @@ typedef struct
   cheat_variant_enum cheat_variant;
 } cheat_type;
 
-void process_cheats();
+void process_cheats(void);
 void add_cheats(char *cheats_filename);
 
 #define MAX_CHEATS 16

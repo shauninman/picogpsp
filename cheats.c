@@ -365,7 +365,7 @@ void process_cheat_gs3(cheat_type *cheat)
 }
 
 
-void process_cheats()
+void process_cheats(void)
 {
   u32 i;
 
