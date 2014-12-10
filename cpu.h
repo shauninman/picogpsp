@@ -152,7 +152,7 @@ s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
 
 #endif
 
-#ifdef __LIBRETRO__
+#ifdef HAVE_MMAP
 extern u8* rom_translation_cache;
 extern u8* ram_translation_cache;
 extern u8* bios_translation_cache;

@@ -20,6 +20,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+#include "libretro.h"
+
 typedef enum
 {
   BUTTON_L = 0x200,
@@ -35,58 +37,12 @@ typedef enum
   BUTTON_NONE = 0x00
 } input_buttons_type;
 
-typedef enum
-{
-  BUTTON_ID_UP,
-  BUTTON_ID_DOWN,
-  BUTTON_ID_LEFT,
-  BUTTON_ID_RIGHT,
-  BUTTON_ID_A,
-  BUTTON_ID_B,
-  BUTTON_ID_L,
-  BUTTON_ID_R,
-  BUTTON_ID_START,
-  BUTTON_ID_SELECT,
-  BUTTON_ID_MENU,
-  BUTTON_ID_FASTFORWARD,
-  BUTTON_ID_LOADSTATE,
-  BUTTON_ID_SAVESTATE,
-  BUTTON_ID_RAPIDFIRE_A,
-  BUTTON_ID_RAPIDFIRE_B,
-  BUTTON_ID_RAPIDFIRE_L,
-  BUTTON_ID_RAPIDFIRE_R,
-  BUTTON_ID_VOLUP,
-  BUTTON_ID_VOLDOWN,
-  BUTTON_ID_FPS,
-  BUTTON_ID_NONE
-} input_buttons_id_type;
-
-typedef enum
-{
-  CURSOR_UP,
-  CURSOR_DOWN,
-  CURSOR_LEFT,
-  CURSOR_RIGHT,
-  CURSOR_SELECT,
-  CURSOR_BACK,
-  CURSOR_EXIT,
-  CURSOR_L,
-  CURSOR_R,
-  CURSOR_NONE
-} gui_action_type;
-
-void init_input();
-u32 update_input();
-void input_write_savestate(void);
-void input_read_savestate(void);
-
-#include "libretro.h"
-
 typedef struct
 {
    unsigned retropad ;
    input_buttons_type gba;
 } map;
+
 static const map btn_map[] = {
    { RETRO_DEVICE_ID_JOYPAD_L,      BUTTON_L },
    { RETRO_DEVICE_ID_JOYPAD_R,      BUTTON_R },
@@ -100,8 +56,9 @@ static const map btn_map[] = {
    { RETRO_DEVICE_ID_JOYPAD_A,      BUTTON_A }
 };
 
-extern u32 gamepad_config_map[];
-extern u32 global_enable_analog;
-extern u32 analog_sensitivity_level;
+void init_input();
+u32 update_input();
+void input_write_savestate(void);
+void input_read_savestate(void);
 
 #endif

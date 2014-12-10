@@ -52,7 +52,7 @@ ifeq ($(platform), unix)
 	ifneq ($(findstring Haiku,$(shell uname -a)),)
 		LIBM :=
 	endif
-	CFLAGS += $(FORCE_32BIT)
+	CFLAGS += $(FORCE_32BIT) -DHAVE_MMAP
 # OS X
 else ifeq ($(platform), osx)
 	TARGET := $(TARGET_NAME)_libretro.dylib
@@ -66,6 +66,7 @@ else ifeq ($(platform), osx)
 		fpic += -mmacosx-version-min=10.5
 	endif
 	SHARED := -dynamiclib
+	CFLAGS += -DHAVE_MMAP
 
 # iOS
 else ifeq ($(platform), ios)
@@ -79,7 +80,7 @@ else ifeq ($(platform), ios)
 	endif
 
 	CC = clang -arch armv7 -isysroot $(IOSSDK)
-	CFLAGS += -DIOS 
+	CFLAGS += -DIOS -DHAVE_MMAP
 	OSXVER = `sw_vers -productVersion | cut -d. -f 2`
 	OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
 	ifeq ($(OSX_LT_MAVERICKS),"YES")
@@ -92,6 +93,7 @@ else ifeq ($(platform), qnx)
 	TARGET := $(TARGET_NAME)_libretro_qnx.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T
+	CFLAGS += -DHAVE_MMAP
 
 	CC = qcc -Vgcc_ntoarmv7le
 	AR = qcc -Vgcc_ntoarmv7le
@@ -180,6 +182,7 @@ else ifneq (,$(findstring armv,$(platform)))
 		ASFLAGS += -mfloat-abi=hard
 	endif
 	CFLAGS += -DARM
+	CFLAGS += -DHAVE_MMAP
 
 # emscripten
 else ifeq ($(platform), emscripten)
@@ -191,7 +194,7 @@ else
 	CC = gcc
 	SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=link.T
 	CFLAGS += -D__WIN32__ -D__WIN32_LIBRETRO__
-
+#	CFLAGS += -DHAVE_MMAP
 endif
 
 # Forcibly disable PIC

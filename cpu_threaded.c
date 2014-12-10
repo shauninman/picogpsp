@@ -23,7 +23,7 @@
 
 #include "common.h"
 
-#ifdef __LIBRETRO__
+#ifdef HAVE_MMAP
 u8* rom_translation_cache;
 u8* ram_translation_cache;
 u8* bios_translation_cache;

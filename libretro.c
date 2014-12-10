@@ -97,6 +97,7 @@ void retro_init()
    init_gamepak_buffer();
    init_sound(1);
 
+#ifdef HAVE_MMAP
    rom_translation_cache = mmap(NULL, ROM_TRANSLATION_CACHE_SIZE,
                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
    ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
@@ -107,6 +108,7 @@ void retro_init()
    rom_translation_ptr = rom_translation_cache;
    ram_translation_ptr = ram_translation_cache;
    bios_translation_ptr = bios_translation_cache;
+#endif
 }
 
 void retro_deinit()
@@ -114,9 +116,11 @@ void retro_deinit()
    perf_cb.perf_log();
    memory_term();
 
+#ifdef HAVE_MMAP
    munmap(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE);
    munmap(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE);
    munmap(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE);
+#endif
 }
 
 void retro_set_environment(retro_environment_t cb)
