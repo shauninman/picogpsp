@@ -11,11 +11,14 @@ SOURCES_C := $(CORE_DIR)/main.c \
 				 $(CORE_DIR)/video.c \
 				 $(CORE_DIR)/input.c \
 				 $(CORE_DIR)/sound.c \
-				 $(CORE_DIR)/cpu_threaded.c \
 				 $(CORE_DIR)/cheats.c \
 				 $(CORE_DIR)/libretro.c \
 				 $(CORE_DIR)/libco/libco.c
 
+
+ifeq ($(HAVE_DYNAREC), 1)
+SOURCES_C += $(CORE_DIR)/cpu_threaded.c
+endif
 endif
 
 ifeq ($(HAVE_DYNAREC), 1)
