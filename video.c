@@ -45,18 +45,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
   current_pixel = palette[source];                                            \
 
 
-#ifdef RENDER_COLOR16_NORMAL
-
-#define tile_expand_base_normal(index)                                        \
-  tile_expand_base_color16(index)                                             \
-
-#else
-
 #define tile_expand_base_normal(index)                                        \
   tile_lookup_palette(palette, current_pixel);                                \
   dest_ptr[index] = current_pixel                                             \
-
-#endif
 
 #define tile_expand_transparent_normal(index)                                 \
   tile_expand_base_normal(index)                                              \
@@ -486,19 +477,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 // Draws eight background pixels for the normal renderer, just a bunch of
 // zeros.
 
-#ifdef RENDER_COLOR16_NORMAL
-
-#define tile_4bpp_draw_eight_base_zero_normal()                               \
-  current_pixel = 0;                                                          \
-  tile_4bpp_draw_eight_base_zero(current_pixel)                               \
-
-#else
-
 #define tile_4bpp_draw_eight_base_zero_normal()                               \
   current_pixel = palette[0];                                                 \
   tile_4bpp_draw_eight_base_zero(current_pixel)                               \
-
-#endif
 
 
 // Draws eight 4bpp pixels.
@@ -842,17 +823,8 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
   }                                                                           \
 
 
-#ifdef RENDER_COLOR16_NORMAL
-
-#define render_scanline_extra_variables_base_normal(bg_type)                  \
-  const u32 pixel_combine = 0                                                 \
-
-#else
-
 #define render_scanline_extra_variables_base_normal(bg_type)                  \
   u16 *palette = palette_ram_converted                                        \
-
-#endif
 
 
 #define render_scanline_extra_variables_base_alpha(bg_type)                   \
@@ -1314,24 +1286,11 @@ render_scanline_affine_builder(transparent, alpha);
     src_ptr = (u16 *)(vram + 0xA000);                                         \
 
 
-#ifdef RENDER_COLOR16_NORMAL
-
-#define render_scanline_vram_setup_mode4()                                    \
-  const u32 pixel_combine = 0;                                                \
-  u8 *src_ptr = vram;                                                         \
-  if(io_registers[REG_DISPCNT] & 0x10)                                        \
-    src_ptr = vram + 0xA000;                                                  \
-
-
-#else
-
 #define render_scanline_vram_setup_mode4()                                    \
   u16 *palette = palette_ram_converted;                                       \
   u8 *src_ptr = vram;                                                         \
   if(io_registers[REG_DISPCNT] & 0x10)                                        \
     src_ptr = vram + 0xA000;                                                  \
-
-#endif
 
 
 
@@ -1775,18 +1734,9 @@ static u32 obj_alpha_count[160];
 
 // Build obj rendering functions
 
-#ifdef RENDER_COLOR16_NORMAL
-
-#define render_scanline_obj_extra_variables_normal(bg_type)                   \
-  const u32 pixel_combine = (1 << 8)                                          \
-
-#else
 
 #define render_scanline_obj_extra_variables_normal(bg_type)                   \
   u16 *palette = palette_ram_converted + 256                                  \
-
-#endif
-
 
 #define render_scanline_obj_extra_variables_color()                           \
   u32 pixel_combine = color_combine_mask(4) | (1 << 8)                        \
@@ -2250,21 +2200,7 @@ fill_line_builder(color32);
 
 // Blend top two pixels of scanline with each other.
 
-#ifdef RENDER_COLOR16_NORMAL
-
-#ifndef ARM_ARCH_BLENDING_OPTS
-void expand_normal(u16 *screen_ptr, u32 start, u32 end)
-{
-  screen_ptr += start;
-}
-
-#endif
-
-#else
-
 #define expand_normal(screen_ptr, start, end)
-
-#endif
 
 
 void expand_blend(u32 *screen_src_ptr, u16 *screen_dest_ptr,
