@@ -1,7 +1,7 @@
 .align 2
 
-.global expand_blend
-.global expand_normal
+.globl expand_blend
+.globl expand_normal
 
 @ Input:
 @   r0 = screen_src_ptr

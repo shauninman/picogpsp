@@ -1,48 +1,48 @@
 .align 2
 
-.global arm_update_gba_arm
-.global arm_update_gba_thumb
-.global arm_update_gba_idle_arm
-.global arm_update_gba_idle_thumb
+.globl arm_update_gba_arm
+.globl arm_update_gba_thumb
+.globl arm_update_gba_idle_arm
+.globl arm_update_gba_idle_thumb
 
-.global arm_indirect_branch_arm
-.global arm_indirect_branch_thumb
-.global arm_indirect_branch_dual_arm
-.global arm_indirect_branch_dual_thumb
+.globl arm_indirect_branch_arm
+.globl arm_indirect_branch_thumb
+.globl arm_indirect_branch_dual_arm
+.globl arm_indirect_branch_dual_thumb
 
-.global execute_arm_translate
+.globl execute_arm_translate
 
-.global execute_store_u8
-.global execute_store_u16
-.global execute_store_u32
-.global execute_store_u32_safe
+.globl execute_store_u8
+.globl execute_store_u16
+.globl execute_store_u32
+.globl execute_store_u32_safe
 
-.global execute_load_u8
-.global execute_load_s8
-.global execute_load_u16
-.global execute_load_s16
-.global execute_load_u32
+.globl execute_load_u8
+.globl execute_load_s8
+.globl execute_load_u16
+.globl execute_load_s16
+.globl execute_load_u32
 
-.global execute_store_cpsr
-.global execute_read_spsr
-.global execute_store_spsr
-.global execute_spsr_restore
+.globl execute_store_cpsr
+.globl execute_read_spsr
+.globl execute_store_spsr
+.globl execute_spsr_restore
 
-.global execute_swi_arm
-.global execute_swi_thumb
+.globl execute_swi_arm
+.globl execute_swi_thumb
 
-.global execute_patch_bios_read
-.global execute_patch_bios_protect
+.globl execute_patch_bios_read
+.globl execute_patch_bios_protect
 
-.global execute_bios_ptr_protected
-.global execute_bios_rom_ptr
+.globl execute_bios_ptr_protected
+.globl execute_bios_rom_ptr
 
-.global invalidate_icache_region
-.global invalidate_cache_region
+.globl invalidate_icache_region
+.globl invalidate_cache_region
 
-.global memory_map_read
-.global memory_map_write
-.global reg
+.globl memory_map_read
+.globl memory_map_write
+.globl reg
 
 #define REG_BASE_OFFSET   1024
 
@@ -448,7 +448,7 @@ execute_swi_builder(thumb)
 
 #define execute_swi_function_builder(swi_function, mode)                     ;\
                                                                              ;\
-  .global execute_swi_hle_##swi_function##_##mode                            ;\
+  .globl execute_swi_hle_##swi_function##_##mode                            ;\
 execute_swi_hle_##swi_function##_##mode:                                     ;\
   save_flags()                                                               ;\
   store_registers_##mode()                                                   ;\
