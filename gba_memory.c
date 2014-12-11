@@ -2943,58 +2943,6 @@ dma_region_type dma_region_map[16] =
   break;                                                                      \
 }                                                                             \
 
-#define dma_transfer_expand(transfer_size)                                    \
-  switch((dma->dest_direction << 2) | dma->source_direction)                  \
-  {                                                                           \
-    case 0x00:                                                                \
-      dma_transfer_loop(inc, inc, transfer_size, writeback);                  \
-                                                                              \
-    case 0x01:                                                                \
-      dma_transfer_loop(dec, inc, transfer_size, writeback);                  \
-                                                                              \
-    case 0x02:                                                                \
-      dma_transfer_loop(fix, inc, transfer_size, writeback);                  \
-                                                                              \
-    case 0x03:                                                                \
-      break;                                                                  \
-                                                                              \
-    case 0x04:                                                                \
-      dma_transfer_loop(inc, dec, transfer_size, writeback);                  \
-                                                                              \
-    case 0x05:                                                                \
-      dma_transfer_loop(dec, dec, transfer_size, writeback);                  \
-                                                                              \
-    case 0x06:                                                                \
-      dma_transfer_loop(fix, dec, transfer_size, writeback);                  \
-                                                                              \
-    case 0x07:                                                                \
-      break;                                                                  \
-                                                                              \
-    case 0x08:                                                                \
-      dma_transfer_loop(inc, fix, transfer_size, writeback);                  \
-                                                                              \
-    case 0x09:                                                                \
-      dma_transfer_loop(dec, fix, transfer_size, writeback);                  \
-                                                                              \
-    case 0x0A:                                                                \
-      dma_transfer_loop(fix, fix, transfer_size, writeback);                  \
-                                                                              \
-    case 0x0B:                                                                \
-      break;                                                                  \
-                                                                              \
-    case 0x0C:                                                                \
-      dma_transfer_loop(inc, inc, transfer_size, reload);                     \
-                                                                              \
-    case 0x0D:                                                                \
-      dma_transfer_loop(dec, inc, transfer_size, reload);                     \
-                                                                              \
-    case 0x0E:                                                                \
-      dma_transfer_loop(fix, inc, transfer_size, reload);                     \
-                                                                              \
-    case 0x0F:                                                                \
-      break;                                                                  \
-  }                                                                           \
-
 cpu_alert_type dma_transfer(dma_transfer_type *dma)
 {
   u32 i;
@@ -3027,14 +2975,84 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
     src_ptr &= ~0x01;
     dest_ptr &= ~0x01;
     cycle_dma16_words += length;
-    dma_transfer_expand(16);
+
+    switch((dma->dest_direction << 2) | dma->source_direction)
+    {
+       case 0x00:
+          dma_transfer_loop(inc, inc, 16, writeback);
+       case 0x01:
+          dma_transfer_loop(dec, inc, 16, writeback);
+       case 0x02:
+          dma_transfer_loop(fix, inc, 16, writeback);
+       case 0x03:
+          break;
+       case 0x04:
+          dma_transfer_loop(inc, dec, 16, writeback);
+       case 0x05:
+          dma_transfer_loop(dec, dec, 16, writeback);
+       case 0x06:
+          dma_transfer_loop(fix, dec, 16, writeback);
+       case 0x07:
+          break;
+       case 0x08:
+          dma_transfer_loop(inc, fix, 16, writeback);
+       case 0x09:
+          dma_transfer_loop(dec, fix, 16, writeback);
+       case 0x0A:
+          dma_transfer_loop(fix, fix, 16, writeback);
+       case 0x0B:
+          break;
+       case 0x0C:
+          dma_transfer_loop(inc, inc, 16, reload);
+       case 0x0D:
+          dma_transfer_loop(dec, inc, 16, reload);
+       case 0x0E:
+          dma_transfer_loop(fix, inc, 16, reload);
+       case 0x0F:
+          break;
+    }
   }
   else
   {
     src_ptr &= ~0x03;
     dest_ptr &= ~0x03;
     cycle_dma32_words += length;
-    dma_transfer_expand(32);
+
+    switch((dma->dest_direction << 2) | dma->source_direction)
+    {
+       case 0x00:
+          dma_transfer_loop(inc, inc, 32, writeback);
+       case 0x01:
+          dma_transfer_loop(dec, inc, 32, writeback);
+       case 0x02:
+          dma_transfer_loop(fix, inc, 32, writeback);
+       case 0x03:
+          break;
+       case 0x04:
+          dma_transfer_loop(inc, dec, 32, writeback);
+       case 0x05:
+          dma_transfer_loop(dec, dec, 32, writeback);
+       case 0x06:
+          dma_transfer_loop(fix, dec, 32, writeback);
+       case 0x07:
+          break;
+       case 0x08:
+          dma_transfer_loop(inc, fix, 32, writeback);
+       case 0x09:
+          dma_transfer_loop(dec, fix, 32, writeback);
+       case 0x0A:
+          dma_transfer_loop(fix, fix, 32, writeback);
+       case 0x0B:
+          break;
+       case 0x0C:
+          dma_transfer_loop(inc, inc, 32, reload);
+       case 0x0D:
+          dma_transfer_loop(dec, inc, 32, reload);
+       case 0x0E:
+          dma_transfer_loop(fix, inc, 32, reload);
+       case 0x0F:
+          break;
+    }
   }
 
   if((dma->repeat_type == DMA_NO_REPEAT) ||
