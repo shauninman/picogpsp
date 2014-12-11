@@ -39,62 +39,15 @@
 #define WOP_D_INVALIDATE	(1 << 1)
 #define WOP_I_INVALIDATE	(1 << 2)
 
-/* change C and B bits (warm_change_cb_*)
- * if is_set in not zero, bits are set, else cleared.
- * the address for range function is virtual address.
- */
-#define WCB_C_BIT		(1 << 0)
-#define WCB_B_BIT		(1 << 1)
-
-#ifndef __ASSEMBLER__
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-int warm_init(void);
-
 int warm_cache_op_range(int ops, void *virt_addr, unsigned long size);
-int warm_cache_op_all(int ops);
-
-int warm_change_cb_upper(int cb, int is_set);
-int warm_change_cb_range(int cb, int is_set, void *virt_addr, unsigned long size);
-
-unsigned long warm_virt2phys(const void *ptr);
-
-void warm_finish(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-/* internal */
-#ifdef WARM_CODE
-
-#include <sys/ioctl.h>
-
-#define WARM_IOCTL_BASE 'A'
-
-struct warm_cache_op
-{
-	unsigned long addr;
-	unsigned long size;
-	int ops;
-};
-
-struct warm_change_cb
-{
-	unsigned long addr;
-	unsigned long size;
-	int cb;
-	int is_set;
-};
-
-#define WARMC_CACHE_OP	_IOW(WARM_IOCTL_BASE,  0, struct warm_cache_op)
-#define WARMC_CHANGE_CB	_IOW(WARM_IOCTL_BASE,  1, struct warm_change_cb)
-#define WARMC_VIRT2PHYS	_IOWR(WARM_IOCTL_BASE, 2, unsigned long)
-
-#endif /* WARM_CODE */
-#endif /* !__ASSEMBLER__ */
 #endif /* __WARM_H__ */
