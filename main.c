@@ -62,15 +62,16 @@ static void update_timers(irq_type *irq_raised)
       if(timer[i].status != TIMER_CASCADE)
       {
          timer[i].count -= execute_cycles;
-         //io_registers[REG_TM##timer_number##D] = -(timer[i].count >> timer[i].prescale);
+         /* io_registers accessors range: REG_TM0D, REG_TM1D, REG_TM2D, REG_TM3D */
          io_registers[128 + (i * 2)] = -(timer[i].count > timer[i].prescale);
       }
 
       if(timer[i].count > 0)
          continue;
 
+      /* irq_raised value range: IRQ_TIMER0, IRQ_TIMER1, IRQ_TIMER2, IRQ_TIMER3 */
       if(timer[i].irq == TIMER_TRIGGER_IRQ)
-         *irq_raised |= (8 << i); /*IRQ_TIMER##timer_number */
+         *irq_raised |= (8 << i);
 
       if((i != 3) && (timer[i + 1].status == TIMER_CASCADE))
       {
