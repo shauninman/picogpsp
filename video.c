@@ -395,14 +395,8 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 
 #define tile_4bpp_draw_base_normal(index)                                     \
   if(current_pixel)                                                           \
-  {                                                                           \
     current_pixel |= current_palette;                                         \
-    tile_expand_base_normal(index);                                           \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    tile_expand_base_normal(index);                                           \
-  }                                                                           \
+  tile_expand_base_normal(index);                                             \
 
 
 #define tile_4bpp_draw_base_alpha(index)                                      \
