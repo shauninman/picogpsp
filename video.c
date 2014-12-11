@@ -279,7 +279,6 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
   {                                                                           \
     current_pixels = *((u32 *)(tile_ptr + 4)) >>                              \
      ((partial_tile_offset - 4) * 8);                                         \
-    partial_tile_8bpp(combine_op, alpha_op);                                  \
   }                                                                           \
   else                                                                        \
   {                                                                           \
@@ -291,13 +290,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
       partial_tile_8bpp(combine_op, alpha_op);                                \
       partial_tile_run = old_run - partial_tile_run;                          \
       current_pixels = *((u32 *)(tile_ptr + 4));                              \
-      partial_tile_8bpp(combine_op, alpha_op);                                \
-    }                                                                         \
-    else                                                                      \
-    {                                                                         \
-      partial_tile_8bpp(combine_op, alpha_op);                                \
     }                                                                         \
   }                                                                           \
+  partial_tile_8bpp(combine_op, alpha_op);                                    \
 
 
 // Draws 8bpp tiles clipped against the right side of the screen,
@@ -355,10 +350,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 
 #define partial_tile_mid_flip_8bpp(combine_op, alpha_op)                      \
   if(partial_tile_offset >= 4)                                                \
-  {                                                                           \
     current_pixels = *((u32 *)tile_ptr) << ((partial_tile_offset - 4) * 8);   \
-    partial_tile_flip_8bpp(combine_op, alpha_op);                             \
-  }                                                                           \
   else                                                                        \
   {                                                                           \
     current_pixels = *((u32 *)(tile_ptr + 4)) <<                              \
@@ -371,13 +363,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
       partial_tile_flip_8bpp(combine_op, alpha_op);                           \
       partial_tile_run = old_run - partial_tile_run;                          \
       current_pixels = *((u32 *)(tile_ptr));                                  \
-      partial_tile_flip_8bpp(combine_op, alpha_op);                           \
-    }                                                                         \
-    else                                                                      \
-    {                                                                         \
-      partial_tile_flip_8bpp(combine_op, alpha_op);                           \
     }                                                                         \
   }                                                                           \
+  partial_tile_flip_8bpp(combine_op, alpha_op);                               \
 
 #define partial_tile_left_flip_8bpp(combine_op, alpha_op)                     \
   if(partial_tile_run >= 4)                                                   \
@@ -1329,33 +1317,27 @@ render_scanline_affine_builder(transparent, alpha);
   u16 *src_ptr = (u16 *)vram                                                  \
 
 #define render_scanline_vram_setup_mode5()                                    \
-  u16 *src_ptr;                                                               \
+  u16 *src_ptr = (u16 *)vram;                                                 \
   if(io_registers[REG_DISPCNT] & 0x10)                                        \
     src_ptr = (u16 *)(vram + 0xA000);                                         \
-  else                                                                        \
-    src_ptr = (u16 *)vram                                                     \
 
 
 #ifdef RENDER_COLOR16_NORMAL
 
 #define render_scanline_vram_setup_mode4()                                    \
   const u32 pixel_combine = 0;                                                \
-  u8 *src_ptr;                                                                \
+  u8 *src_ptr = vram;                                                         \
   if(io_registers[REG_DISPCNT] & 0x10)                                        \
-    src_ptr = vram + 0xA000;                                                  \
-  else                                                                        \
-    src_ptr = vram                                                            \
+    src_ptr += vram + 0xA000;                                                 \
 
 
 #else
 
 #define render_scanline_vram_setup_mode4()                                    \
   u16 *palette = palette_ram_converted;                                       \
-  u8 *src_ptr;                                                                \
+  u8 *src_ptr = vram;                                                         \
   if(io_registers[REG_DISPCNT] & 0x10)                                        \
     src_ptr = vram + 0xA000;                                                  \
-  else                                                                        \
-    src_ptr = vram                                                            \
 
 #endif
 
@@ -1607,15 +1589,12 @@ static const bitmap_layer_render_struct bitmap_mode_renderers[3] =
    + ((vertical_offset % 8) * tile_width_##color_depth)                       \
 
 #define obj_render_scale_pixel_4bpp(combine_op, alpha_op)                     \
+  current_pixel =                                                             \
+     tile_ptr[tile_map_offset + ((tile_x >> 1) & 0x03)];                      \
   if(tile_x & 0x01)                                                           \
-  {                                                                           \
-    current_pixel = tile_ptr[tile_map_offset + ((tile_x >> 1) & 0x03)] >> 4;  \
-  }                                                                           \
+    current_pixel >>= 4;                                                      \
   else                                                                        \
-  {                                                                           \
-    current_pixel =                                                           \
-     tile_ptr[tile_map_offset + ((tile_x >> 1) & 0x03)] & 0x0F;               \
-  }                                                                           \
+    current_pixel &= 0x0F;                                                    \
                                                                               \
   tile_4bpp_draw_##combine_op(0, none, 0, alpha_op)                           \
 
@@ -1669,16 +1648,12 @@ static const bitmap_layer_render_struct bitmap_mode_renderers[3] =
   obj_tile_pitch = 1024                                                       \
 
 #define obj_render_rotate_pixel_4bpp(combine_op, alpha_op)                    \
+   current_pixel = tile_ptr[tile_map_offset +                                 \
+((tile_x >> 1) & 0x03) + ((tile_y & 0x07) * obj_pitch)];                      \
   if(tile_x & 0x01)                                                           \
-  {                                                                           \
-    current_pixel = tile_ptr[tile_map_offset +                                \
-     ((tile_x >> 1) & 0x03) + ((tile_y & 0x07) * obj_pitch)] >> 4;            \
-  }                                                                           \
+    current_pixel >>= 4;                                                      \
   else                                                                        \
-  {                                                                           \
-    current_pixel = tile_ptr[tile_map_offset +                                \
-     ((tile_x >> 1) & 0x03) + ((tile_y & 0x07) * obj_pitch)] & 0x0F;          \
-  }                                                                           \
+    current_pixel &= 0x0F;                                                    \
                                                                               \
   tile_4bpp_draw_##combine_op(0, none, 0, alpha_op)                           \
 
