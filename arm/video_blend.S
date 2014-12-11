@@ -5,8 +5,13 @@
 @   r3 = end
 
 6:
+#ifdef __MACH__
+  .word _io_registers
+  .word _palette_ram_converted
+#else
   .word io_registers
   .word palette_ram_converted
+#endif
   .word 0x04000200                @ combine test mask
   .word 0x07E0F81F                @ clamp mask
   .word 0x000003FE                @ palette index mask
