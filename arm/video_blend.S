@@ -157,7 +157,11 @@ _expand_blend:
 @   r2 = end
 
 1:
+#ifdef __MACH__
+  .word _palette_ram_converted
+#else
   .word palette_ram_converted
+#endif
   .word 0x3FE
 
 .align 2
