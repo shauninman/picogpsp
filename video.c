@@ -109,13 +109,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define tile_expand_transparent_alpha_obj(index)                              \
   dest = dest_ptr[index];                                                     \
   if(dest & 0x00000100)                                                       \
-  {                                                                           \
     dest_ptr[index] = (dest & 0xFFFF0000) | current_pixel | pixel_combine;    \
-  }                                                                           \
   else                                                                        \
-  {                                                                           \
     dest_ptr[index] = (dest << 16) | current_pixel | pixel_combine;           \
-  }                                                                           \
 
 
 // For color effects that don't need to preserve the previous layer.
@@ -1232,12 +1228,8 @@ render_scanline_affine_builder(transparent, alpha);
         dest_ptr -= pixel_x;                                                  \
         pixel_x = 0;                                                          \
       }                                                                       \
-      else                                                                    \
-                                                                              \
-      if(pixel_x > 0)                                                         \
-      {                                                                       \
+      else if(pixel_x > 0)                                                    \
         src_ptr += pixel_x;                                                   \
-      }                                                                       \
                                                                               \
       if((pixel_x + end) >= width)                                            \
         end = (width - pixel_x);                                              \
@@ -1894,10 +1886,9 @@ static u32 obj_alpha_count[160];
 
 #define render_scanline_obj_prologue_copy_body(type)                          \
   copy_start = obj_x;                                                         \
+  copy_end = obj_x + obj_width;                                               \
   if(obj_attribute_0 & 0x200)                                                 \
-    copy_end = obj_x + (obj_width * 2);                                       \
-  else                                                                        \
-    copy_end = obj_x + obj_width;                                             \
+    copy_end += obj_width;                                                    \
                                                                               \
   if(copy_start < start)                                                      \
     copy_start = start;                                                       \
@@ -2005,15 +1996,11 @@ static void order_obj(u32 video_mode)
   for(priority = 0; priority < 5; priority++)
   {
     for(row = 0; row < 160; row++)
-    {
       obj_priority_count[priority][row] = 0;
-    }
   }
 
   for(row = 0; row < 160; row++)
-  {
     obj_alpha_count[row] = 0;
-  }
 
   for(obj_num = 127; obj_num >= 0; obj_num--, oam_ptr -= 4)
   {
@@ -2055,9 +2042,7 @@ static void order_obj(u32 video_mode)
           }
 
           if((obj_y + obj_height) >= 160)
-          {
             obj_height = 160 - obj_y;
-          }
 
           if(obj_mode == 1)
           {
@@ -2072,9 +2057,7 @@ static void order_obj(u32 video_mode)
           else
           {
             if(obj_mode == 2)
-            {
               obj_priority = 4;
-            }
 
             for(row = obj_y; row < obj_y + obj_height; row++)
             {
@@ -2122,9 +2105,7 @@ static void order_layers(u32 layer_flags)
   u32 i;                                                                      \
                                                                               \
   for(i = _start; i < _end; i++)                                              \
-  {                                                                           \
     dest_ptr[i] = color;                                                      \
-  }                                                                           \
 
 
 #define fill_line_color_normal()                                              \
@@ -2274,20 +2255,7 @@ fill_line_builder(color32);
 #ifndef ARM_ARCH_BLENDING_OPTS
 void expand_normal(u16 *screen_ptr, u32 start, u32 end)
 {
-  u32 i, pixel_source;
   screen_ptr += start;
-
-  return;
-
-  end -= start;
-
-  for(i = 0; i < end; i++)
-  {
-    pixel_source = *screen_ptr;
-    *screen_ptr = palette_ram_converted[pixel_source];
-
-    screen_ptr++;
-  }
 }
 
 #endif
