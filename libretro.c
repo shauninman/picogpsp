@@ -120,6 +120,12 @@ void retro_deinit(void)
 #endif
 }
 
+static retro_time_t retro_perf_dummy_get_time_usec() { return 0; }
+static retro_perf_tick_t retro_perf_dummy_get_counter() { return 0; }
+static uint64_t retro_perf_dummy_get_cpu_features() { return 0; }
+static void retro_perf_dummy_log() {}
+static void retro_perf_dummy_counter(struct retro_perf_counter *counter) {};
+
 void retro_set_environment(retro_environment_t cb)
 {
    struct retro_log_callback log;
@@ -138,6 +144,15 @@ void retro_set_environment(retro_environment_t cb)
    else
       log_cb = NULL;
 
+   perf_cb = (struct retro_perf_callback){
+      retro_perf_dummy_get_time_usec,
+      retro_perf_dummy_get_counter,
+      retro_perf_dummy_get_cpu_features,
+      retro_perf_dummy_counter,
+      retro_perf_dummy_counter,
+      retro_perf_dummy_counter,
+      retro_perf_dummy_log,
+   };
    environ_cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf_cb);
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
 }
