@@ -221,9 +221,9 @@ static void extract_directory(char* buf, const char* path, size_t size)
 
 static void check_variables(int started_from_load)
 {
+#ifdef HAVE_DYNAREC
    struct retro_variable var;
 
-#ifdef HAVE_DYNAREC
    var.key = "gpsp_drc";
    var.value = NULL;
 
