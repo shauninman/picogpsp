@@ -51,50 +51,45 @@ char save_path[512];
 
 void trigger_ext_event(void);
 
-#define check_count(count_var)                                                \
-  if(count_var < execute_cycles)                                              \
-    execute_cycles = count_var;                                               \
+static void update_timers(irq_type *irq_raised)
+{
+   unsigned i;
+   for (i = 0; i < 4; i++)
+   {
+      if(timer[i].status == TIMER_INACTIVE)
+         continue;
 
-#define check_timer(timer_number)                                             \
-  if(timer[timer_number].status == TIMER_PRESCALE)                            \
-    check_count(timer[timer_number].count);                                   \
+      if(timer[i].status != TIMER_CASCADE)
+      {
+         timer[i].count -= execute_cycles;
+         //io_registers[REG_TM##timer_number##D] = -(timer[i].count >> timer[i].prescale);
+         io_registers[128 + (i * 2)] = -(timer[i].count > timer[i].prescale);
+      }
 
-#define update_timer(timer_number)                                            \
-  if(timer[timer_number].status != TIMER_INACTIVE)                            \
-  {                                                                           \
-    if(timer[timer_number].status != TIMER_CASCADE)                           \
-    {                                                                         \
-      timer[timer_number].count -= execute_cycles;                            \
-      io_registers[REG_TM##timer_number##D] =                                 \
-       -(timer[timer_number].count >> timer[timer_number].prescale);          \
-    }                                                                         \
-                                                                              \
-    if(timer[timer_number].count <= 0)                                        \
-    {                                                                         \
-      if(timer[timer_number].irq == TIMER_TRIGGER_IRQ)                        \
-        irq_raised |= IRQ_TIMER##timer_number;                                \
-                                                                              \
-      if((timer_number != 3) &&                                               \
-       (timer[timer_number + 1].status == TIMER_CASCADE))                     \
-      {                                                                       \
-        timer[timer_number + 1].count--;                                      \
-        io_registers[REG_TM0D + (timer_number + 1) * 2] =                     \
-         -(timer[timer_number + 1].count);                                    \
-      }                                                                       \
-                                                                              \
-      if(timer_number < 2)                                                    \
-      {                                                                       \
-        if(timer[timer_number].direct_sound_channels & 0x01)                  \
-          sound_timer(timer[timer_number].frequency_step, 0);                 \
-                                                                              \
-        if(timer[timer_number].direct_sound_channels & 0x02)                  \
-          sound_timer(timer[timer_number].frequency_step, 1);                 \
-      }                                                                       \
-                                                                              \
-      timer[timer_number].count +=                                            \
-       (timer[timer_number].reload << timer[timer_number].prescale);          \
-    }                                                                         \
-  }                                                                           \
+      if(timer[i].count > 0)
+         continue;
+
+      if(timer[i].irq == TIMER_TRIGGER_IRQ)
+         *irq_raised |= (8 << i); /*IRQ_TIMER##timer_number */
+
+      if((i != 3) && (timer[i + 1].status == TIMER_CASCADE))
+      {
+         timer[i + 1].count--;
+         io_registers[REG_TM0D + (i + 1) * 2] = -(timer[i + 1].count);
+      }
+
+      if(i < 2)
+      {
+         if(timer[i].direct_sound_channels & 0x01)
+            sound_timer(timer[i].frequency_step, 0);
+
+         if(timer[i].direct_sound_channels & 0x02)
+            sound_timer(timer[i].frequency_step, 1);
+      }
+
+      timer[i].count += (timer[i].reload << timer[i].prescale);
+   }
+}
 
 void init_main(void)
 {
@@ -132,6 +127,7 @@ u32 update_gba(void)
 
   do
   {
+    unsigned i;
     cpu_ticks += execute_cycles;
 
     reg[CHANGED_PC_STATUS] = 0;
@@ -143,10 +139,7 @@ u32 update_gba(void)
       gbc_sound_update = 0;
     }
 
-    update_timer(0);
-    update_timer(1);
-    update_timer(2);
-    update_timer(3);
+    update_timers(&irq_raised);
 
     video_count -= execute_cycles;
 
@@ -253,9 +246,7 @@ u32 update_gba(void)
           }
         }
         else
-        {
           dispstat &= ~0x04;
-        }
 
         io_registers[REG_VCOUNT] = vcount;
       }
@@ -267,10 +258,14 @@ u32 update_gba(void)
 
     execute_cycles = video_count;
 
-    check_timer(0);
-    check_timer(1);
-    check_timer(2);
-    check_timer(3);
+    for (i = 0; i < 4; i++)
+    {
+       if(timer[i].status != TIMER_PRESCALE)
+          continue;
+
+       if(timer[i].count < execute_cycles)
+          execute_cycles = timer[i].count;
+    }
   } while(reg[CPU_HALT_STATE] != CPU_ACTIVE);
 
   return execute_cycles;
