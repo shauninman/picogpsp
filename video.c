@@ -1122,13 +1122,149 @@ static void render_scanline_text_transparent_normal(u32 layer,
 
   if(bg_control & 0x80)
   {
+     /* color depth: 8bpp 
+      * combine: transparent
+      * alpha : normal
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(8bpp, transparent, normal);
+
+     u32 vertical_pixel_offset = (vertical_offset % 8) *
+        tile_width_8bpp;
+     u32 vertical_pixel_flip =
+        ((tile_size_8bpp - tile_width_8bpp) -
+         vertical_pixel_offset) - vertical_pixel_offset;
+     tile_extra_variables_8bpp();
+     u8 *tile_base = vram + (((bg_control >> 2) & 0x03) * (1024 * 16)) +
+        vertical_pixel_offset;
+     u32 pixel_run = 256 - (horizontal_offset % 256);
+     u32 current_tile;
+
+     map_base += ((vertical_offset % 256) / 8) * 32;
+     partial_tile_offset = (horizontal_offset % 8);
+
+     if(pixel_run >= end)
+     {
+        if(partial_tile_offset)
+        {
+           partial_tile_run = 8 - partial_tile_offset;
+           if(end < partial_tile_run)
+           {
+              partial_tile_run = end;
+              partial_tile_mid_map(transparent, 8bpp, normal);
+              return;
+           }
+           else
+           {
+              end -= partial_tile_run;
+              partial_tile_right_map(transparent, 8bpp, normal);
+           }
+        }
+
+        tile_run = end / 8;
+        multiple_tile_map(transparent, 8bpp, normal);
+
+        partial_tile_run = end % 8;
+
+        if(partial_tile_run)
+        {
+           partial_tile_left_map(transparent, 8bpp, normal);
+        }
+     }
+     else
+     {
+        if(partial_tile_offset)
+        {
+           partial_tile_run = 8 - partial_tile_offset;
+           partial_tile_right_map(transparent, 8bpp, normal);
+        }
+
+        tile_run = (pixel_run - partial_tile_run) / 8;
+        multiple_tile_map(transparent, 8bpp, normal);
+        map_ptr = second_ptr;
+        end -= pixel_run;
+        tile_run = end / 8;
+        multiple_tile_map(transparent, 8bpp, normal);
+
+        partial_tile_run = end % 8;
+        if(partial_tile_run)
+        {
+           partial_tile_left_map(transparent, 8bpp, normal);
+        }
+     }
   }
   else
   {
+     /* color depth: 4bpp 
+      * combine: transparent
+      * alpha : normal
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(4bpp, transparent, normal);
+
+     u32 vertical_pixel_offset = (vertical_offset % 8) *
+        tile_width_4bpp;
+     u32 vertical_pixel_flip =
+        ((tile_size_4bpp - tile_width_4bpp) -
+         vertical_pixel_offset) - vertical_pixel_offset;
+     tile_extra_variables_4bpp();
+     u8 *tile_base = vram + (((bg_control >> 2) & 0x03) * (1024 * 16)) +
+        vertical_pixel_offset;
+     u32 pixel_run = 256 - (horizontal_offset % 256);
+     u32 current_tile;
+
+     map_base += ((vertical_offset % 256) / 8) * 32;
+     partial_tile_offset = (horizontal_offset % 8);
+
+     if(pixel_run >= end)
+     {
+        if(partial_tile_offset)
+        {
+           partial_tile_run = 8 - partial_tile_offset;
+           if(end < partial_tile_run)
+           {
+              partial_tile_run = end;
+              partial_tile_mid_map(transparent, 4bpp, normal);
+              return;
+           }
+           else
+           {
+              end -= partial_tile_run;
+              partial_tile_right_map(transparent, 4bpp, normal);
+           }
+        }
+
+        tile_run = end / 8;
+        multiple_tile_map(transparent, 4bpp, normal);
+
+        partial_tile_run = end % 8;
+
+        if(partial_tile_run)
+        {
+           partial_tile_left_map(transparent, 4bpp, normal);
+        }
+     }
+     else
+     {
+        if(partial_tile_offset)
+        {
+           partial_tile_run = 8 - partial_tile_offset;
+           partial_tile_right_map(transparent, 4bpp, normal);
+        }
+
+        tile_run = (pixel_run - partial_tile_run) / 8;
+        multiple_tile_map(transparent, 4bpp, normal);
+        map_ptr = second_ptr;
+        end -= pixel_run;
+        tile_run = end / 8;
+        multiple_tile_map(transparent, 4bpp, normal);
+
+        partial_tile_run = end % 8;
+        if(partial_tile_run)
+        {
+           partial_tile_left_map(transparent, 4bpp, normal);
+        }
+     }
   }
 }
 
