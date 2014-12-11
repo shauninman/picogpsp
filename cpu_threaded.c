@@ -30,7 +30,7 @@ u8* bios_translation_cache;
 u8 *rom_translation_ptr;
 u8 *ram_translation_ptr;
 u8 *bios_translation_ptr;
-#elif defined(ANDROID)
+#elif defined(ARM_MEMORY_DYNAREC)
 __asm__(".section .jit,\"awx\",%progbits");
 
 u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE]
