@@ -200,8 +200,10 @@ else
 #	CFLAGS += -DHAVE_MMAP
 endif
 
+ifeq ($(HAVE_DYNAREC), 1)
 # Forcibly disable PIC
 fpic :=
+endif
 
 ifeq ($(DEBUG), 1)
 	OPTIMIZE_SAFE := -O0 -g
