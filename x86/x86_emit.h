@@ -492,9 +492,6 @@ typedef enum
 
 #define generate_block_extra_vars_thumb()                                     \
 
-
-#define translate_invalidate_dcache()                                         \
-
 #define block_prologue_size 0
 
 #define calculate_z_flag(dest)                                                \

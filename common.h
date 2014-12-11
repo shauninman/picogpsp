@@ -210,8 +210,4 @@ typedef u32 fixed8_24;
 #include "main.h"
 #include "cheats.h"
 
-#ifdef ARM_ARCH
-  #include "arm/warm.h"
-#endif
-
 #endif

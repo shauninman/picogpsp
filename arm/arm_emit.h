@@ -636,32 +636,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     }                                                                         \
   }                                                                           \
 
-u8 *last_rom_translation_ptr = NULL;
-u8 *last_ram_translation_ptr = NULL;
-u8 *last_bios_translation_ptr = NULL;
-
-#define translate_invalidate_dcache_one(which)                                \
-  if (which##_translation_ptr > last_##which##_translation_ptr)               \
-  {                                                                           \
-    warm_cache_op_range(WOP_D_CLEAN, last_##which##_translation_ptr,          \
-      which##_translation_ptr - last_##which##_translation_ptr);              \
-    warm_cache_op_range(WOP_I_INVALIDATE, last_##which##_translation_ptr, 32);\
-    last_##which##_translation_ptr = which##_translation_ptr;                 \
-  }
-
-#define translate_invalidate_dcache()                                         \
-{                                                                             \
-  translate_invalidate_dcache_one(rom)                                        \
-  translate_invalidate_dcache_one(ram)                                        \
-  translate_invalidate_dcache_one(bios)                                       \
-}
-
-#define invalidate_icache_region(addr, size)                                  \
-  warm_cache_op_range(WOP_I_INVALIDATE, addr, size)
-
-
 #define block_prologue_size 0
-
 
 // It should be okay to still generate result flags, spsr will overwrite them.
 // This is pretty infrequent (returning from interrupt handlers, et al) so

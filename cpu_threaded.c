@@ -23,6 +23,10 @@
 
 #include "common.h"
 
+u8 *last_rom_translation_ptr = NULL;
+u8 *last_ram_translation_ptr = NULL;
+u8 *last_bios_translation_ptr = NULL;
+
 #if defined(HAVE_MMAP)
 u8* rom_translation_cache;
 u8* ram_translation_cache;
@@ -217,6 +221,51 @@ extern u8 bit_count[256];
 #include "x86/x86_emit.h"
 
 #endif
+
+/* Cache invalidation */
+
+#if defined(PSP_BUILD)
+#define translate_invalidate_dcache() sceKernelDcacheWritebackAll()
+
+#elif defined(ARM_ARCH)
+static int sys_cacheflush(void *addr, unsigned long size)
+{
+   void *start = (void*)addr;
+   void *end   = (void*)(char *)addr + size;
+
+	register const unsigned char *r0 asm("r0") = start;
+	register const unsigned char *r1 asm("r1") = end;
+	register const int r2 asm("r2") = 0;
+	register const int r7 asm("r7") = 0xf0002;
+	asm volatile ("svc 0x0" :: "r" (r0), "r" (r1), "r" (r2), "r" (r7));
+   return -1;
+}
+
+#define translate_invalidate_dcache_one(which)                                \
+  if (which##_translation_ptr > last_##which##_translation_ptr)               \
+  {                                                                           \
+    sys_cacheflush(last_##which##_translation_ptr,          \
+      which##_translation_ptr - last_##which##_translation_ptr);              \
+    sys_cacheflush(last_##which##_translation_ptr, 32);\
+    last_##which##_translation_ptr = which##_translation_ptr;                 \
+  }
+
+#define translate_invalidate_dcache()                                         \
+{                                                                             \
+  translate_invalidate_dcache_one(rom)                                        \
+  translate_invalidate_dcache_one(ram)                                        \
+  translate_invalidate_dcache_one(bios)                                       \
+}
+#define invalidate_icache_region(addr, size) (void)0
+
+#else
+
+#define translate_invalidate_dcache() (void)0
+#define invalidate_icache_region(addr, size) (void)0
+
+#endif
+
+/* End of Cache invalidation */
 
 
 #define check_pc_region(pc)                                                   \
@@ -3632,13 +3681,8 @@ void flush_translation_cache_ram(void)
    flush_ram_count, reg[REG_PC], iwram_code_min, iwram_code_max,
    ewram_code_min, ewram_code_max); */
 
-#if defined(ARM_ARCH) || defined(MIPS_ARCH)
-  invalidate_icache_region(ram_translation_cache,
-   (ram_translation_ptr - ram_translation_cache) + 0x100);
-#endif
-#ifdef ARM_ARCH
+  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);
   last_ram_translation_ptr = ram_translation_cache;
-#endif
   ram_translation_ptr = ram_translation_cache;
   ram_block_tag_top = 0x0101;
   if(iwram_code_min != 0xFFFFFFFF)
@@ -3673,9 +3717,7 @@ void flush_translation_cache_ram(void)
     else
     {
       for(i = ewram_code_min_page + 1; i < ewram_code_max_page; i++)
-      {
         memset(ewram + (i * 0x10000), 0, 0x8000);
-      }
 
       memset(ewram, 0, ewram_code_max_offset);
     }
@@ -3689,30 +3731,23 @@ void flush_translation_cache_ram(void)
 
 void flush_translation_cache_rom(void)
 {
-#if defined(ARM_ARCH) || defined(MIPS_ARCH)
-  invalidate_icache_region(rom_translation_cache,
-   rom_translation_ptr - rom_translation_cache + 0x100);
-#endif
-#ifdef ARM_ARCH
-  last_rom_translation_ptr = rom_translation_cache;
-#endif
+  invalidate_icache_region(rom_translation_cache, rom_translation_ptr - rom_translation_cache + 0x100);
 
-  rom_translation_ptr = rom_translation_cache;
+  last_rom_translation_ptr = rom_translation_cache;
+  rom_translation_ptr      = rom_translation_cache;
+
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
 }
 
 void flush_translation_cache_bios(void)
 {
-#if defined(ARM_ARCH) || defined(MIPS_ARCH)
-  invalidate_icache_region(bios_translation_cache,
-   bios_translation_ptr - bios_translation_cache + 0x100);
-#endif
-#ifdef ARM_ARCH
-  last_bios_translation_ptr = bios_translation_cache;
-#endif
+  invalidate_icache_region(bios_translation_cache, bios_translation_ptr - bios_translation_cache + 0x100);
 
   bios_block_tag_top = 0x0101;
+
+  last_bios_translation_ptr = bios_translation_cache;
   bios_translation_ptr = bios_translation_cache;
+
   memset(bios_rom + 0x4000, 0, 0x4000);
 }
 

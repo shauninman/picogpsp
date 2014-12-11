@@ -32,9 +32,7 @@ endif
 
 endif
 
-# Special optimized routines
 ifeq ($(CPU_ARCH), arm)
-SOURCES_C   += $(CORE_DIR)/arm/warm.c
 SOURCES_ASM += $(CORE_DIR)/arm/video_blend.S
 endif
 
