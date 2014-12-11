@@ -1320,7 +1320,7 @@ render_scanline_affine_builder(transparent, alpha);
   const u32 pixel_combine = 0;                                                \
   u8 *src_ptr = vram;                                                         \
   if(io_registers[REG_DISPCNT] & 0x10)                                        \
-    src_ptr += vram + 0xA000;                                                 \
+    src_ptr = vram + 0xA000;                                                  \
 
 
 #else
