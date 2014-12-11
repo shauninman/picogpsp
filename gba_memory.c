@@ -144,20 +144,20 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
   address16(io_registers, 0x7C) = value;                                      \
 }                                                                             \
 
-#define gbc_trigger_sound_channel(channel)                                    \
-  gbc_sound_master_volume_right = value & 0x07;                               \
-  gbc_sound_master_volume_left = (value >> 4) & 0x07;                         \
-  gbc_sound_channel[channel].status = ((value >> (channel + 8)) & 0x01) |     \
-   ((value >> (channel + 11)) & 0x03)                                         \
+static void gbc_trigger_sound(u32 value)
+{
+   u32 channel;
 
-#define gbc_trigger_sound()                                                   \
-{                                                                             \
-  gbc_trigger_sound_channel(0);                                               \
-  gbc_trigger_sound_channel(1);                                               \
-  gbc_trigger_sound_channel(2);                                               \
-  gbc_trigger_sound_channel(3);                                               \
-  address16(io_registers, 0x80) = value;                                      \
-}                                                                             \
+   /* Trigger all 4 GBC sound channels */
+   for (channel = 0; channel < 4; channel++)
+   {
+      gbc_sound_master_volume_right = value & 0x07;
+      gbc_sound_master_volume_left = (value >> 4) & 0x07;
+      gbc_sound_channel[channel].status = 
+         ((value >> (channel + 8)) & 0x01) | ((value >> (channel + 11)) & 0x03);
+   }
+   address16(io_registers, 0x80) = value;
+}
 
 #define trigger_sound()                                                       \
 {                                                                             \
@@ -178,21 +178,24 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
   address16(io_registers, 0x82) = value;                                      \
 }                                                                             \
 
-#define sound_on()                                                            \
-  if(value & 0x80)                                                            \
-  {                                                                           \
-    if(sound_on != 1)                                                         \
-      sound_on = 1;                                                           \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    u32 i;                                                                    \
-    for(i = 0; i < 4; i++)                                                    \
-      gbc_sound_channel[i].active_flag = 0;                                   \
-    sound_on = 0;                                                             \
-  }                                                                           \
-  address16(io_registers, 0x84) =                                             \
-    (address16(io_registers, 0x84) & 0x000F) | (value & 0xFFF0);              \
+static void sound_control_x(u32 value)
+{
+   if (value & 0x80)
+   {
+      if (sound_on != 1)
+         sound_on = 1;
+   }
+   else
+   {
+      u32 i;
+      for (i = 0; i < 4; i++)
+         gbc_sound_channel[i].active_flag = 0;
+      sound_on = 0;
+   }
+
+   address16(io_registers, 0x84) = 
+      (address16(io_registers, 0x84) & 0x000F) | (value & 0xFFF0);
+}
 
 #define sound_update_frequency_step(timer_number)                             \
   timer[timer_number].frequency_step =                                        \
@@ -1062,12 +1065,12 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
     // Sound control L
     case 0x80:
       access_register8_low(0x80);
-      gbc_trigger_sound();
+      gbc_trigger_sound(value);
       break;
 
     case 0x81:
       access_register8_high(0x80);
-      gbc_trigger_sound();
+      gbc_trigger_sound(value);
       break;
 
     // Sound control H
@@ -1083,7 +1086,7 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
 
     // Sound control X
     case 0x84:
-      sound_on();
+      sound_control_x(value);
       break;
 
     // Sound wave RAM
@@ -1341,7 +1344,7 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
 
     // Sound control L
     case 0x80:
-      gbc_trigger_sound();
+      gbc_trigger_sound(value);
       break;
 
     // Sound control H
@@ -1351,7 +1354,7 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
 
     // Sound control X
     case 0x84:
-      sound_on();
+      sound_control_x(value);
       break;
 
     // Sound wave RAM
