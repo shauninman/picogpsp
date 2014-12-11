@@ -603,7 +603,7 @@ void function_cc write_eeprom(u32 address, u32 value)
     value = current_instruction | (current_instruction << 16);                \
   }                                                                           \
 
-u32 function_cc read_eeprom()
+u32 function_cc read_eeprom(void)
 {
   u32 value;
 
@@ -2176,7 +2176,7 @@ u32 save_backup(char *name)
   return 0;
 }
 
-void update_backup()
+void update_backup(void)
 {
   save_backup(backup_filename);
 }
@@ -2297,27 +2297,19 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
 
             if(!strcmp(current_variable, "iwram_stack_optimize") &&
                   !strcmp(current_value, "no\0")) /* \0 for broken toolchain workaround */
-            {
                iwram_stack_optimize = 0;
-            }
 
             if(!strcmp(current_variable, "flash_rom_type") &&
               !strcmp(current_value, "128KB"))
-            {
               flash_device_id = FLASH_DEVICE_MACRONIX_128KB;
-            }
 
             if(!strcmp(current_variable, "bios_rom_hack_39") &&
               !strcmp(current_value, "yes"))
-            {
               bios_rom[0x39] = 0xC0;
-            }
 
             if(!strcmp(current_variable, "bios_rom_hack_2C") &&
               !strcmp(current_value, "yes"))
-            {
                bios_rom[0x2C] = 0x02;
-            }
           }
         }
 
@@ -3109,7 +3101,7 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
 // Picks a page to evict
 u32 page_time = 0;
 
-u32 evict_gamepak_page()
+u32 evict_gamepak_page(void)
 {
   // Find the one with the smallest frame timestamp
   u32 page_index = 0;
@@ -3161,7 +3153,7 @@ u8 *load_gamepak_page(u32 physical_index)
   return swap_location;
 }
 
-void init_memory_gamepak()
+void init_memory_gamepak(void)
 {
   u32 map_offset = 0;
 
