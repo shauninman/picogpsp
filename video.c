@@ -2296,8 +2296,7 @@ fill_line_builder(color32);
 
 #ifdef RENDER_COLOR16_NORMAL
 
-#ifndef ARM_ARCH
-
+#ifndef ARM_ARCH_BLENDING_OPTS
 void expand_normal(u16 *screen_ptr, u32 start, u32 end)
 {
   u32 i, pixel_source;
@@ -2328,7 +2327,7 @@ void expand_normal(u16 *screen_ptr, u32 start, u32 end)
 void expand_blend(u32 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end);
 
-#ifndef ARM_ARCH
+#ifndef ARM_ARCH_BLENDING_OPTS
 
 void expand_blend(u32 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)

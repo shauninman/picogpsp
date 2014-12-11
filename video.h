@@ -20,7 +20,7 @@
 #ifndef VIDEO_H
 #define VIDEO_H
 
-void update_scanline();
+void update_scanline(void);
 void video_write_savestate(void);
 void video_read_savestate(void);
 

@@ -33,7 +33,10 @@ endif
 endif
 
 ifeq ($(CPU_ARCH), arm)
+ifeq ($(CPU_ARCH_ARM_BLENDING_OPTS),1)
+CFLAGS += -DARM_ARCH_BLENDING_OPTS
 SOURCES_ASM += $(CORE_DIR)/arm/video_blend.S
+endif
 endif
 
 INCFLAGS := -I$(CORE_DIR)
