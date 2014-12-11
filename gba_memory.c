@@ -221,52 +221,53 @@ static u32 prescale_table[] = { 0, 6, 8, 10 };
      (gbc_sound_buffer_index + buffer_adjust) % BUFFER_SIZE;                  \
   }                                                                           \
 
-#define trigger_timer(timer_number)                                           \
-  if(value & 0x80)                                                            \
-  {                                                                           \
-    if(timer[timer_number].status == TIMER_INACTIVE)                          \
-    {                                                                         \
-      u32 prescale = prescale_table[value & 0x03];                            \
-      u32 timer_reload = timer[timer_number].reload;                          \
-                                                                              \
-      if((value >> 2) & 0x01)                                                 \
-        timer[timer_number].status = TIMER_CASCADE;                           \
-      else                                                                    \
-        timer[timer_number].status = TIMER_PRESCALE;                          \
-                                                                              \
-      timer[timer_number].prescale = prescale;                                \
-      timer[timer_number].irq = (value >> 6) & 0x01;                          \
-                                                                              \
-      address16(io_registers, 0x100 + (timer_number * 4)) =                   \
-       -timer_reload;                                                         \
-                                                                              \
-      timer_reload <<= prescale;                                              \
-      timer[timer_number].count = timer_reload;                               \
-                                                                              \
-      if(timer_reload < execute_cycles)                                       \
-        execute_cycles = timer_reload;                                        \
-                                                                              \
-      if(timer_number < 2)                                                    \
-      {                                                                       \
-        u32 buffer_adjust =                                                   \
-         (u32)(((float)(cpu_ticks - gbc_sound_last_cpu_ticks) *               \
-         sound_frequency) / GBC_BASE_RATE) * 2;                               \
-                                                                              \
-        sound_update_frequency_step(timer_number);                            \
-        adjust_sound_buffer(timer_number, 0);                                 \
-        adjust_sound_buffer(timer_number, 1);                                 \
-      }                                                                       \
-    }                                                                         \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    if(timer[timer_number].status != TIMER_INACTIVE)                          \
-    {                                                                         \
-      timer[timer_number].status = TIMER_INACTIVE;                            \
-      timer[timer_number].stop_cpu_ticks = cpu_ticks;                         \
-    }                                                                         \
-  }                                                                           \
-  address16(io_registers, 0x102 + (timer_number * 4)) = value;                \
+static void trigger_timer(u32 timer_number, u32 value)
+{
+   if (value & 0x80)
+   {
+      if(timer[timer_number].status == TIMER_INACTIVE)
+      {
+         u32 prescale = prescale_table[value & 0x03];
+         u32 timer_reload = timer[timer_number].reload;
+
+         if((value >> 2) & 0x01)
+            timer[timer_number].status = TIMER_CASCADE;
+         else
+            timer[timer_number].status = TIMER_PRESCALE;
+
+         timer[timer_number].prescale = prescale;
+         timer[timer_number].irq = (value >> 6) & 0x01;
+
+         address16(io_registers, 0x100 + (timer_number * 4)) = -timer_reload;
+
+         timer_reload <<= prescale;
+         timer[timer_number].count = timer_reload;
+
+         if(timer_reload < execute_cycles)
+            execute_cycles = timer_reload;
+
+         if(timer_number < 2)
+         {
+            u32 buffer_adjust =
+               (u32)(((float)(cpu_ticks - gbc_sound_last_cpu_ticks) *
+                        sound_frequency) / GBC_BASE_RATE) * 2;
+
+            sound_update_frequency_step(timer_number);
+            adjust_sound_buffer(timer_number, 0);
+            adjust_sound_buffer(timer_number, 1);
+         }
+      }
+   }
+   else
+   {
+      if(timer[timer_number].status != TIMER_INACTIVE)
+      {
+         timer[timer_number].status = TIMER_INACTIVE;
+         timer[timer_number].stop_cpu_ticks = cpu_ticks;
+      }
+   }
+   address16(io_registers, 0x102 + (timer_number * 4)) = value;
+}
 
 // This table is configured for sequential access on system defaults
 
@@ -1170,22 +1171,22 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
     // Timer control (trigger byte)
     case 0x103:
       access_register8_low(0x102);
-      trigger_timer(0);
+      trigger_timer(0, value);
       break;
 
     case 0x107:
       access_register8_low(0x106);
-      trigger_timer(1);
+      trigger_timer(1, value);
       break;
 
     case 0x10B:
       access_register8_low(0x10A);
-      trigger_timer(2);
+      trigger_timer(2, value);
       break;
 
     case 0x10F:
       access_register8_low(0x10E);
-      trigger_timer(3);
+      trigger_timer(3, value);
       break;
 
     // IF
@@ -1407,21 +1408,24 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
       count_timer(3);
       break;
 
-    // Timer control
+    /* Timer control 0 */
     case 0x102:
-      trigger_timer(0);
+      trigger_timer(0, value);
       break;
 
+    /* Timer control 1 */
     case 0x106:
-      trigger_timer(1);
+      trigger_timer(1, value);
       break;
 
+    /* Timer control 2 */
     case 0x10A:
-      trigger_timer(2);
+      trigger_timer(2, value);
       break;
 
+    /* Timer control 3 */
     case 0x10E:
-      trigger_timer(3);
+      trigger_timer(3, value);
       break;
 
     // P1
