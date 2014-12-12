@@ -931,7 +931,7 @@ static void render_scanline_text_base_normal(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
 
@@ -995,7 +995,7 @@ static void render_scanline_text_base_normal(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
 
@@ -1119,7 +1119,7 @@ static void render_scanline_text_transparent_normal(u32 layer,
 
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_8bpp();
@@ -1182,7 +1182,7 @@ static void render_scanline_text_transparent_normal(u32 layer,
 
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_4bpp();
@@ -1304,7 +1304,7 @@ static void render_scanline_text_base_color16(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_8bpp();
@@ -1366,7 +1366,7 @@ static void render_scanline_text_base_color16(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_4bpp();
@@ -1489,7 +1489,7 @@ static void render_scanline_text_transparent_color16(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_8bpp();
@@ -1551,7 +1551,7 @@ static void render_scanline_text_transparent_color16(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_4bpp();
@@ -1674,7 +1674,7 @@ static void render_scanline_text_base_color32(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_8bpp();
@@ -1736,7 +1736,7 @@ static void render_scanline_text_base_color32(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_4bpp();
@@ -1859,7 +1859,7 @@ static void render_scanline_text_transparent_color32(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_8bpp();
@@ -1923,7 +1923,7 @@ static void render_scanline_text_transparent_color32(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_4bpp();
@@ -2046,7 +2046,7 @@ static void render_scanline_text_base_alpha(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_8bpp();
@@ -2108,7 +2108,7 @@ static void render_scanline_text_base_alpha(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_4bpp();
@@ -2229,7 +2229,7 @@ static void render_scanline_text_transparent_alpha(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_8bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_8bpp - tile_width_8bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_8bpp();
@@ -2291,7 +2291,7 @@ static void render_scanline_text_transparent_alpha(u32 layer,
      /* Render a single scanline of text tiles */
      u32 vertical_pixel_offset = (vertical_offset % 8) *
         tile_width_4bpp;
-     u32 vertical_pixel_flip =
+     s32 vertical_pixel_flip =
         ((tile_size_4bpp - tile_width_4bpp) -
          vertical_pixel_offset) - vertical_pixel_offset;
      tile_extra_variables_4bpp();
