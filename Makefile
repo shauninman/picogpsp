@@ -1,6 +1,7 @@
 DEBUG=0
 HAVE_GRIFFIN=0
 FRONTEND_SUPPORTS_RGB565=1
+FORCE_32BIT_ARCH=0
 
 ifneq ($(EMSCRIPTEN),)
 	platform = emscripten
@@ -21,6 +22,23 @@ ifeq ($(platform),)
 	else ifneq ($(findstring win,$(shell uname -a)),)
 		platform = win
 	endif
+endif
+
+
+ifeq ($(firstword $(filter x86_64,$(UNAME))),x86_64)
+
+else ifeq ($(firstword $(filter amd64,$(UNAME))),amd64)
+
+else ifeq ($(firstword $(filter x86,$(UNAME))),x86)
+	FORCE_32BIT_ARCH := 1
+endif
+
+FORCE_32BIT :=
+
+ifeq ($(FORCE_32BIT_ARCH),1)
+	HAVE_DYNAREC := 1
+	FORCE_32BIT := -m32
+	CPU_ARCH := x86_32
 endif
 
 # system platform
@@ -47,9 +65,6 @@ LDFLAGS     :=
 ifeq ($(platform), unix)
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC
-	FORCE_32BIT := -m32
-	CPU_ARCH := x86_32
-	HAVE_DYNAREC := 1
 	SHARED := -shared $(FORCE_32BIT) -Wl,--version-script=link.T
 	ifneq ($(findstring Haiku,$(shell uname -a)),)
 		LIBM :=
