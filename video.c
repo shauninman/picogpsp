@@ -624,6 +624,20 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
     tile_type##_noflip_##color_depth(combine_op, alpha_op);                   \
   }                                                                           \
 
+#define single_tile_map_base_4bpp_color16(tile_type)                          \
+  get_tile_4bpp();                                                            \
+  if(current_tile & 0x800)                                                    \
+    tile_ptr += vertical_pixel_flip;                                          \
+                                                                              \
+  if(current_tile & 0x400)                                                    \
+  {                                                                           \
+    tile_type##_flip_4bpp(base, color16);                                     \
+  }                                                                           \
+  else                                                                        \
+  {                                                                           \
+    tile_type##_noflip_4bpp(base, color16);                                   \
+  }                                                                           \
+
 
 // Draws multiple sequential tiles from the tilemap, hflips and vflips as
 // necessary.
@@ -663,7 +677,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define multiple_tile_map_base_4bpp_color16()                                 \
   for(i = 0; i < tile_run; i++)                                               \
   {                                                                           \
-    single_tile_map(tile, base, 4bpp, color16);                               \
+    single_tile_map_base_4bpp_color16(tile);                                  \
     advance_dest_ptr_base(8);                                                 \
     map_ptr++;                                                                \
   }                                                                           \
