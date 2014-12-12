@@ -3360,42 +3360,21 @@ thumb_loop:
 
           case 0x38:                                                                
              /* SUB r0, imm */                                                       
-             thumb_sub(imm, 0, reg[0], imm);                                         
-             break;                                                                  
-
           case 0x39:                                                                
              /* SUB r1, imm */                                                       
-             thumb_sub(imm, 1, reg[1], imm);                                         
-             break;                                                                  
-
           case 0x3A:                                                                
              /* SUB r2, imm */                                                       
-             thumb_sub(imm, 2, reg[2], imm);                                         
-             break;                                                                  
-
           case 0x3B:                                                                
              /* SUB r3, imm */                                                       
-             thumb_sub(imm, 3, reg[3], imm);                                         
-             break;                                                                  
-
           case 0x3C:                                                                
              /* SUB r4, imm */                                                       
-             thumb_sub(imm, 4, reg[4], imm);                                         
-             break;                                                                  
-
           case 0x3D:                                                                
              /* SUB r5, imm */                                                       
-             thumb_sub(imm, 5, reg[5], imm);                                         
-             break;                                                                  
-
           case 0x3E:                                                                
              /* SUB r6, imm */                                                       
-             thumb_sub(imm, 6, reg[6], imm);                                         
-             break;                                                                  
-
           case 0x3F:                                                                
              /* SUB r7, imm */                                                       
-             thumb_sub(imm, 7, reg[7], imm);                                         
+             thumb_sub(imm, thumb_opcode_val & 0x7, reg[thumb_opcode_val & 0x7], imm);                                         
              break;                                                                  
 
           case 0x40:                                                                
