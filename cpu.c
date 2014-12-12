@@ -3317,7 +3317,7 @@ thumb_loop:
              /* MOV r6, imm */                                                       
           case 0x27:                                                                
              /* MOV r7, imm */                                                       
-             thumb_logic(imm, thumb_opcode_val - 0x20, imm);                                               
+             thumb_logic(imm, thumb_opcode_val & 0x7, imm);                                               
              break;                                                                  
 
           case 0x28:                                                                
@@ -3336,7 +3336,7 @@ thumb_loop:
              /* CMP r6, imm */                                                       
           case 0x2F:                                                                
              /* CMP r7, imm */                                                       
-             thumb_test_sub(imm, reg[thumb_opcode_val - 0x28], imm);                                       
+             thumb_test_sub(imm, reg[thumb_opcode_val & 0x7], imm);                                       
              break;                                                                  
 
           case 0x30:                                                                
@@ -3355,7 +3355,7 @@ thumb_loop:
              /* ADD r6, imm */                                                       
           case 0x37:                                                                
              /* ADD r7, imm */                                                       
-             thumb_add(imm, thumb_opcode_val - 0x30, reg[thumb_opcode_val - 0x30], imm);                                         
+             thumb_add(imm, thumb_opcode_val & 0x7, reg[thumb_opcode_val & 0x7], imm);                                         
              break;                                                                  
 
           case 0x38:                                                                
