@@ -6,7 +6,7 @@ ifeq ($(HAVE_GRIFFIN), 1)
 SOURCES_C := $(CORE_DIR)/gpsp_griffin.c
 else
 SOURCES_C := $(CORE_DIR)/main.c \
-				 $(CORE_DIR)/cpu.c \
+				 $(CORE_DIR)/cpu_orig.c \
 				 $(CORE_DIR)/gba_memory.c \
 				 $(CORE_DIR)/video.c \
 				 $(CORE_DIR)/input.c \
