@@ -636,6 +636,22 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
     map_ptr++;                                                                \
   }                                                                           \
 
+#define multiple_tile_map_base_8bpp_normal()                                  \
+  for(i = 0; i < tile_run; i++)                                               \
+  {                                                                           \
+    single_tile_map(tile, base, 8bpp, normal);                                \
+    advance_dest_ptr_base(8);                                                 \
+    map_ptr++;                                                                \
+  }                                                                           \
+
+#define multiple_tile_map_base_4bpp_normal()                                  \
+  for(i = 0; i < tile_run; i++)                                               \
+  {                                                                           \
+    single_tile_map(tile, base, 4bpp, normal);                                \
+    advance_dest_ptr_base(8);                                                 \
+    map_ptr++;                                                                \
+  }                                                                           \
+
 // Draws a partial tile from a tilemap clipped against the left edge of the
 // screen.
 
@@ -894,12 +910,12 @@ static void render_scanline_text_base_normal(u32 layer,
         }
 
         tile_run = (pixel_run - partial_tile_run) / 8;
-        multiple_tile_map(base, 8bpp, normal);
+        multiple_tile_map_base_8bpp_normal();
         map_ptr = second_ptr;
         end -= pixel_run;
      }
      tile_run = end / 8;
-     multiple_tile_map(base, 8bpp, normal);
+     multiple_tile_map_base_8bpp_normal();
 
      partial_tile_run = end % 8;
      if(partial_tile_run)
@@ -958,12 +974,12 @@ static void render_scanline_text_base_normal(u32 layer,
         }
 
         tile_run = (pixel_run - partial_tile_run) / 8;
-        multiple_tile_map(base, 4bpp, normal);
+        multiple_tile_map_base_4bpp_normal();
         map_ptr = second_ptr;
         end -= pixel_run;
      }
      tile_run = end / 8;
-     multiple_tile_map(base, 4bpp, normal);
+     multiple_tile_map_base_4bpp_normal();
 
      partial_tile_run = end % 8;
      if(partial_tile_run)
