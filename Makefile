@@ -264,9 +264,6 @@ else
 	$(CC) $(fpic) $(SHARED) $(INCFLAGS) $(OPTIMIZE) -o $@ $(OBJECTS) $(LIBM) $(LDFLAGS)
 endif
 
-cpu.o: cpu.c
-	$(CC) $(CFLAGS) -Wno-unused-variable -Wno-unused-label $(OPTIMIZE_SAFE) $(INCDIRS) -c -o $@ $<
-
 cpu_threaded.o: cpu_threaded.c
 	$(CC) $(CFLAGS) -Wno-unused-variable -Wno-unused-label $(OPTIMIZE_SAFE) $(INCDIRS) -c -o $@ $<
 
