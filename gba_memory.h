@@ -219,7 +219,8 @@ static inline void state_mem_write(const void* src, size_t size)
   state_mem_write_ptr += size;
 }
 
-#define GBA_STATE_MEM_SIZE                    429640
+/* this is an upper limit, ToDo : calculate the exact state size */
+#define GBA_STATE_MEM_SIZE                    (512*1024)
 
 #define state_mem_write_array(array)          state_mem_write(array,     sizeof(array))
 #define state_mem_write_variable(variable)    state_mem_write(&variable, sizeof(variable))
