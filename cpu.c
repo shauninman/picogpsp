@@ -3341,42 +3341,21 @@ thumb_loop:
 
           case 0x30:                                                                
              /* ADD r0, imm */                                                       
-             thumb_add(imm, 0, reg[0], imm);                                         
-             break;                                                                  
-
           case 0x31:                                                                
              /* ADD r1, imm */                                                       
-             thumb_add(imm, 1, reg[1], imm);                                         
-             break;                                                                  
-
           case 0x32:                                                                
              /* ADD r2, imm */                                                       
-             thumb_add(imm, 2, reg[2], imm);                                         
-             break;                                                                  
-
           case 0x33:                                                                
              /* ADD r3, imm */                                                       
-             thumb_add(imm, 3, reg[3], imm);                                         
-             break;                                                                  
-
           case 0x34:                                                                
              /* ADD r4, imm */                                                       
-             thumb_add(imm, 4, reg[4], imm);                                         
-             break;                                                                  
-
           case 0x35:                                                                
              /* ADD r5, imm */                                                       
-             thumb_add(imm, 5, reg[5], imm);                                         
-             break;                                                                  
-
           case 0x36:                                                                
              /* ADD r6, imm */                                                       
-             thumb_add(imm, 6, reg[6], imm);                                         
-             break;                                                                  
-
           case 0x37:                                                                
              /* ADD r7, imm */                                                       
-             thumb_add(imm, 7, reg[7], imm);                                         
+             thumb_add(imm, thumb_opcode_val - 0x30, reg[thumb_opcode_val - 0x30], imm);                                         
              break;                                                                  
 
           case 0x38:                                                                
