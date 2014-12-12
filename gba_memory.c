@@ -2949,7 +2949,7 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
   u32 length = dma->length;
   u32 read_value;
   u32 src_ptr = dma->source_address;
-  u32 dest_ptr = dma->dest_address;
+  uintptr_t dest_ptr = dma->dest_address;
   cpu_alert_type return_value = CPU_ALERT_NONE;
 
   // Technically this should be done for source and destination, but
