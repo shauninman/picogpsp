@@ -636,6 +636,22 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
     map_ptr++;                                                                \
   }                                                                           \
 
+#define multiple_tile_map_transparent_8bpp_color16()                          \
+  for(i = 0; i < tile_run; i++)                                               \
+  {                                                                           \
+    single_tile_map(tile, transparent, 8bpp, color16);                        \
+    advance_dest_ptr_transparent(8);                                          \
+    map_ptr++;                                                                \
+  }                                                                           \
+
+#define multiple_tile_map_transparent_4bpp_color16()                          \
+  for(i = 0; i < tile_run; i++)                                               \
+  {                                                                           \
+    single_tile_map(tile, transparent, 4bpp, color16);                        \
+    advance_dest_ptr_transparent(8);                                          \
+    map_ptr++;                                                                \
+  }                                                                           \
+
 #define multiple_tile_map_base_8bpp_color16()                                 \
   for(i = 0; i < tile_run; i++)                                               \
   {                                                                           \
@@ -1498,12 +1514,12 @@ static void render_scanline_text_transparent_color16(u32 layer,
         }
 
         tile_run = (pixel_run - partial_tile_run) / 8;
-        multiple_tile_map(transparent, 8bpp, color16);
+        multiple_tile_map_transparent_8bpp_color16();
         map_ptr = second_ptr;
         end -= pixel_run;
      }
      tile_run = end / 8;
-     multiple_tile_map(transparent, 8bpp, color16);
+     multiple_tile_map_transparent_8bpp_color16();
 
      partial_tile_run = end % 8;
      if(partial_tile_run)
@@ -1561,12 +1577,12 @@ static void render_scanline_text_transparent_color16(u32 layer,
         }
 
         tile_run = (pixel_run - partial_tile_run) / 8;
-        multiple_tile_map(transparent, 4bpp, color16);
+        multiple_tile_map_transparent_4bpp_color16();
         map_ptr = second_ptr;
         end -= pixel_run;
      }
      tile_run = end / 8;
-     multiple_tile_map(transparent, 4bpp, color16);
+     multiple_tile_map_transparent_4bpp_color16();
 
      partial_tile_run = end % 8;
 
