@@ -1327,13 +1327,23 @@ static void render_scanline_text_base_color16(u32 layer,
 
   if(bg_control & 0x80)
   {
+     /* color depth: 8bpp 
+      * combine: base
+      * alpha :color16 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(8bpp, base, color16);
+     tile_render(8bpp, base, color16);
   }
   else
   {
+     /* color depth: 4bpp 
+      * combine: base
+      * alpha :color16 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(4bpp, base, color16);
+     tile_render(4bpp, base, color16);
   }
 }
 
@@ -1396,13 +1406,23 @@ static void render_scanline_text_transparent_color16(u32 layer,
 
   if(bg_control & 0x80)
   {
+     /* color depth: 8bpp 
+      * combine: transparent
+      * alpha :color16 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(8bpp, transparent, color16);
+     tile_render(8bpp, transparent, color16);
   }
   else
   {
+     /* color depth: 4bpp 
+      * combine: transparent
+      * alpha :color16 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(4bpp, transparent, color16);
+     tile_render(4bpp, transparent, color16);
   }
 }
 
@@ -1465,13 +1485,23 @@ static void render_scanline_text_base_color32(u32 layer,
 
   if(bg_control & 0x80)
   {
+     /* color depth: 8bpp 
+      * combine: base 
+      * alpha :color32 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(8bpp, base, color32);
+     tile_render(8bpp, base, color32);
   }
   else
   {
+     /* color depth: 4bpp 
+      * combine: base 
+      * alpha :color32 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(4bpp, base, color32);
+     tile_render(4bpp, base, color32);
   }
 }
 
@@ -1534,13 +1564,23 @@ static void render_scanline_text_transparent_color32(u32 layer,
 
   if(bg_control & 0x80)
   {
+     /* color depth: 8bpp 
+      * combine: transparent
+      * alpha :color32 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(8bpp, transparent, color32);
+     tile_render(8bpp, transparent, color32);
   }
   else
   {
+     /* color depth: 4bpp 
+      * combine: transparent
+      * alpha :color32 
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(4bpp, transparent, color32);
+     tile_render(4bpp, transparent, color32);
   }
 }
 
@@ -1603,13 +1643,23 @@ static void render_scanline_text_base_alpha(u32 layer,
 
   if(bg_control & 0x80)
   {
+     /* color depth: 8bpp 
+      * combine: base
+      * alpha : alpha
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(8bpp, base, alpha);
+     tile_render(8bpp, base, alpha);
   }
   else
   {
+     /* color depth: 4bpp 
+      * combine: base
+      * alpha : alpha
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(4bpp, base, alpha);
+     tile_render(4bpp, base, alpha);
   }
 }
 
@@ -1672,13 +1722,23 @@ static void render_scanline_text_transparent_alpha(u32 layer,
 
   if(bg_control & 0x80)
   {
+     /* color depth: 8bpp 
+      * combine: transparent
+      * alpha : alpha
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(8bpp, transparent, alpha);
+     tile_render(8bpp, transparent, alpha);
   }
   else
   {
+     /* color depth: 4bpp 
+      * combine: transparent
+      * alpha : alpha
+      */
+
      /* Render a single scanline of text tiles */
-    tile_render(4bpp, transparent, alpha);
+     tile_render(4bpp, transparent, alpha);
   }
 }
 
