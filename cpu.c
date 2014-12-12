@@ -3322,42 +3322,21 @@ thumb_loop:
 
           case 0x28:                                                                
              /* CMP r0, imm */                                                       
-             thumb_test_sub(imm, reg[0], imm);                                       
-             break;                                                                  
-
           case 0x29:                                                                
              /* CMP r1, imm */                                                       
-             thumb_test_sub(imm, reg[1], imm);                                       
-             break;                                                                  
-
           case 0x2A:                                                                
              /* CMP r2, imm */                                                       
-             thumb_test_sub(imm, reg[2], imm);                                       
-             break;                                                                  
-
           case 0x2B:                                                                
              /* CMP r3, imm */                                                       
-             thumb_test_sub(imm, reg[3], imm);                                       
-             break;                                                                  
-
           case 0x2C:                                                                
              /* CMP r4, imm */                                                       
-             thumb_test_sub(imm, reg[4], imm);                                       
-             break;                                                                  
-
           case 0x2D:                                                                
              /* CMP r5, imm */                                                       
-             thumb_test_sub(imm, reg[5], imm);                                       
-             break;                                                                  
-
           case 0x2E:                                                                
              /* CMP r6, imm */                                                       
-             thumb_test_sub(imm, reg[6], imm);                                       
-             break;                                                                  
-
           case 0x2F:                                                                
              /* CMP r7, imm */                                                       
-             thumb_test_sub(imm, reg[7], imm);                                       
+             thumb_test_sub(imm, reg[thumb_opcode_val - 0x28], imm);                                       
              break;                                                                  
 
           case 0x30:                                                                
