@@ -3525,44 +3525,22 @@ thumb_loop:
 
           case 0x48:                                                                
              /* LDR r0, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[0], u32); 
-             break;                                                                  
-
           case 0x49:                                                                
              /* LDR r1, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[1], u32); 
-             break;                                                                  
-
           case 0x4A:                                                                
              /* LDR r2, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[2], u32); 
-             break;                                                                  
-
           case 0x4B:                                                                
              /* LDR r3, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[3], u32); 
-             break;                                                                  
-
           case 0x4C:                                                                
              /* LDR r4, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[4], u32); 
-             break;                                                                  
-
           case 0x4D:                                                                
              /* LDR r5, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[5], u32); 
-             break;                                                                  
-
           case 0x4E:                                                                
              /* LDR r6, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[6], u32); 
-             break;                                                                  
-
           case 0x4F:                                                                
              /* LDR r7, [pc + imm] */                                                
-             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[7], u32); 
+             thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[thumb_opcode_val & 0x7], u32); 
              break;                                                                  
-
           case 0x50 ... 0x51:                                                       
              /* STR rd, [rb + ro] */                                                 
              thumb_access_memory(store, mem_reg, reg[rb] + reg[ro], reg[rd], u32);   
@@ -3635,164 +3613,76 @@ thumb_loop:
 
           case 0x90:                                                                
              /* STR r0, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[0], u32);  
-             break;                                                                  
-
           case 0x91:                                                                
              /* STR r1, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[1], u32);  
-             break;                                                                  
-
           case 0x92:                                                                
              /* STR r2, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[2], u32);  
-             break;                                                                  
-
           case 0x93:                                                                
              /* STR r3, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[3], u32);  
-             break;                                                                  
-
           case 0x94:                                                                
              /* STR r4, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[4], u32);  
-             break;                                                                  
-
           case 0x95:                                                                
              /* STR r5, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[5], u32);  
-             break;                                                                  
-
           case 0x96:                                                                
              /* STR r6, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[6], u32);  
-             break;                                                                  
-
           case 0x97:                                                                
              /* STR r7, [sp + imm] */                                                
-             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[7], u32);  
+             thumb_access_memory(store, imm, reg[REG_SP] + (imm * 4), reg[thumb_opcode_val & 0x7], u32);  
              break;                                                                  
-
           case 0x98:                                                                
              /* LDR r0, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[0], u32);   
-             break;                                                                  
-
           case 0x99:                                                                
              /* LDR r1, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[1], u32);   
-             break;                                                                  
-
           case 0x9A:                                                                
              /* LDR r2, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[2], u32);   
-             break;                                                                  
-
           case 0x9B:                                                                
              /* LDR r3, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[3], u32);   
-             break;                                                                  
-
           case 0x9C:                                                                
              /* LDR r4, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[4], u32);   
-             break;                                                                  
-
           case 0x9D:                                                                
              /* LDR r5, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[5], u32);   
-             break;                                                                  
-
           case 0x9E:                                                                
              /* LDR r6, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[6], u32);   
-             break;                                                                  
-
           case 0x9F:                                                                
              /* LDR r7, [sp + imm] */                                                
-             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[7], u32);   
+             thumb_access_memory(load, imm, reg[REG_SP] + (imm * 4), reg[thumb_opcode_val & 0x7], u32);   
              break;                                                                  
-
           case 0xA0:                                                                
              /* ADD r0, pc, +imm */                                                  
-             thumb_add_noflags(imm, 0, (pc & ~2) + 4, (imm * 4));                    
-             break;                                                                  
-
           case 0xA1:                                                                
              /* ADD r1, pc, +imm */                                                  
-             thumb_add_noflags(imm, 1, (pc & ~2) + 4, (imm * 4));                    
-             break;                                                                  
-
           case 0xA2:                                                                
              /* ADD r2, pc, +imm */                                                  
-             thumb_add_noflags(imm, 2, (pc & ~2) + 4, (imm * 4));                    
-             break;                                                                  
-
           case 0xA3:                                                                
              /* ADD r3, pc, +imm */                                                  
-             thumb_add_noflags(imm, 3, (pc & ~2) + 4, (imm * 4));                    
-             break;                                                                  
-
           case 0xA4:                                                                
              /* ADD r4, pc, +imm */                                                  
-             thumb_add_noflags(imm, 4, (pc & ~2) + 4, (imm * 4));                    
-             break;                                                                  
-
           case 0xA5:                                                                
              /* ADD r5, pc, +imm */                                                  
-             thumb_add_noflags(imm, 5, (pc & ~2) + 4, (imm * 4));                    
-             break;                                                                  
-
           case 0xA6:                                                                
              /* ADD r6, pc, +imm */                                                  
-             thumb_add_noflags(imm, 6, (pc & ~2) + 4, (imm * 4));                    
-             break;                                                                  
-
           case 0xA7:                                                                
              /* ADD r7, pc, +imm */                                                  
-             thumb_add_noflags(imm, 7, (pc & ~2) + 4, (imm * 4));                    
+             thumb_add_noflags(imm, thumb_opcode_val & 0x7, (pc & ~2) + 4, (imm * 4));                    
              break;                                                                  
-
           case 0xA8:                                                                
              /* ADD r0, sp, +imm */                                                  
-             thumb_add_noflags(imm, 0, reg[REG_SP], (imm * 4));                      
-             break;                                                                  
-
           case 0xA9:                                                                
              /* ADD r1, sp, +imm */                                                  
-             thumb_add_noflags(imm, 1, reg[REG_SP], (imm * 4));                      
-             break;                                                                  
-
           case 0xAA:                                                                
              /* ADD r2, sp, +imm */                                                  
-             thumb_add_noflags(imm, 2, reg[REG_SP], (imm * 4));                      
-             break;                                                                  
-
           case 0xAB:                                                                
              /* ADD r3, sp, +imm */                                                  
-             thumb_add_noflags(imm, 3, reg[REG_SP], (imm * 4));                      
-             break;                                                                  
-
           case 0xAC:                                                                
              /* ADD r4, sp, +imm */                                                  
-             thumb_add_noflags(imm, 4, reg[REG_SP], (imm * 4));                      
-             break;                                                                  
-
           case 0xAD:                                                                
              /* ADD r5, sp, +imm */                                                  
-             thumb_add_noflags(imm, 5, reg[REG_SP], (imm * 4));                      
-             break;                                                                  
-
           case 0xAE:                                                                
              /* ADD r6, sp, +imm */                                                  
-             thumb_add_noflags(imm, 6, reg[REG_SP], (imm * 4));                      
-             break;                                                                  
-
           case 0xAF:                                                                
              /* ADD r7, sp, +imm */                                                  
-             thumb_add_noflags(imm, 7, reg[REG_SP], (imm * 4));                      
+             thumb_add_noflags(imm, thumb_opcode_val & 0x7, reg[REG_SP], (imm * 4));                      
              break;                                                                  
-
           case 0xB0 ... 0xB3:                                                       
              if((opcode >> 7) & 0x01)                                                
              {                                                                       
@@ -3828,82 +3718,39 @@ thumb_loop:
 
           case 0xC0:                                                                
              /* STMIA r0!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 0);                                
-             break;                                                                  
-
           case 0xC1:                                                                
              /* STMIA r1!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 1);                                
-             break;                                                                  
-
           case 0xC2:                                                                
              /* STMIA r2!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 2);                                
-             break;                                                                  
-
           case 0xC3:                                                                
              /* STMIA r3!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 3);                                
-             break;                                                                  
-
           case 0xC4:                                                                
              /* STMIA r4!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 4);                                
-             break;                                                                  
-
           case 0xC5:                                                                
              /* STMIA r5!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 5);                                
-             break;                                                                  
-
           case 0xC6:                                                                
              /* STMIA r6!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 6);                                
-             break;                                                                  
-
           case 0xC7:                                                                
              /* STMIA r7!, rlist */                                                  
-             thumb_block_memory(store, no_op, up, 7);                                
+             thumb_block_memory(store, no_op, up, thumb_opcode_val & 0x7);                                
              break;                                                                  
-
           case 0xC8:                                                                
              /* LDMIA r0!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 0);                                 
-             break;                                                                  
-
           case 0xC9:                                                                
              /* LDMIA r1!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 1);                                 
-             break;                                                                  
-
           case 0xCA:                                                                
              /* LDMIA r2!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 2);                                 
-             break;                                                                  
-
           case 0xCB:                                                                
              /* LDMIA r3!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 3);                                 
-             break;                                                                  
-
           case 0xCC:                                                                
              /* LDMIA r4!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 4);                                 
-             break;                                                                  
-
           case 0xCD:                                                                
              /* LDMIA r5!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 5);                                 
-             break;                                                                  
-
           case 0xCE:                                                                
              /* LDMIA r6!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 6);                                 
-             break;                                                                  
-
           case 0xCF:                                                                
              /* LDMIA r7!, rlist */                                                  
-             thumb_block_memory(load, no_op, up, 7);                                 
+             thumb_block_memory(load, no_op, up, thumb_opcode_val & 0x7);                                 
              break;                                                                  
 
           case 0xD0:                                                                
