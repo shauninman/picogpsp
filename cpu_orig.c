@@ -1656,7 +1656,6 @@ void execute_arm(u32 cycles)
   cpu_alert_type cpu_alert;
 
   u32 old_pc;
-  u32 thumb_opcode_val = 0, arm_opcode_val = 0;
 
   if(!pc_address_block)
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);
@@ -3262,9 +3261,8 @@ thumb_loop:
        check_pc_region();                                                          
        pc &= ~0x01;                                                                
        opcode = address16(pc_address_block, (pc & 0x7FFF));                        
-       thumb_opcode_val = (opcode >> 8) & 0xFF;
 
-       switch(thumb_opcode_val)                                                
+       switch((opcode >> 8) & 0xFF)                                                
        {                                                                           
           case 0x00 ... 0x07:                                                       
              /* LSL rd, rs, offset */                                                
@@ -3303,78 +3301,162 @@ thumb_loop:
 
           case 0x20:                                                                
              /* MOV r0, imm */                                                       
+             thumb_logic(imm, 0, imm);                                               
+             break;                                                                  
+
           case 0x21:                                                                
              /* MOV r1, imm */                                                       
+             thumb_logic(imm, 1, imm);                                               
+             break;                                                                  
+
           case 0x22:                                                                
              /* MOV r2, imm */                                                       
+             thumb_logic(imm, 2, imm);                                               
+             break;                                                                  
+
           case 0x23:                                                                
              /* MOV r3, imm */                                                       
+             thumb_logic(imm, 3, imm);                                               
+             break;                                                                  
+
           case 0x24:                                                                
              /* MOV r4, imm */                                                       
+             thumb_logic(imm, 4, imm);                                               
+             break;                                                                  
+
           case 0x25:                                                                
              /* MOV r5, imm */                                                       
+             thumb_logic(imm, 5, imm);                                               
+             break;                                                                  
+
           case 0x26:                                                                
              /* MOV r6, imm */                                                       
+             thumb_logic(imm, 6, imm);                                               
+             break;                                                                  
+
           case 0x27:                                                                
              /* MOV r7, imm */                                                       
-             thumb_logic(imm, thumb_opcode_val & 0x7, imm);                                               
+             thumb_logic(imm, 7, imm);                                               
              break;                                                                  
 
           case 0x28:                                                                
              /* CMP r0, imm */                                                       
+             thumb_test_sub(imm, reg[0], imm);                                       
+             break;                                                                  
+
           case 0x29:                                                                
              /* CMP r1, imm */                                                       
+             thumb_test_sub(imm, reg[1], imm);                                       
+             break;                                                                  
+
           case 0x2A:                                                                
              /* CMP r2, imm */                                                       
+             thumb_test_sub(imm, reg[2], imm);                                       
+             break;                                                                  
+
           case 0x2B:                                                                
              /* CMP r3, imm */                                                       
+             thumb_test_sub(imm, reg[3], imm);                                       
+             break;                                                                  
+
           case 0x2C:                                                                
              /* CMP r4, imm */                                                       
+             thumb_test_sub(imm, reg[4], imm);                                       
+             break;                                                                  
+
           case 0x2D:                                                                
              /* CMP r5, imm */                                                       
+             thumb_test_sub(imm, reg[5], imm);                                       
+             break;                                                                  
+
           case 0x2E:                                                                
              /* CMP r6, imm */                                                       
+             thumb_test_sub(imm, reg[6], imm);                                       
+             break;                                                                  
+
           case 0x2F:                                                                
              /* CMP r7, imm */                                                       
-             thumb_test_sub(imm, reg[thumb_opcode_val & 0x7], imm);                                       
+             thumb_test_sub(imm, reg[7], imm);                                       
              break;                                                                  
 
           case 0x30:                                                                
              /* ADD r0, imm */                                                       
+             thumb_add(imm, 0, reg[0], imm);                                         
+             break;                                                                  
+
           case 0x31:                                                                
              /* ADD r1, imm */                                                       
+             thumb_add(imm, 1, reg[1], imm);                                         
+             break;                                                                  
+
           case 0x32:                                                                
              /* ADD r2, imm */                                                       
+             thumb_add(imm, 2, reg[2], imm);                                         
+             break;                                                                  
+
           case 0x33:                                                                
              /* ADD r3, imm */                                                       
+             thumb_add(imm, 3, reg[3], imm);                                         
+             break;                                                                  
+
           case 0x34:                                                                
              /* ADD r4, imm */                                                       
+             thumb_add(imm, 4, reg[4], imm);                                         
+             break;                                                                  
+
           case 0x35:                                                                
              /* ADD r5, imm */                                                       
+             thumb_add(imm, 5, reg[5], imm);                                         
+             break;                                                                  
+
           case 0x36:                                                                
              /* ADD r6, imm */                                                       
+             thumb_add(imm, 6, reg[6], imm);                                         
+             break;                                                                  
+
           case 0x37:                                                                
              /* ADD r7, imm */                                                       
-             thumb_add(imm, thumb_opcode_val & 0x7, reg[thumb_opcode_val & 0x7], imm);                                         
+             thumb_add(imm, 7, reg[7], imm);                                         
              break;                                                                  
 
           case 0x38:                                                                
              /* SUB r0, imm */                                                       
+             thumb_sub(imm, 0, reg[0], imm);                                         
+             break;                                                                  
+
           case 0x39:                                                                
              /* SUB r1, imm */                                                       
+             thumb_sub(imm, 1, reg[1], imm);                                         
+             break;                                                                  
+
           case 0x3A:                                                                
              /* SUB r2, imm */                                                       
+             thumb_sub(imm, 2, reg[2], imm);                                         
+             break;                                                                  
+
           case 0x3B:                                                                
              /* SUB r3, imm */                                                       
+             thumb_sub(imm, 3, reg[3], imm);                                         
+             break;                                                                  
+
           case 0x3C:                                                                
              /* SUB r4, imm */                                                       
+             thumb_sub(imm, 4, reg[4], imm);                                         
+             break;                                                                  
+
           case 0x3D:                                                                
              /* SUB r5, imm */                                                       
+             thumb_sub(imm, 5, reg[5], imm);                                         
+             break;                                                                  
+
           case 0x3E:                                                                
              /* SUB r6, imm */                                                       
+             thumb_sub(imm, 6, reg[6], imm);                                         
+             break;                                                                  
+
           case 0x3F:                                                                
              /* SUB r7, imm */                                                       
-             thumb_sub(imm, thumb_opcode_val & 0x7, reg[thumb_opcode_val & 0x7], imm);                                         
+             thumb_sub(imm, 7, reg[7], imm);                                         
              break;                                                                  
 
           case 0x40:                                                                
