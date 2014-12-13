@@ -5,24 +5,26 @@ FORCE_32BIT_ARCH=0
 HAVE_MMAP=0
 HAVE_MMAP_WIN32=0
 
+UNAME=$(shell uname -a)
+
 ifneq ($(EMSCRIPTEN),)
 	platform = emscripten
 endif
 
 ifeq ($(platform),)
 	platform = unix
-	ifeq ($(shell uname -a),)
+	ifeq ($(UNAME),)
 		platform = win
-	else ifneq ($(findstring MINGW,$(shell uname -a)),)
+	else ifneq ($(findstring MINGW,$(UNAME)),)
 		platform = win
-	else ifneq ($(findstring Darwin,$(shell uname -a)),)
+	else ifneq ($(findstring Darwin,$(UNAME)),)
 		platform = osx
 		arch = intel
 	ifeq ($(shell uname -p),powerpc)
 		arch = ppc
 		FORCE_32BIT_ARCH = 1
 	endif
-	else ifneq ($(findstring win,$(shell uname -a)),)
+	else ifneq ($(findstring win,$(UNAME)),)
 		platform = win
 	endif
 endif
@@ -46,16 +48,16 @@ endif
 
 # system platform
 system_platform = unix
-ifeq ($(shell uname -a),)
+ifeq ($(UNAME),)
 	EXE_EXT = .exe
 	system_platform = win
-else ifneq ($(findstring Darwin,$(shell uname -a)),)
+else ifneq ($(findstring Darwin,$(UNAME)),)
 	system_platform = osx
 	arch = intel
 	ifeq ($(shell uname -p),powerpc)
 		arch = ppc
 	endif
-	else ifneq ($(findstring MINGW,$(shell uname -a)),)
+	else ifneq ($(findstring MINGW,$(UNAME)),)
 	system_platform = win
 endif
 
@@ -74,10 +76,10 @@ ifeq ($(platform), unix)
 	endif
 	CFLAGS += $(FORCE_32BIT)
 	LDFLAGS := -Wl,--no-undefined
+	ifeq ($(HAVE_DYNAREC),1)
+		HAVE_MMAP = 1
+	endif
 
-ifeq ($(HAVE_DYNAREC),1)
-	HAVE_MMAP = 1
-endif
 # OS X
 else ifeq ($(platform), osx)
 	TARGET := $(TARGET_NAME)_libretro.dylib
@@ -91,10 +93,9 @@ else ifeq ($(platform), osx)
 		fpic += -mmacosx-version-min=10.5
 	endif
 	SHARED := -dynamiclib
-
-ifeq ($(HAVE_DYNAREC),1)
-	HAVE_MMAP = 1
-endif
+	ifeq ($(HAVE_DYNAREC),1)
+		HAVE_MMAP = 1
+	endif
 
 # iOS
 else ifeq ($(platform), ios)
@@ -186,7 +187,8 @@ else ifeq ($(platform), wii)
 # ARM
 else ifneq (,$(findstring armv,$(platform)))
 	TARGET := $(TARGET_NAME)_libretro.so
-	SHARED := -shared -Wl,--no-undefined
+	SHARED := -shared -Wl,--version-script=link.T
+	CPU_ARCH := arm
 	fpic := -fPIC
 	CC = gcc
 	ifneq (,$(findstring cortexa8,$(platform)))
@@ -209,8 +211,9 @@ else ifneq (,$(findstring armv,$(platform)))
 		CFLAGS += -mfloat-abi=hard
 		ASFLAGS += -mfloat-abi=hard
 	endif
-	CFLAGS += -DARM
-	HAVE_MMAP = 1
+	HAVE_DYNAREC := 1
+	CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
+	LDFLAGS := -Wl,--no-undefined
 
 # emscripten
 else ifeq ($(platform), emscripten)
@@ -222,11 +225,10 @@ else
 	CC = gcc
 	SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=link.T
 	CFLAGS += -D__WIN32__ -D__WIN32_LIBRETRO__
-
-ifeq ($(HAVE_DYNAREC),1)
-	HAVE_MMAP = 1
-	HAVE_MMAP_WIN32 = 1
-endif
+	ifeq ($(HAVE_DYNAREC),1)
+		HAVE_MMAP = 1
+		HAVE_MMAP_WIN32 = 1
+	endif
 
 endif
 
