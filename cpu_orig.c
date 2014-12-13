@@ -2629,7 +2629,8 @@ arm_loop:
              arm_data_proc_sub_flags((imm + c_flag - 1), reg[rn], imm);              
              break;                                                                  
 
-          case 0x30 ... 0x31:                                                       
+          case 0x30:                                                       
+          case 0x31:
              /* TST rn, imm */                                                       
              arm_data_proc_test_logic(reg[rn] & imm, imm);                           
              break;                                                                  
@@ -2644,7 +2645,8 @@ arm_loop:
              arm_data_proc_test_logic(reg[rn] ^ imm, imm);                           
              break;                                                                  
 
-          case 0x34 ... 0x35:                                                       
+          case 0x34:
+          case 0x35:                                                       
              /* CMP rn, imm */                                                       
              arm_data_proc_test_sub(reg[rn], imm, imm);                              
              break;                                                                  
@@ -3202,7 +3204,22 @@ arm_loop:
                 break;                                                                  
              }                                                                         
 
-          case 0xB0 ... 0xBF:                                                       
+          case 0xB0:
+          case 0xB1:
+          case 0xB2:
+          case 0xB3:
+          case 0xB4:
+          case 0xB5:
+          case 0xB6:
+          case 0xB7:
+          case 0xB8:
+          case 0xB9:
+          case 0xBA:
+          case 0xBB:
+          case 0xBC:
+          case 0xBD:
+          case 0xBE:
+          case 0xBF:                                                       
              {                                                                         
                 /* BL offset */                                                         
                 arm_decode_branch();                                                    
@@ -3211,11 +3228,28 @@ arm_loop:
                 break;                                                                  
              }                                                                         
 
+#ifdef HAVE_UNUSED
           case 0xC0 ... 0xEF:                                                       
              /* coprocessor instructions, reserved on GBA */                         
              break;                                                                  
+#endif
 
-          case 0xF0 ... 0xFF:                                                       
+          case 0xF0:
+          case 0xF1:
+          case 0xF2:
+          case 0xF3:
+          case 0xF4:
+          case 0xF5:
+          case 0xF6:
+          case 0xF7:
+          case 0xF8:
+          case 0xF9:
+          case 0xFA:
+          case 0xFB:
+          case 0xFC:
+          case 0xFD:
+          case 0xFE:
+          case 0xFF:                                                       
              {                                                                         
                 /* SWI comment */                                                       
                 u32 swi_comment = opcode & 0x00FFFFFF;                                  
@@ -3264,37 +3298,62 @@ thumb_loop:
 
        switch((opcode >> 8) & 0xFF)                                                
        {                                                                           
-          case 0x00 ... 0x07:                                                       
+          case 0x00:
+          case 0x01:
+          case 0x02:
+          case 0x03:
+          case 0x04:
+          case 0x05:
+          case 0x06:
+          case 0x07:                                                       
              /* LSL rd, rs, offset */                                                
              thumb_shift(shift, lsl, imm);                                           
              break;                                                                  
 
-          case 0x08 ... 0x0F:                                                       
+          case 0x08:
+          case 0x09:
+          case 0x0A:
+          case 0x0B:
+          case 0x0C:
+          case 0x0D:
+          case 0x0E:
+          case 0x0F:                                                       
              /* LSR rd, rs, offset */                                                
              thumb_shift(shift, lsr, imm);                                           
              break;                                                                  
 
-          case 0x10 ... 0x17:                                                       
+          case 0x10:
+          case 0x11:
+          case 0x12:
+          case 0x13:
+          case 0x14:
+          case 0x15:
+          case 0x16:
+          case 0x17:                                                       
              /* ASR rd, rs, offset */                                                
              thumb_shift(shift, asr, imm);                                           
              break;                                                                  
 
-          case 0x18 ... 0x19:                                                       
+          case 0x18:
+          case 0x19:                                                       
              /* ADD rd, rs, rn */                                                    
              thumb_add(add_sub, rd, reg[rs], reg[rn]);                               
              break;                                                                  
 
-          case 0x1A ... 0x1B:                                                       
+          case 0x1A:
+          case 0x1B:                                                       
              /* SUB rd, rs, rn */                                                    
              thumb_sub(add_sub, rd, reg[rs], reg[rn]);                               
              break;                                                                  
 
-          case 0x1C ... 0x1D:                                                       
+          case 0x1C:
+          case 0x1D:                                                       
              /* ADD rd, rs, imm */                                                   
              thumb_add(add_sub_imm, rd, reg[rs], imm);                               
              break;                                                                  
 
-          case 0x1E ... 0x1F:                                                       
+          case 0x1E:
+          case 0x1F:                                                       
              /* SUB rd, rs, imm */                                                   
              thumb_sub(add_sub_imm, rd, reg[rs], imm);                               
              break;                                                                  
@@ -3645,72 +3704,122 @@ thumb_loop:
              thumb_access_memory(load, imm, (pc & ~2) + (imm * 4) + 4, reg[7], u32); 
              break;                                                                  
 
-          case 0x50 ... 0x51:                                                       
+          case 0x50:
+          case 0x51:                                                       
              /* STR rd, [rb + ro] */                                                 
              thumb_access_memory(store, mem_reg, reg[rb] + reg[ro], reg[rd], u32);   
              break;                                                                  
 
-          case 0x52 ... 0x53:                                                       
+          case 0x52:
+          case 0x53:                                                       
              /* STRH rd, [rb + ro] */                                                
              thumb_access_memory(store, mem_reg, reg[rb] + reg[ro], reg[rd], u16);   
              break;                                                                  
 
-          case 0x54 ... 0x55:                                                       
+          case 0x54:
+          case 0x55:
              /* STRB rd, [rb + ro] */                                                
              thumb_access_memory(store, mem_reg, reg[rb] + reg[ro], reg[rd], u8);    
              break;                                                                  
 
-          case 0x56 ... 0x57:                                                       
+          case 0x56:
+          case 0x57:
              /* LDSB rd, [rb + ro] */                                                
              thumb_access_memory(load, mem_reg, reg[rb] + reg[ro], reg[rd], s8);     
              break;                                                                  
 
-          case 0x58 ... 0x59:                                                       
+          case 0x58:
+          case 0x59:
              /* LDR rd, [rb + ro] */                                                 
              thumb_access_memory(load, mem_reg, reg[rb] + reg[ro], reg[rd], u32);    
              break;                                                                  
 
-          case 0x5A ... 0x5B:                                                       
+          case 0x5A:
+          case 0x5B:
              /* LDRH rd, [rb + ro] */                                                
              thumb_access_memory(load, mem_reg, reg[rb] + reg[ro], reg[rd], u16);    
              break;                                                                  
 
-          case 0x5C ... 0x5D:                                                       
+          case 0x5C:
+          case 0x5D:
              /* LDRB rd, [rb + ro] */                                                
              thumb_access_memory(load, mem_reg, reg[rb] + reg[ro], reg[rd], u8);     
              break;                                                                  
 
-          case 0x5E ... 0x5F:                                                       
+          case 0x5E:
+          case 0x5F:
              /* LDSH rd, [rb + ro] */                                                
              thumb_access_memory(load, mem_reg, reg[rb] + reg[ro], reg[rd], s16);    
              break;                                                                  
 
-          case 0x60 ... 0x67:                                                       
+          case 0x60:
+          case 0x61:
+          case 0x62:
+          case 0x63:
+          case 0x64:
+          case 0x65:
+          case 0x66:
+          case 0x67:                                                      
              /* STR rd, [rb + imm] */                                                
              thumb_access_memory(store, mem_imm, reg[rb] + (imm * 4), reg[rd], u32); 
              break;                                                                  
 
-          case 0x68 ... 0x6F:                                                       
+          case 0x68:
+          case 0x69:
+          case 0x6A:
+          case 0x6B:
+          case 0x6C:
+          case 0x6D:
+          case 0x6E:
+          case 0x6F:                                                       
              /* LDR rd, [rb + imm] */                                                
              thumb_access_memory(load, mem_imm, reg[rb] + (imm * 4), reg[rd], u32);  
              break;                                                                  
 
-          case 0x70 ... 0x77:                                                       
+          case 0x70:
+          case 0x71:
+          case 0x72:
+          case 0x73:
+          case 0x74:
+          case 0x75:
+          case 0x76:
+          case 0x77:                                                       
              /* STRB rd, [rb + imm] */                                               
              thumb_access_memory(store, mem_imm, reg[rb] + imm, reg[rd], u8);        
              break;                                                                  
 
-          case 0x78 ... 0x7F:                                                       
+          case 0x78:
+          case 0x79:
+          case 0x7A:
+          case 0x7B:
+          case 0x7C:
+          case 0x7D:
+          case 0x7E:
+          case 0x7F:                                                       
              /* LDRB rd, [rb + imm] */                                               
              thumb_access_memory(load, mem_imm, reg[rb] + imm, reg[rd], u8);         
              break;                                                                  
 
-          case 0x80 ... 0x87:                                                       
+          case 0x80:
+          case 0x81:
+          case 0x82:
+          case 0x83:
+          case 0x84:
+          case 0x85:
+          case 0x86:
+          case 0x87:                                                       
              /* STRH rd, [rb + imm] */                                               
              thumb_access_memory(store, mem_imm, reg[rb] + (imm * 2), reg[rd], u16); 
              break;                                                                  
 
-          case 0x88 ... 0x8F:                                                       
+          case 0x88:
+          case 0x89:
+          case 0x8A:
+          case 0x8B:
+          case 0x8C:
+          case 0x8D:
+          case 0x8E:
+          case 0x8F:                                                       
              /* LDRH rd, [rb + imm] */                                               
              thumb_access_memory(load, mem_imm, reg[rb] + (imm * 2), reg[rd], u16);  
              break;                                                                  
@@ -3875,7 +3984,10 @@ thumb_loop:
              thumb_add_noflags(imm, 7, reg[REG_SP], (imm * 4));                      
              break;                                                                  
 
-          case 0xB0 ... 0xB3:                                                       
+          case 0xB0:
+          case 0xB1:
+          case 0xB2:
+          case 0xB3:                                                       
              if((opcode >> 7) & 0x01)                                                
              {                                                                       
                 /* ADD sp, -imm */                                                    
@@ -4078,7 +4190,14 @@ thumb_loop:
                 break;                                                                  
              }                                                                         
 
-          case 0xE0 ... 0xE7:                                                       
+          case 0xE0:
+          case 0xE1:
+          case 0xE2:
+          case 0xE3:
+          case 0xE4:
+          case 0xE5:
+          case 0xE6:
+          case 0xE7:                                                       
              {                                                                         
                 /* B label */                                                           
                 thumb_decode_branch();                                                  
@@ -4086,7 +4205,14 @@ thumb_loop:
                 break;                                                                  
              }                                                                         
 
-          case 0xF0 ... 0xF7:                                                       
+          case 0xF0:
+          case 0xF1:
+          case 0xF2:
+          case 0xF3:
+          case 0xF4:
+          case 0xF5:
+          case 0xF6:
+          case 0xF7:                                                       
              {                                                                         
                 /* (low word) BL label */                                               
                 thumb_decode_branch();                                                  
@@ -4095,7 +4221,14 @@ thumb_loop:
                 break;                                                                  
              }                                                                         
 
-          case 0xF8 ... 0xFF:                                                       
+          case 0xF8:
+          case 0xF9:
+          case 0xFA:
+          case 0xFB:
+          case 0xFC:
+          case 0xFD:
+          case 0xFE:
+          case 0xFF:                                                       
              {                                                                         
                 /* (high word) BL label */                                              
                 thumb_decode_branch();                                                  

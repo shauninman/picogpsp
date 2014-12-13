@@ -1705,10 +1705,6 @@ static int sys_cacheflush(void *addr, unsigned long size)
       break;                                                                  \
     }                                                                         \
                                                                               \
-    case 0xC0 ... 0xEF:                                                       \
-      /* coprocessor instructions, reserved on GBA */                         \
-      break;                                                                  \
-                                                                              \
     case 0xF0 ... 0xFF:                                                       \
     {                                                                         \
       /* SWI comment */                                                       \
