@@ -3275,6 +3275,8 @@ skip_instruction:
 
        /* End of Execute ARM instruction */
        cycles_remaining -= cycles_per_instruction;
+
+       if (pc == idle_loop_target_pc && cycles_remaining > 0) cycles_remaining = 0;
     } while(cycles_remaining > 0);
 
     collapse_flags();
@@ -4242,6 +4244,8 @@ thumb_loop:
 
        /* End of Execute THUMB instruction */
        cycles_remaining -= cycles_per_instruction;
+
+       if (pc == idle_loop_target_pc && cycles_remaining > 0) cycles_remaining = 0;
     } while(cycles_remaining > 0);
 
     collapse_flags();
