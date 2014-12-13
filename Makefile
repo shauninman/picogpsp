@@ -2,6 +2,8 @@ DEBUG=0
 HAVE_GRIFFIN=0
 FRONTEND_SUPPORTS_RGB565=1
 FORCE_32BIT_ARCH=0
+HAVE_MMAP=0
+HAVE_MMAP_WIN32=0
 
 ifneq ($(EMSCRIPTEN),)
 	platform = emscripten
@@ -69,14 +71,18 @@ ifeq ($(platform), unix)
 	ifneq ($(findstring Haiku,$(shell uname -a)),)
 		LIBM :=
 	endif
-	CFLAGS += $(FORCE_32BIT) -DHAVE_MMAP
+	CFLAGS += $(FORCE_32BIT)
 	LDFLAGS := -Wl,--no-undefined
+
+ifeq ($(HAVE_DYNAREC),1)
+	HAVE_MMAP = 1
+endif
 # OS X
 else ifeq ($(platform), osx)
 	TARGET := $(TARGET_NAME)_libretro.dylib
 	fpic := -fPIC
 	ifeq ($(arch),ppc)
-		CFLAGS += -DBLARGG_BIG_ENDIAN=1 -D__ppc__
+		CFLAGS += -DMSB_FIRST -D__ppc__
 	endif
 	OSXVER = `sw_vers -productVersion | cut -d. -f 2`
 	OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
@@ -84,7 +90,10 @@ else ifeq ($(platform), osx)
 		fpic += -mmacosx-version-min=10.5
 	endif
 	SHARED := -dynamiclib
-	CFLAGS += -DHAVE_MMAP
+
+ifeq ($(HAVE_DYNAREC),1)
+	HAVE_MMAP = 1
+endif
 
 # iOS
 else ifeq ($(platform), ios)
@@ -98,7 +107,7 @@ else ifeq ($(platform), ios)
 	endif
 
 	CC = clang -arch armv7 -isysroot $(IOSSDK)
-	CFLAGS += -DIOS -DHAVE_MMAP -DHAVE_POSIX_MEMALIGN -marm
+	CFLAGS += -DIOS -DHAVE_POSIX_MEMALIGN -marm
 	OSXVER = `sw_vers -productVersion | cut -d. -f 2`
 	OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
 	ifeq ($(OSX_LT_MAVERICKS),"YES")
@@ -111,7 +120,7 @@ else ifeq ($(platform), qnx)
 	TARGET := $(TARGET_NAME)_libretro_qnx.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T
-	CFLAGS += -DHAVE_MMAP
+	HAVE_MMAP = 1
 
 	CC = qcc -Vgcc_ntoarmv7le
 	AR = qcc -Vgcc_ntoarmv7le
@@ -122,7 +131,7 @@ else ifeq ($(platform), ps3)
 	TARGET := $(TARGET_NAME)_libretro_ps3.a
 	CC = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-gcc.exe
 	AR = $(CELL_SDK)/host-win32/ppu/bin/ppu-lv2-ar.exe
-	CFLAGS += -DBLARGG_BIG_ENDIAN=1 -D__ppc__
+	CFLAGS += -DMSB_FIRST -D__ppc__
 	STATIC_LINKING = 1
 
 # sncps3
@@ -130,7 +139,7 @@ else ifeq ($(platform), sncps3)
 	TARGET := $(TARGET_NAME)_libretro_ps3.a
 	CC = $(CELL_SDK)/host-win32/sn/bin/ps3ppusnc.exe
 	AR = $(CELL_SDK)/host-win32/sn/bin/ps3snarl.exe
-	CFLAGS += -DBLARGG_BIG_ENDIAN=1 -D__ppc__
+	CFLAGS += -DMSB_FIRST -D__ppc__
 	STATIC_LINKING = 1
 
 # Lightweight PS3 Homebrew SDK
@@ -138,7 +147,7 @@ else ifeq ($(platform), psl1ght)
 	TARGET := $(TARGET_NAME)_libretro_psl1ght.a
 	CC = $(PS3DEV)/ppu/bin/ppu-gcc$(EXE_EXT)
 	AR = $(PS3DEV)/ppu/bin/ppu-ar$(EXE_EXT)
-	CFLAGS += -DBLARGG_BIG_ENDIAN=1 -D__ppc__
+	CFLAGS += -DMSB_FIRST -D__ppc__
 	STATIC_LINKING = 1
 
 # PSP
@@ -162,7 +171,7 @@ else ifeq ($(platform), ngc)
 	TARGET := $(TARGET_NAME)_libretro_ngc.a
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
-	CFLAGS += -DGEKKO -DHW_DOL -mrvl -mcpu=750 -meabi -mhard-float -DBLARGG_BIG_ENDIAN=1 -D__ppc__
+	CFLAGS += -DGEKKO -DHW_DOL -mrvl -mcpu=750 -meabi -mhard-float -DMSB_FIRST -D__ppc__
 	STATIC_LINKING = 1
 
 # Nintendo Wii
@@ -170,7 +179,7 @@ else ifeq ($(platform), wii)
 	TARGET := $(TARGET_NAME)_libretro_wii.a
 	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
 	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
-	CFLAGS += -DGEKKO -DHW_RVL -mrvl -mcpu=750 -meabi -mhard-float -DBLARGG_BIG_ENDIAN=1 -D__ppc__
+	CFLAGS += -DGEKKO -DHW_RVL -mrvl -mcpu=750 -meabi -mhard-float -DMSB_FIRST -D__ppc__
 	STATIC_LINKING = 1
 
 # ARM
@@ -200,7 +209,7 @@ else ifneq (,$(findstring armv,$(platform)))
 		ASFLAGS += -mfloat-abi=hard
 	endif
 	CFLAGS += -DARM
-	CFLAGS += -DHAVE_MMAP
+	HAVE_MMAP = 1
 
 # emscripten
 else ifeq ($(platform), emscripten)
@@ -212,7 +221,16 @@ else
 	CC = gcc
 	SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=link.T
 	CFLAGS += -D__WIN32__ -D__WIN32_LIBRETRO__
-#	CFLAGS += -DHAVE_MMAP
+
+ifeq ($(HAVE_DYNAREC),1)
+	HAVE_MMAP = 1
+	HAVE_MMAP_WIN32 = 1
+endif
+
+endif
+
+ifeq ($(HAVE_MMAP), 1)
+CFLAGS += -DHAVE_MMAP
 endif
 
 ifeq ($(HAVE_DYNAREC), 1)

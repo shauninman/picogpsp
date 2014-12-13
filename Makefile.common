@@ -29,14 +29,19 @@ endif
 ifeq ($(CPU_ARCH), arm)
 SOURCES_ASM += $(CORE_DIR)/arm/arm_stub.S
 endif
-
 endif
 
 ifeq ($(CPU_ARCH), arm)
+
 ifeq ($(CPU_ARCH_ARM_BLENDING_OPTS),1)
 CFLAGS += -DARM_ARCH_BLENDING_OPTS
 SOURCES_ASM += $(CORE_DIR)/arm/video_blend.S
 endif
+
+endif
+
+ifeq ($(HAVE_MMAP_WIN32),1)
+SOURCES_C += $(CORE_DIR)/memmap_win32.c
 endif
 
 INCFLAGS := -I$(CORE_DIR)

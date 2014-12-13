@@ -6,6 +6,7 @@
 #include "common.h"
 #include "libco.h"
 #include "libretro.h"
+#include "memmap.h"
 
 #ifndef MAX_PATH
 #define MAX_PATH (512)
@@ -98,10 +99,6 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
    info->timing.fps = ((float) GBC_BASE_RATE) / (308 * 228 * 4);
    info->timing.sample_rate = GBA_SOUND_FREQUENCY;
 }
-
-#ifdef HAVE_MMAP
-#include <sys/mman.h>
-#endif
 
 void retro_init(void)
 {
