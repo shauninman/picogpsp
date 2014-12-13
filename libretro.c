@@ -99,7 +99,9 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
    info->timing.sample_rate = GBA_SOUND_FREQUENCY;
 }
 
+#ifdef HAVE_MMAP
 #include <sys/mman.h>
+#endif
 
 void retro_init(void)
 {
