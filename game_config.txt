@@ -77,6 +77,12 @@ game_code = AREE
 vender_code = 08
 idle_loop_eliminate_target = 08000338
 
+# Battle Network RockMan EXE (J)
+game_name = ROCKMAN_EXE
+game_code = AREJ
+vender_code = 08
+idle_loop_eliminate_target = 08000338
+
 # Megaman Battle Network 2 (U)
 game_name = MEGAMAN_EXE2
 game_code = AE2E
