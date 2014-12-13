@@ -1092,7 +1092,22 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
       break;
 
     // Sound wave RAM
-    case 0x90 ... 0x9F:
+    case 0x90:
+    case 0x91:
+    case 0x92:
+    case 0x93:
+    case 0x94:
+    case 0x95:
+    case 0x96:
+    case 0x97:
+    case 0x98:
+    case 0x99:
+    case 0x9A:
+    case 0x9B:
+    case 0x9C:
+    case 0x9D:
+    case 0x9E:
+    case 0x9F:
       gbc_sound_wave_update = 1;
       address8(io_registers, address) = value;
       break;
@@ -1356,7 +1371,21 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
       break;
 
     // Sound wave RAM
-    case 0x90 ... 0x9E:
+    case 0x90:
+    case 0x91:
+    case 0x92:
+    case 0x93:
+    case 0x94:
+    case 0x95:
+    case 0x96:
+    case 0x97:
+    case 0x98:
+    case 0x99:
+    case 0x9A:
+    case 0x9B:
+    case 0x9C:
+    case 0x9D:
+    case 0x9E:
       gbc_sound_wave_update = 1;
       address16(io_registers, address) = value;
       break;
@@ -1982,7 +2011,10 @@ void function_cc write_rtc(u32 address, u32 value)
       write_rtc##type();                                                      \
       break;                                                                  \
                                                                               \
-    case 0x09 ... 0x0C:                                                       \
+    case 0x09:                                                                \
+    case 0x0A:                                                                \
+    case 0x0B:                                                                \
+    case 0x0C:                                                                \
       /* gamepak ROM space */                                                 \
       break;                                                                  \
                                                                               \
