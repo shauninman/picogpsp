@@ -531,7 +531,7 @@ void update_gbc_sound(u32 cpu_ticks)
 // angeneraldiscussion&Number=2069&page=0&view=expanded&mode=threaded&sb=4
 // Hope you don't mind me borrowing it ^_-
 
-void init_noise_table(u32 *table, u32 period, u32 bit_length)
+static void init_noise_table(u32 *table, u32 period, u32 bit_length)
 {
   u32 shift_register = 0xFF;
   u32 mask = ~(1 << bit_length);

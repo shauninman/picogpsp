@@ -24,7 +24,7 @@ static retro_input_state_t input_state_cb;
 
 void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
 
-void trigger_key(u32 key)
+static void trigger_key(u32 key)
 {
   u32 p1_cnt = io_registers[REG_P1CNT];
 
