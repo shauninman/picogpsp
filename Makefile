@@ -20,6 +20,7 @@ ifeq ($(platform),)
 		arch = intel
 	ifeq ($(shell uname -p),powerpc)
 		arch = ppc
+		FORCE_32BIT_ARCH = 1
 	endif
 	else ifneq ($(findstring win,$(shell uname -a)),)
 		platform = win
@@ -32,7 +33,7 @@ ifeq ($(firstword $(filter x86_64,$(UNAME))),x86_64)
 else ifeq ($(firstword $(filter amd64,$(UNAME))),amd64)
 
 else ifeq ($(firstword $(filter x86,$(UNAME))),x86)
-	FORCE_32BIT_ARCH := 1
+	FORCE_32BIT_ARCH = 1
 endif
 
 FORCE_32BIT :=
@@ -233,7 +234,7 @@ ifeq ($(HAVE_MMAP), 1)
 CFLAGS += -DHAVE_MMAP
 endif
 
-ifeq ($(HAVE_DYNAREC), 1)
+ifeq ($(FORCE_32BIT_ARCH), 1)
 # Forcibly disable PIC
 fpic :=
 endif
