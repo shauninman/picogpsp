@@ -176,9 +176,15 @@ vender_code = 01
 idle_loop_eliminate_target = 08000fae
 iwram_stack_optimize = no
 
-# Super Mario Advance (U)
+# Super Mario Advance (Demo/Kiosk) (U)
 game_name = SUPER MARIOA
 game_code = AMZE
+vender_code = 01
+idle_loop_eliminate_target = 08001cf2
+
+# Super Mario Advance (E/U)
+game_name = SUPER MARIOA
+game_code = AMAE
 vender_code = 01
 idle_loop_eliminate_target = 08001cf2
 
