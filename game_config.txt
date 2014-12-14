@@ -137,6 +137,12 @@ game_code = AZCE
 vender_code = 08
 idle_loop_eliminate_target = 080004ee
 
+# Rockman Zero (J)
+game_name = ROCKMAN ZERO
+game_code = ARZJ
+vender_code = 08
+idle_loop_eliminate_target = 080004ee
+
 # Megaman Zero 2 (U)
 game_name = MEGAMANZERO2
 game_code = A62E
@@ -806,6 +812,12 @@ game_name = DISNEY'S DON
 game_code = ADKE
 vender_code = 41
 idle_loop_eliminate_target = 08002f30
+
+# Final Fight One (E)
+game_name = FINAL FIGHT
+game_code = AFFP
+vender_code = 08
+idle_loop_eliminate_target = 0800b428
 
 # Final Fight One (U)
 game_name = FINAL FIGHT
