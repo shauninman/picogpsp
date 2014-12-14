@@ -233,6 +233,14 @@ vender_code = 01
 idle_loop_eliminate_target = 08000732
 flash_rom_type = 128KB
 
+# Advance Wars (E)
+# This one was really annoying to find, I hope it's okay.. there
+# might be a better one somewhere.
+game_name = ADVANCEWARSP
+game_code = AWRP
+vender_code = 01
+idle_loop_eliminate_target = 0803880a
+
 # Advance Wars (U)
 # This one was really annoying to find, I hope it's okay.. there
 # might be a better one somewhere.
