@@ -760,11 +760,23 @@ game_code = BRIJ
 vender_code = 01
 idle_loop_eliminate_target = 080013d4
 
+# River City Ransom EX (J)
+game_name = DOWNTOWN
+game_code = BDTJ
+vender_code = EB
+idle_loop_eliminate_target = 0800065a
+
 # River City Ransom EX (U)
 game_name = RIVERCRANSOM
 game_code = BDTE
 vender_code = EB
 idle_loop_eliminate_target = 0800065a
+
+# Super Puzzle Fighter II Turbo (E)
+game_name = PUZZLEFIGHT2
+game_code = AZ8P
+vender_code = 08
+idle_loop_eliminate_target = 08002b5e
 
 # Super Puzzle Fighter II Turbo (U)
 game_name = PUZZLEFIGHT2
