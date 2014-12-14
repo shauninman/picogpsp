@@ -77,6 +77,12 @@ game_code = AAME
 vender_code = A4
 idle_loop_eliminate_target = 080003d2
 
+# Megaman Battle Network (E)
+game_name = MEGAMANEXEBN
+game_code = AREP
+vender_code = 08
+idle_loop_eliminate_target = 08000338
+
 # Megaman Battle Network (U)
 game_name = MEGAMAN_BN
 game_code = AREE
