@@ -206,11 +206,23 @@ game_code = AMAE
 vender_code = 01
 idle_loop_eliminate_target = 08001cf2
 
+# Super Mario Advance 2 (E)
+game_name = SUPER MARIOB
+game_code = AA2P
+vender_code = 01
+idle_loop_eliminate_target = 08000534
+
 # Super Mario Advance 2 (U)
 game_name = SUPER MARIOB
 game_code = AA2E
 vender_code = 01
 idle_loop_eliminate_target = 08000534
+
+# Super Mario Advance 3 (J)
+game_name = SUPER MARIOC
+game_code = A3AJ
+vender_code = 01
+idle_loop_eliminate_target = 08002ba4
 
 # Super Mario Advance 3 (U)
 game_name = SUPER MARIOC
