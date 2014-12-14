@@ -650,6 +650,12 @@ game_code = V49E
 vender_code = 01
 idle_loop_eliminate_target = 080006c2
 
+# F-Zero for Game Boy Advance (J)
+game_name = F-ZERO ADVAN
+game_code = AFZJ
+vender_code = 01
+idle_loop_eliminate_target = 08000c2e
+
 # F-Zero - Maximum Velocity (U)
 game_name = F-ZERO ADVAN
 game_code = AFZE
