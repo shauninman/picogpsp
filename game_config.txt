@@ -65,6 +65,12 @@
 
 # bios_rom_hack_2C - like the above but allows Rayman Advance to work.
 
+# Castlevania: Circle of the Moon (E)
+game_name = DRACULA AGB1
+game_code = AAMP
+vender_code = A4
+idle_loop_eliminate_target = 080003d2
+
 # Castlevania: Circle of the Moon (U)
 game_name = DRACULA AGB1
 game_code = AAME
