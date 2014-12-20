@@ -320,7 +320,7 @@ bool retro_load_game(const struct retro_game_info* info)
 
    gamepak_filename[0] = 0;
 
-   if (load_gamepak(info->path) != 0)
+   if (load_gamepak(info, info->path) != 0)
    {
       error_msg("Could not load the game file.");
       return false;

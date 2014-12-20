@@ -2388,49 +2388,45 @@ char gamepak_code[5];
 char gamepak_maker[3];
 char gamepak_filename[512];
 
-u32 load_gamepak(const char *name)
+u32 load_gamepak(const struct retro_game_info* info, const char *name)
 {
-  char cheats_filename[256];
-  char *p;
+   char cheats_filename[256];
+   char *p;
 
-  s32 file_size = load_gamepak_raw(name);
+   s32 file_size = load_gamepak_raw(name);
 
-  // A dumb April fool's joke was here once :o
+   if(file_size == -1)
+      return -1;
 
-  if(file_size != -1)
-  {
-    gamepak_size = (file_size + 0x7FFF) & ~0x7FFF;
+   gamepak_size = (file_size + 0x7FFF) & ~0x7FFF;
 
-    strncpy(gamepak_filename, name, sizeof(gamepak_filename));
-    gamepak_filename[sizeof(gamepak_filename) - 1] = 0;
+   strncpy(gamepak_filename, name, sizeof(gamepak_filename));
+   gamepak_filename[sizeof(gamepak_filename) - 1] = 0;
 
-    p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
-    if (!p)
+   p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
+   if (!p)
       p = gamepak_filename;
 
-    snprintf(backup_filename, sizeof(backup_filename), "%s/%s", save_path, p);
-    p = strrchr(backup_filename, '.');
-    if (p)
+   snprintf(backup_filename, sizeof(backup_filename), "%s/%s", save_path, p);
+   p = strrchr(backup_filename, '.');
+   if (p)
       strcpy(p, ".sav");
 
-    load_backup(backup_filename);
+   load_backup(backup_filename);
 
-    memcpy(gamepak_title, gamepak_rom + 0xA0, 12);
-    memcpy(gamepak_code, gamepak_rom + 0xAC, 4);
-    memcpy(gamepak_maker, gamepak_rom + 0xB0, 2);
-    gamepak_title[12] = 0;
-    gamepak_code[4] = 0;
-    gamepak_maker[2] = 0;
+   memcpy(gamepak_title, gamepak_rom + 0xA0, 12);
+   memcpy(gamepak_code, gamepak_rom + 0xAC, 4);
+   memcpy(gamepak_maker, gamepak_rom + 0xB0, 2);
+   gamepak_title[12] = 0;
+   gamepak_code[4] = 0;
+   gamepak_maker[2] = 0;
 
-    load_game_config(gamepak_title, gamepak_code, gamepak_maker);
+   load_game_config(gamepak_title, gamepak_code, gamepak_maker);
 
-    change_ext(gamepak_filename, cheats_filename, ".cht");
-    add_cheats(cheats_filename);
+   change_ext(gamepak_filename, cheats_filename, ".cht");
+   add_cheats(cheats_filename);
 
-    return 0;
-  }
-
-  return -1;
+   return 0;
 }
 
 s32 load_bios(char *name)
