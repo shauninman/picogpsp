@@ -60,8 +60,6 @@
   #include <pspaudiolib.h>
   #include <psprtc.h>
 
-  #define function_cc
-
   #define convert_palette(value)                                              \
     value = ((value & 0x7FE0) << 1) | (value & 0x1F)                          \
 
@@ -97,12 +95,6 @@
 #define GBA_SCREEN_PITCH  (240)
 
 void switch_to_main_thread(void);
-
-#ifdef ARM_ARCH
-  #define function_cc
-#else
-  #define function_cc __attribute__((regparm(2)))
-#endif
 
   typedef unsigned char u8;
   typedef signed char s8;

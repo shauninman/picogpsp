@@ -418,26 +418,18 @@ u8 read_backup(u32 address)
     backup_type = BACKUP_SRAM;
 
   if(backup_type == BACKUP_SRAM)
-  {
     value = gamepak_backup[address];
-  }
-  else
-
-  if(flash_mode == FLASH_ID_MODE)
+  else if(flash_mode == FLASH_ID_MODE)
   {
     /* ID manufacturer type */
     if(address == 0x0000)
       value = flash_manufacturer_id;
-    else
-
     /* ID device type */
-    if(address == 0x0001)
+    else if(address == 0x0001)
       value = flash_device_id;
   }
   else
-  {
     value = flash_bank_ptr[address];
-  }
 
   return value;
 }
@@ -481,8 +473,7 @@ u32 eeprom_address = 0;
 s32 eeprom_counter = 0;
 u8 eeprom_buffer[8];
 
-
-void function_cc write_eeprom(u32 address, u32 value)
+void write_eeprom(u32 address, u32 value)
 {
   switch(eeprom_mode)
   {
@@ -599,7 +590,7 @@ void function_cc write_eeprom(u32 address, u32 value)
     value = current_instruction | (current_instruction << 16);                \
   }                                                                           \
 
-u32 function_cc read_eeprom(void)
+u32 read_eeprom(void)
 {
   u32 value;
 
@@ -802,7 +793,7 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
 #define access_register16_low(address)                                        \
   value = ((address16(io_registers, address + 2)) << 16) | value              \
 
-cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
+cpu_alert_type write_io_register8(u32 address, u32 value)
 {
   switch(address)
   {
@@ -1218,7 +1209,7 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
   return CPU_ALERT_NONE;
 }
 
-cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
+cpu_alert_type write_io_register16(u32 address, u32 value)
 {
   switch(address)
   {
@@ -1471,7 +1462,7 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
 }
 
 
-cpu_alert_type function_cc write_io_register32(u32 address, u32 value)
+cpu_alert_type write_io_register32(u32 address, u32 value)
 {
   switch(address)
   {
@@ -1550,7 +1541,7 @@ cpu_alert_type function_cc write_io_register32(u32 address, u32 value)
 }                                                                             \
 
 
-void function_cc write_backup(u32 address, u32 value)
+void write_backup(u32 address, u32 value)
 {
   value &= 0xFF;
 
@@ -1741,7 +1732,7 @@ static u32 encode_bcd(u8 value)
                                                                               \
   address16(map, update_address & 0x7FFF) = _value                            \
 
-void function_cc write_rtc(u32 address, u32 value)
+void write_rtc(u32 address, u32 value)
 {
   u32 rtc_page_index;
   u32 update_address;
@@ -2015,14 +2006,14 @@ void function_cc write_rtc(u32 address, u32 value)
       break;                                                                  \
   }                                                                           \
 
-u8 function_cc read_memory8(u32 address)
+u8 read_memory8(u32 address)
 {
   u8 value;
   read_memory(8);
   return value;
 }
 
-u16 function_cc read_memory16_signed(u32 address)
+u16 read_memory16_signed(u32 address)
 {
   u16 value;
 
@@ -2036,7 +2027,7 @@ u16 function_cc read_memory16_signed(u32 address)
 
 // unaligned reads are actually 32bit
 
-u32 function_cc read_memory16(u32 address)
+u32 read_memory16(u32 address)
 {
   u32 value;
 
@@ -2055,7 +2046,7 @@ u32 function_cc read_memory16(u32 address)
 }
 
 
-u32 function_cc read_memory32(u32 address)
+u32 read_memory32(u32 address)
 {
   u32 value;
   if(address & 0x03)
@@ -2073,19 +2064,19 @@ u32 function_cc read_memory32(u32 address)
   return value;
 }
 
-cpu_alert_type function_cc write_memory8(u32 address, u8 value)
+cpu_alert_type write_memory8(u32 address, u8 value)
 {
   write_memory(8);
   return CPU_ALERT_NONE;
 }
 
-cpu_alert_type function_cc write_memory16(u32 address, u16 value)
+cpu_alert_type write_memory16(u32 address, u16 value)
 {
   write_memory(16);
   return CPU_ALERT_NONE;
 }
 
-cpu_alert_type function_cc write_memory32(u32 address, u32 value)
+cpu_alert_type write_memory32(u32 address, u32 value)
 {
   write_memory(32);
   return CPU_ALERT_NONE;
@@ -2433,17 +2424,15 @@ s32 load_bios(char *name)
 {
   file_open(bios_file, name, read);
 
-  if(file_check_valid(bios_file))
-  {
-    file_read(bios_file, bios_rom, 0x4000);
+  if(!(file_check_valid(bios_file)))
+    return -1;
 
-    // This is a hack to get Zelda working, because emulating
-    // the proper memory read behavior here is much too expensive.
-    file_close(bios_file);
-    return 0;
-  }
+  file_read(bios_file, bios_rom, 0x4000);
 
-  return -1;
+  // This is a hack to get Zelda working, because emulating
+  // the proper memory read behavior here is much too expensive.
+  file_close(bios_file);
+  return 0;
 }
 
 // DMA memory regions can be one of the following:

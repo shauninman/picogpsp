@@ -155,13 +155,13 @@ typedef enum
   FLASH_MANUFACTURER_SST       = 0xBF
 } flash_manufacturer_id_type;
 
-u8 function_cc read_memory8(u32 address);
-u32 function_cc read_memory16(u32 address);
-u16 function_cc read_memory16_signed(u32 address);
-u32 function_cc read_memory32(u32 address);
-cpu_alert_type function_cc write_memory8(u32 address, u8 value);
-cpu_alert_type function_cc write_memory16(u32 address, u16 value);
-cpu_alert_type function_cc write_memory32(u32 address, u32 value);
+u8 read_memory8(u32 address);
+u32 read_memory16(u32 address);
+u16 read_memory16_signed(u32 address);
+u32 read_memory32(u32 address);
+cpu_alert_type write_memory8(u32 address, u8 value);
+cpu_alert_type write_memory16(u32 address, u16 value);
+cpu_alert_type write_memory32(u32 address, u32 value);
 
 extern u8 *memory_regions[16];
 extern u32 memory_limits[16];

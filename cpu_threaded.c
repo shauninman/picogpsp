@@ -2799,7 +2799,7 @@ u32 translation_flush_count = 0;
 
 
 #define block_lookup_address_builder(type)                                    \
-u8 function_cc *block_lookup_address_##type(u32 pc)                           \
+u8 *block_lookup_address_##type(u32 pc)                           	      \
 {                                                                             \
   u16 *location;                                                              \
   u32 block_tag;                                                              \

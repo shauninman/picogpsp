@@ -43,7 +43,7 @@ u32 execute_spsr_restore(u32 address);
 void execute_swi_arm(u32 pc);
 void execute_swi_thumb(u32 pc);
 
-void function_cc execute_store_u32_safe(u32 address, u32 source);
+void execute_store_u32_safe(u32 address, u32 source);
 
 #define write32(value)                                                        \
   *((u32 *)translation_ptr) = value;                                          \
@@ -671,7 +671,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
   }                                                                           \
 
 
-u32 function_cc execute_spsr_restore_body(u32 pc)
+u32 execute_spsr_restore_body(u32 pc)
 {
   set_cpu_mode(cpu_modes[reg[REG_CPSR] & 0x1F]);
   check_for_interrupts();
