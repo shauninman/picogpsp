@@ -2215,7 +2215,7 @@ void update_backup(void)
 
 #define CONFIG_FILENAME "game_config.txt"
 
-char *skip_spaces(char *line_ptr)
+static char *skip_spaces(char *line_ptr)
 {
   while(*line_ptr == ' ')
     line_ptr++;
@@ -2223,7 +2223,7 @@ char *skip_spaces(char *line_ptr)
   return line_ptr;
 }
 
-s32 parse_config_line(char *current_line, char *current_variable, char *current_value)
+static s32 parse_config_line(char *current_line, char *current_variable, char *current_value)
 {
   char *line_ptr = current_line;
   char *line_ptr_new;
@@ -2257,7 +2257,7 @@ s32 parse_config_line(char *current_line, char *current_variable, char *current_
   return 0;
 }
 
-s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_maker)
+static s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_maker)
 {
   char current_line[256];
   char current_variable[256];
@@ -2359,7 +2359,7 @@ s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_make
   return -1;
 }
 
-s32 load_gamepak_raw(const char *name)
+static s32 load_gamepak_raw(const char *name)
 {
   file_open(gamepak_file, name, read);
 
@@ -3151,7 +3151,7 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
 // Picks a page to evict
 u32 page_time = 0;
 
-u32 evict_gamepak_page(void)
+static u32 evict_gamepak_page(void)
 {
   // Find the one with the smallest frame timestamp
   u32 page_index = 0;
@@ -3203,7 +3203,7 @@ u8 *load_gamepak_page(u32 physical_index)
   return swap_location;
 }
 
-void init_memory_gamepak(void)
+static void init_memory_gamepak(void)
 {
   u32 map_offset = 0;
 
