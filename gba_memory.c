@@ -535,9 +535,7 @@ void function_cc write_eeprom(u32 address, u32 value)
         eeprom_counter = 0;
 
         if(eeprom_mode == EEPROM_ADDRESS_MODE)
-        {
           eeprom_mode = EEPROM_ADDRESS_FOOTER_MODE;
-        }
         else
         {
           eeprom_mode = EEPROM_WRITE_MODE;
@@ -561,13 +559,9 @@ void function_cc write_eeprom(u32 address, u32 value)
     case EEPROM_WRITE_FOOTER_MODE:
       eeprom_counter = 0;
       if(eeprom_mode == EEPROM_ADDRESS_FOOTER_MODE)
-      {
         eeprom_mode = EEPROM_READ_HEADER_MODE;
-      }
       else
-      {
         eeprom_mode = EEPROM_BASE_MODE;
-      }
       break;
 
     default:
@@ -598,9 +592,7 @@ void function_cc write_eeprom(u32 address, u32 value)
 
 #define read_open32()                                                         \
   if(!(reg[REG_CPSR] & 0x20))                                                 \
-  {                                                                           \
     value = read_memory32(reg[REG_PC] + 4);                                   \
-  }                                                                           \
   else                                                                        \
   {                                                                           \
     u32 current_instruction = read_memory16(reg[REG_PC] + 2);                 \
@@ -700,9 +692,7 @@ u32 function_cc read_eeprom(void)
     case 0x0C:                                                                \
       /* gamepak ROM */                                                       \
       if((address & 0x1FFFFFF) >= gamepak_size)                               \
-      {                                                                       \
         value = 0;                                                            \
-      }                                                                       \
       else                                                                    \
       {                                                                       \
         read_memory_gamepak(type);                                            \
@@ -1640,9 +1630,7 @@ void function_cc write_backup(u32 address, u32 value)
 
   if((address == 0x2AAA) && (value == 0x55) &&
    (flash_command_position == 1))
-  {
     flash_command_position = 2;
-  }
   else
   {
     if((flash_command_position == 2) &&
@@ -1737,7 +1725,7 @@ u32 rtc_status = 0x40;
 u32 rtc_data_bytes;
 s32 rtc_bit_count;
 
-u32 encode_bcd(u8 value)
+static u32 encode_bcd(u8 value)
 {
   return ((value / 10) << 4) | (value % 10);
 }
@@ -2039,13 +2027,9 @@ u16 function_cc read_memory16_signed(u32 address)
   u16 value;
 
   if(address & 0x01)
-  {
     return (s8)read_memory8(address);
-  }
-  else
-  {
-    read_memory(16);
-  }
+
+  read_memory(16);
 
   return value;
 }
