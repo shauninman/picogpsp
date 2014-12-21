@@ -101,11 +101,36 @@ game_code = AW2E
 vender_code = 01
 idle_loop_eliminate_target = 08036e2a
 
+# Animal Yokochou Dokidoki Shinkyuu Shiken (J)
+game_name = ANIYOKO2
+game_code = BAXJ
+vender_code = A4
+iwram_stack_optimize = no
+
+# This is needed to make the game work.
+# Another World (Homebrew)
+game_name = FoxAnWorld
+game_code = Home
+vender_code = 00
+translation_gate_target = 03000f1c
+
+# Asterix & Obelix XXL (E)
+game_name = ASTERIX
+game_code = BLXP
+vender_code = 70
+idle_loop_eliminate_target = 0846d060
+
 # Battle Network RockMan EXE (J) [!]
 game_name = ROCKMAN_EXE
 game_code = AREJ
 vender_code = 08
 idle_loop_eliminate_target = 08000338
+
+# Bleach Advance (J)
+game_name = BLEACH ADV1
+game_code = BLEJ
+vender_code = 8P
+iwram_stack_optimize = no
 
 # Bomberman Tournament (U) [!]
 game_name = BOMSTORYUSA
@@ -166,6 +191,198 @@ game_name = DRILL DOZER
 game_code = V49E
 vender_code = 01
 idle_loop_eliminate_target = 080006c2
+
+# Doom 2 (U)
+game_name = DOOM II
+game_code = A9DE
+vender_code = 52
+translation_gate_target = 030041c8
+translation_gate_target = 03004fa0
+
+# Digimon Battle Spirit (U)
+game_name = DIGIMON BTSP
+game_code = A8SE
+vender_code = B2
+idle_loop_eliminate_target = 08011208
+
+# Digimon Battle Spirit 2 (U)
+game_name = DIGIMON BS2
+game_code = BDSE
+vender_code = B2
+idle_loop_eliminate_target = 08010eb0
+
+# Donald Duck Advance (U)
+game_name = DISNEY'S DON
+game_code = ADKE
+vender_code = 41
+idle_loop_eliminate_target = 08002f30
+
+# Kirby: Nightmare in Dreamland (U)
+game_name = AGB KIRBY DX
+game_code = A7KE
+vender_code = 01
+idle_loop_eliminate_target = 08000fae
+iwram_stack_optimize = no
+
+# Hoshi no Kirby: Yume no Izumi Deluxe (J)
+game_name = AGB KIRBY DX
+game_code = A7KJ
+vender_code = 01
+idle_loop_eliminate_target = 08000f92
+iwram_stack_optimize = no
+
+# Kirby: Nightmare in Dreamland (E)
+game_name = AGB KIRBY DX
+game_code = A7KP
+vender_code = 01
+idle_loop_eliminate_target = 08000fae
+iwram_stack_optimize = no
+
+
+# F-Zero: Climax (J)
+game_name = F-ZEROCLIMAX
+game_code = BFTJ
+vender_code = 01
+flash_rom_type = 128KB
+
+# Final Fantasy Tactics Advance (U) [!]
+game_name = FFTA_USVER.
+game_code = AFXE
+vender_code = 01
+idle_loop_eliminate_target = 0800041e
+
+# Game Boy Wars Advance 1+2 (J) [!]
+game_name = GBWARS1+2
+game_code = BGWJ
+vender_code = 01
+flash_rom_type = 128KB
+
+# Gradius Galaxies (U)
+# Badly coded game with several idle loops. This one works for level
+# one at least.
+game_name = GRADIUSGALAX
+game_code = AGAE
+vender_code = A4
+idle_loop_eliminate_target = 08013844
+
+
+# Golden Sun (U)
+game_name = Golden_Sun_A
+game_code = AGSE
+vender_code = 01
+translation_gate_target = 03000820
+translation_gate_target = 030009ac
+translation_gate_target = 03007dac
+
+# Golden Sun: The Lost Age (U) [!]
+# Probably the most horrifically coded GBA game in existence.
+game_name = GOLDEN_SUN_B
+game_code = AGFE
+vender_code = 01
+idle_loop_eliminate_target = 08013542
+translation_gate_target = 030009ac
+#translation_gate_target = 03007d70
+
+# Mario & Luigi: Superstar Saga (U)
+game_name = MARIO&LUIGIU
+game_code = A88E
+vender_code = 01
+
+# Mario Party Advance (U)
+game_name = MARIOPARTYUS
+game_code = B8ME
+vender_code = 01
+iwram_stack_optimize = no
+
+# Mario Party Advance (J)
+game_name = MARIOPARTYJA
+game_code = B8MJ
+vender_code = 01
+iwram_stack_optimize = no
+
+# Mario Party Advance (E)
+game_name = MARIOPARTYEU
+game_code = B8MP
+vender_code = 01
+iwram_stack_optimize = no
+
+# Mario Golf: Advance Tour (U)
+game_name = MARIOGOLFGBA
+game_code = BMGE
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Golf: GBA Tour (J)
+game_name = MARIOGOLFGBA
+game_code = BMGJ
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Golf: Advance Tour (E)
+game_name = MARIOGOLFGBA
+game_code = BMGP
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Golf: Advance Tour (S)
+game_name = MARIOGOLFGBA
+game_code = BMGS
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Golf: Advance Tour (F)
+game_name = MARIOGOLFGBA
+game_code = BMGF
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Golf: Advance Tour (I)
+game_name = MARIOGOLFGBA
+game_code = BMGI
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Golf: Advance Tour (G)
+game_name = MARIOGOLFGBA
+game_code = BMGD
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Golf: Advance Tour (A)
+game_name = MARIOGOLFGBA
+game_code = BMGU
+vender_code = 01
+iwram_stack_optimize = no
+idle_loop_eliminate_target = 08014e0a
+translation_gate_target = 03000d00
+translation_gate_target = 03000a30
+
+# Mario Vs Donkey Kong (U)
+game_name = MARIOVSDK
+game_code = BM5E
+vender_code = 01
+idle_loop_eliminate_target = 08033eec
 
 # Megaman Battle Network (E) [!]
 game_name = MEGAMANEXEBN
@@ -234,11 +451,6 @@ game_code = AZCE
 vender_code = 08
 idle_loop_eliminate_target = 080004ee
 
-# Rockman Zero (J)
-game_name = ROCKMAN ZERO
-game_code = ARZJ
-vender_code = 08
-idle_loop_eliminate_target = 080004ee
 
 # Megaman Zero 2 (U)
 game_name = MEGAMANZERO2
@@ -258,84 +470,133 @@ game_code = B4ZP
 vender_code = 08
 idle_loop_eliminate_target = 0800090c
 
-# Kirby: Nightmare in Dreamland (U)
-game_name = AGB KIRBY DX
-game_code = A7KE
-vender_code = 01
-idle_loop_eliminate_target = 08000fae
+# Momotarou Densetsu G - Gold Deck wo Tsukure! (J)
+game_name = MOMOTETSU-G
+game_code = BM2J
+vender_code = 18
 iwram_stack_optimize = no
 
-# Hoshi no Kirby: Yume no Izumi Deluxe (J)
-game_name = AGB KIRBY DX
-game_code = A7KJ
-vender_code = 01
-idle_loop_eliminate_target = 08000f92
+# Magical Houshin (J)
+game_name = M HOUSHIN
+game_code = AJOJ
+vender_code = C8
 iwram_stack_optimize = no
 
-# Kirby: Nightmare in Dreamland (E)
-game_name = AGB KIRBY DX
-game_code = A7KP
-vender_code = 01
-idle_loop_eliminate_target = 08000fae
+# Medal of Honor (J)
+game_name = INFILTRATOR
+game_code = BMHJ
+vender_code = 13
 iwram_stack_optimize = no
 
-# Super Mario Advance (Demo/Kiosk) (U)
-game_name = SUPER MARIOA
-game_code = AMZE
-vender_code = 01
-idle_loop_eliminate_target = 08001cf2
+# Megaman Zero 2 (U)
+game_name = MEGAMANZERO2
+game_code = A62E
+vender_code = 08
+idle_loop_eliminate_target = 08000664
 
-# Super Mario Advance (E/U) [!]
-game_name = SUPER MARIOA
-game_code = AMAE
-vender_code = 01
-idle_loop_eliminate_target = 08001cf2
+# Megaman Zero 3 (U)
+game_name = MEGAMANZERO3
+game_code = BZ3E
+vender_code = 08
+idle_loop_eliminate_target = 08001a08
 
-# Super Mario Advance 2 (E)
-game_name = SUPER MARIOB
-game_code = AA2P
-vender_code = 01
-idle_loop_eliminate_target = 08000534
+# Megaman Zero 4 (U)
+game_name = MEGAMANZERO4
+game_code = B4ZE
+vender_code = 08
+idle_loop_eliminate_target = 0800090c
 
-# Super Mario Advance 2 (U)
-game_name = SUPER MARIOB
-game_code = AA2E
-vender_code = 01
-idle_loop_eliminate_target = 08000534
+# Metal Slug Advance (U)
+game_name = METAL SLUG
+game_code = BSME
+vender_code = B7
+idle_loop_eliminate_target = 08000298
 
-# Super Mario Advance 3 (J)
-game_name = SUPER MARIOC
-game_code = A3AJ
-vender_code = 01
-idle_loop_eliminate_target = 08002ba4
+# Magical Quest 2 Starring Mickey & Minnie (U)
+game_name = M&M MAGICAL2
+game_code = AQME
+vender_code = 08
+idle_loop_eliminate_target = 0801d340
 
-# Super Mario Advance 3 (U)
-game_name = SUPER MARIOC
-game_code = A3AE
-vender_code = 01
-idle_loop_eliminate_target = 08002ba4
+# Magical Quest 3 Starring Mickey & Donald (U)
+game_name = M&D MAGICAL3
+game_code = BMQE
+vender_code = 08
+idle_loop_eliminate_target = 08016064
 
-# Super Mario Advance 4 (U) [!]
-game_name = SUPER MARIOD
-game_code = AX4E
+# Tales of Phantasia (U)
+game_name = PHANTASIA
+game_code = AN8E
 vender_code = 01
-idle_loop_eliminate_target = 08000732
-flash_rom_type = 128KB
+iwram_stack_optimize = no
 
-# Super Mario Advance 4 (J) [!]
-game_name = SUPER MARIOD
-game_code = AX4J
+# Tales of Phantasia (J)
+game_name = PHANTASIA
+game_code = AN8J
+vender_code = AF
+iwram_stack_optimize = no
+
+# Tales of Phantasia (E)
+game_name = PHANTASIA
+game_code = AN8P
 vender_code = 01
-idle_loop_eliminate_target = 08000732
-flash_rom_type = 128KB
+iwram_stack_optimize = no
 
-# Super Mario Advance 4 (E) [!]
-game_name = SUPER MARIOD
-game_code = AX4P
+# Tom Clancy's Splinter Cell (U)
+game_name = SPLINTERCELL
+game_code = AO4E
+vender_code = 41
+idle_loop_eliminate_target = 0807a0c4
+
+# Tom Clancy's Splinter Cell - Pandora Tomorrow (U)
+game_name = TOM CLANCY'S
+game_code = BSLE
+vender_code = 41
+idle_loop_eliminate_target = 0807785e
+
+# The Pinball of The Dead
+game_name = PINBALL DEAD
+game_code = APDE
+vender_code = 78
+idle_loop_eliminate_target = 08000300
+
+# Tringo (U)
+game_name = TRINGO
+game_code = BTJE
+vender_code = 4Z
+idle_loop_eliminate_target = 080009a4
+
+# Tottoko Hamutaro Hamuhamu Sports (JU)
+game_name = HAMSPORTS
+game_code = B85A
 vender_code = 01
-idle_loop_eliminate_target = 08000732
-flash_rom_type = 128KB
+iwram_stack_optimize = no
 
+
+# F-Zero for Game Boy Advance (J)
+game_name = F-ZERO ADVAN
+game_code = AFZJ
+vender_code = 01
+idle_loop_eliminate_target = 08000c2e
+
+# F-Zero - Maximum Velocity (U)
+game_name = F-ZERO ADVAN
+game_code = AFZE
+vender_code = 01
+idle_loop_eliminate_target = 08000c2e
+
+
+# Pinball Challenge Deluxe (E)
+game_name = PINBALL CHAL
+game_code = APLP
+vender_code = 41
+idle_loop_eliminate_target = 080075a6
+
+# Prince of Persia - The Sands of Time (U)
+game_name = PRINCEPERSIA
+game_code = BPYE
+vender_code = 41
+idle_loop_eliminate_target = 0808ff3a
 
 # Pokemon Emerald (E/U)
 # I don't know why this has an idle loop when Ruby doesn't....
@@ -452,13 +713,6 @@ game_code = AXVF
 vender_code = 01
 flash_rom_type = 128KB
 
-
-# Mario Vs Donkey Kong (U)
-game_name = MARIOVSDK
-game_code = BM5E
-vender_code = 01
-idle_loop_eliminate_target = 08033eec
-
 # Pokemon: Sapphire (U)
 game_name = POKEMON SAPP
 game_code = AXPE
@@ -569,25 +823,17 @@ game_code = B24P
 vender_code = 01
 flash_rom_type = 128KB
 
-# F-Zero: Climax (J)
-game_name = F-ZEROCLIMAX
-game_code = BFTJ
+# Pokemon Leaf Green (J)
+game_name = POKEMON LEAF
+game_code = BPGJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# Final Fantasy Tactics Advance (U)
-game_name = FFTA_USVER.
-game_code = AFXE
-vender_code = 01
-idle_loop_eliminate_target = 0800041e
-
-# Gradius Galaxies (U)
-# Badly coded game with several idle loops. This one works for level
-# one at least.
-game_name = GRADIUSGALAX
-game_code = AGAE
-vender_code = A4
-idle_loop_eliminate_target = 08013844
+# Rockman Zero (J)
+game_name = ROCKMAN ZERO
+game_code = ARZJ
+vender_code = 08
+idle_loop_eliminate_target = 080004ee
 
 # Rebelstar: Tactical Command (U)
 # Badly coded game with several idle loops. I don't think any are
@@ -597,200 +843,6 @@ game_name = REBELSTAR
 game_code = BRLE
 vender_code = AF
 idle_loop_eliminate_target = 0800041a
-
-# Golden Sun (U)
-game_name = Golden_Sun_A
-game_code = AGSE
-vender_code = 01
-translation_gate_target = 03000820
-translation_gate_target = 030009ac
-translation_gate_target = 03007dac
-
-# Golden Sun: The Lost Age (U) [!]
-# Probably the most horrifically coded GBA game in existence.
-game_name = GOLDEN_SUN_B
-game_code = AGFE
-vender_code = 01
-idle_loop_eliminate_target = 08013542
-translation_gate_target = 030009ac
-#translation_gate_target = 03007d70
-
-# Nothing to see here :/
-# Mario & Luigi: Superstar Saga (U)
-game_name = MARIO&LUIGIU
-game_code = A88E
-vender_code = 01
-
-# Mario Party Advance (U)
-game_name = MARIOPARTYUS
-game_code = B8ME
-vender_code = 01
-iwram_stack_optimize = no
-
-# Mario Party Advance (J)
-game_name = MARIOPARTYJA
-game_code = B8MJ
-vender_code = 01
-iwram_stack_optimize = no
-
-# Mario Party Advance (E)
-game_name = MARIOPARTYEU
-game_code = B8MP
-vender_code = 01
-iwram_stack_optimize = no
-
-# Mario Golf: Advance Tour (U)
-game_name = MARIOGOLFGBA
-game_code = BMGE
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Mario Golf: GBA Tour (J)
-game_name = MARIOGOLFGBA
-game_code = BMGJ
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Mario Golf: Advance Tour (E)
-game_name = MARIOGOLFGBA
-game_code = BMGP
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Mario Golf: Advance Tour (S)
-game_name = MARIOGOLFGBA
-game_code = BMGS
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Mario Golf: Advance Tour (F)
-game_name = MARIOGOLFGBA
-game_code = BMGF
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Mario Golf: Advance Tour (I)
-game_name = MARIOGOLFGBA
-game_code = BMGI
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Mario Golf: Advance Tour (G)
-game_name = MARIOGOLFGBA
-game_code = BMGD
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Mario Golf: Advance Tour (A)
-game_name = MARIOGOLFGBA
-game_code = BMGU
-vender_code = 01
-iwram_stack_optimize = no
-idle_loop_eliminate_target = 08014e0a
-translation_gate_target = 03000d00
-translation_gate_target = 03000a30
-
-# Tales of Phantasia (U)
-game_name = PHANTASIA
-game_code = AN8E
-vender_code = 01
-iwram_stack_optimize = no
-
-# Tales of Phantasia (J)
-game_name = PHANTASIA
-game_code = AN8J
-vender_code = AF
-iwram_stack_optimize = no
-
-# Tales of Phantasia (E)
-game_name = PHANTASIA
-game_code = AN8P
-vender_code = 01
-iwram_stack_optimize = no
-
-
-
-
-# F-Zero for Game Boy Advance (J)
-game_name = F-ZERO ADVAN
-game_code = AFZJ
-vender_code = 01
-idle_loop_eliminate_target = 08000c2e
-
-# F-Zero - Maximum Velocity (U)
-game_name = F-ZERO ADVAN
-game_code = AFZE
-vender_code = 01
-idle_loop_eliminate_target = 08000c2e
-
-# Megaman Zero 2 (U)
-game_name = MEGAMANZERO2
-game_code = A62E
-vender_code = 08
-idle_loop_eliminate_target = 08000664
-
-# Megaman Zero 3 (U)
-game_name = MEGAMANZERO3
-game_code = BZ3E
-vender_code = 08
-idle_loop_eliminate_target = 08001a08
-
-# Megaman Zero 4 (U)
-game_name = MEGAMANZERO4
-game_code = B4ZE
-vender_code = 08
-idle_loop_eliminate_target = 0800090c
-
-# Metal Slug Advance (U)
-game_name = METAL SLUG
-game_code = BSME
-vender_code = B7
-idle_loop_eliminate_target = 08000298
-
-# Magical Quest 2 Starring Mickey & Minnie (U)
-game_name = M&M MAGICAL2
-game_code = AQME
-vender_code = 08
-idle_loop_eliminate_target = 0801d340
-
-# Magical Quest 3 Starring Mickey & Donald (U)
-game_name = M&D MAGICAL3
-game_code = BMQE
-vender_code = 08
-idle_loop_eliminate_target = 08016064
-
-# Pinball Challenge Deluxe (E)
-game_name = PINBALL CHAL
-game_code = APLP
-vender_code = 41
-idle_loop_eliminate_target = 080075a6
-
-# Prince of Persia - The Sands of Time (U)
-game_name = PRINCEPERSIA
-game_code = BPYE
-vender_code = 41
-idle_loop_eliminate_target = 0808ff3a
 
 # Rhythm Tengoku (J)
 game_name = RHYTHMTENGOK
@@ -809,6 +861,64 @@ game_name = RIVERCRANSOM
 game_code = BDTE
 vender_code = EB
 idle_loop_eliminate_target = 0800065a
+
+# Super Mario Advance (Demo/Kiosk) (U)
+game_name = SUPER MARIOA
+game_code = AMZE
+vender_code = 01
+idle_loop_eliminate_target = 08001cf2
+
+# Super Mario Advance (E/U) [!]
+game_name = SUPER MARIOA
+game_code = AMAE
+vender_code = 01
+idle_loop_eliminate_target = 08001cf2
+
+# Super Mario Advance 2 (E)
+game_name = SUPER MARIOB
+game_code = AA2P
+vender_code = 01
+idle_loop_eliminate_target = 08000534
+
+# Super Mario Advance 2 (U)
+game_name = SUPER MARIOB
+game_code = AA2E
+vender_code = 01
+idle_loop_eliminate_target = 08000534
+
+# Super Mario Advance 3 (J)
+game_name = SUPER MARIOC
+game_code = A3AJ
+vender_code = 01
+idle_loop_eliminate_target = 08002ba4
+
+# Super Mario Advance 3 (U)
+game_name = SUPER MARIOC
+game_code = A3AE
+vender_code = 01
+idle_loop_eliminate_target = 08002ba4
+
+# Super Mario Advance 4 (U) [!]
+game_name = SUPER MARIOD
+game_code = AX4E
+vender_code = 01
+idle_loop_eliminate_target = 08000732
+flash_rom_type = 128KB
+
+# Super Mario Advance 4 (J) [!]
+game_name = SUPER MARIOD
+game_code = AX4J
+vender_code = 01
+idle_loop_eliminate_target = 08000732
+flash_rom_type = 128KB
+
+# Super Mario Advance 4 (E) [!]
+game_name = SUPER MARIOD
+game_code = AX4P
+vender_code = 01
+idle_loop_eliminate_target = 08000732
+flash_rom_type = 128KB
+
 
 # Super Puzzle Fighter II Turbo (E)
 game_name = PUZZLEFIGHT2
@@ -853,17 +963,6 @@ vender_code = A4
 idle_loop_eliminate_target = 08089792
 
 
-# Tom Clancy's Splinter Cell (U)
-game_name = SPLINTERCELL
-game_code = AO4E
-vender_code = 41
-idle_loop_eliminate_target = 0807a0c4
-
-# Tom Clancy's Splinter Cell - Pandora Tomorrow (U)
-game_name = TOM CLANCY'S
-game_code = BSLE
-vender_code = 41
-idle_loop_eliminate_target = 0807785e
 
 # Final Fantasy IV Advance (U) [!]
 game_name = FF4ADVANCE
@@ -872,23 +971,6 @@ vender_code = 01
 idle_loop_eliminate_target = 0800fabe
 # or try 00000430
 
-# Digimon Battle Spirit (U)
-game_name = DIGIMON BTSP
-game_code = A8SE
-vender_code = B2
-idle_loop_eliminate_target = 08011208
-
-# Digimon Battle Spirit 2 (U)
-game_name = DIGIMON BS2
-game_code = BDSE
-vender_code = B2
-idle_loop_eliminate_target = 08010eb0
-
-# Donald Duck Advance (U)
-game_name = DISNEY'S DON
-game_code = ADKE
-vender_code = 41
-idle_loop_eliminate_target = 08002f30
 
 # Final Fight One (E)
 game_name = FINAL FIGHT
@@ -926,27 +1008,11 @@ game_code = A2QE
 vender_code = 9B
 idle_loop_eliminate_target = 081c7290
 
-# The Pinball of The Dead
-game_name = PINBALL DEAD
-game_code = APDE
-vender_code = 78
-idle_loop_eliminate_target = 08000300
-
-# Tringo (U)
-game_name = TRINGO
-game_code = BTJE
-vender_code = 4Z
-idle_loop_eliminate_target = 080009a4
-
-
-
-
-
-# Asterix & Obelix XXL (E)
-game_name = ASTERIX
-game_code = BLXP
-vender_code = 70
-idle_loop_eliminate_target = 0846d060
+# Motoracer Advance (E)
+game_name = MOTORACERADV
+game_code = A9MP
+vender_code = 41
+idle_loop_eliminate_target = 03001cf8
 
 # Ninja Five-0 (U)
 game_name = NINJA FIVE 0
@@ -960,24 +1026,19 @@ game_code = ANXP
 vender_code = A4
 iwram_stack_optimize = no
 
+# Nishihara Rieko no Dendou Mahjong (J)
+game_name = DENDOHMAJANG
+game_code = ASMJ
+vender_code = AG
+iwram_stack_optimize = no
+
 # Sennen Kazoku (J)
 game_name = SENNENKAZOKU
 game_code = BKAJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# Doom 2 (U)
-game_name = DOOM II
-game_code = A9DE
-vender_code = 52
-translation_gate_target = 030041c8
-translation_gate_target = 03004fa0
 
-# Bleach Advance (J)
-game_name = BLEACH ADV1
-game_code = BLEJ
-vender_code = 8P
-iwram_stack_optimize = no
 
 # Shining Soul (J)
 game_name = SHINING SOUL
@@ -1015,11 +1076,6 @@ game_code = AU2P
 vender_code = 8P
 iwram_stack_optimize = no
 
-# Motoracer Advance (E)
-game_name = MOTORACERADV
-game_code = A9MP
-vender_code = 41
-idle_loop_eliminate_target = 03001cf8
 
 # Kim Possible 2 (U)
 game_name = KIMPOSSIBLE2
@@ -1033,12 +1089,6 @@ game_code = BKMP
 vender_code = 4Q
 idle_loop_eliminate_target = 080008a2
 
-# This is needed to make the game work.
-# Another World (Homebrew)
-game_name = FoxAnWorld
-game_code = Home
-vender_code = 00
-translation_gate_target = 03000f1c
 
 
 # J League Pro Soccer Club wo Tsukurou Advance (J)
@@ -1047,11 +1097,6 @@ game_code = AC2J
 vender_code = 8P
 iwram_stack_optimize = no
 
-# Animal Yokochou Dokidoki Shinkyuu Shiken (J)
-game_name = ANIYOKO2
-game_code = BAXJ
-vender_code = A4
-iwram_stack_optimize = no
 
 
 
@@ -1067,11 +1112,6 @@ game_code = BIXJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# Game Boy Wars Advance 1+2 (J)
-game_name = GBWARS1+2
-game_code = BGWJ
-vender_code = 01
-flash_rom_type = 128KB
 
 # Koinu-Chan no Hajimete no Osanpo (J)
 game_name = OSANPO
@@ -1085,17 +1125,7 @@ game_code = BCHJ
 vender_code = G9
 iwram_stack_optimize = no
 
-# Tottoko Hamutaro Hamuhamu Sports (JU)
-game_name = HAMSPORTS
-game_code = B85A
-vender_code = 01
-iwram_stack_optimize = no
 
-# Nishihara Rieko no Dendou Mahjong (J)
-game_name = DENDOHMAJANG
-game_code = ASMJ
-vender_code = AG
-iwram_stack_optimize = no
 
 # Bomberman Jetters Game Collection (J)
 game_name = BOMBERMANJGC
@@ -1103,23 +1133,7 @@ game_code = BOMJ
 vender_code = 18
 iwram_stack_optimize = no
 
-# Pokemon Leaf Green (J)
-game_name = POKEMON LEAF
-game_code = BPGJ
-vender_code = 01
-flash_rom_type = 128KB
 
-# Magical Houshin (J)
-game_name = M HOUSHIN
-game_code = AJOJ
-vender_code = C8
-iwram_stack_optimize = no
-
-# Medal of Honor (J)
-game_name = INFILTRATOR
-game_code = BMHJ
-vender_code = 13
-iwram_stack_optimize = no
 
 # Robot Ponkotto 2 - Cross Version (J)
 game_name = ROBOPON2CROS
@@ -1133,11 +1147,6 @@ game_code = ARPJ
 vender_code = 18
 iwram_stack_optimize = no
 
-# Momotarou Densetsu G - Gold Deck wo Tsukure! (J)
-game_name = MOMOTETSU-G
-game_code = BM2J
-vender_code = 18
-iwram_stack_optimize = no
 
 # Open Season (U)
 game_name = OPEN SEASON
@@ -1165,13 +1174,13 @@ game_code = BUHJ
 vender_code = D9
 iwram_stack_optimize = no
 
-# V-Rally 3 (E)
+# V-Rally 3 (E) [!]
 game_name = V-RALLY 3
 game_code = AVRP
 vender_code = 70
 idle_loop_eliminate_target = 080aa920
 
-# Virtual Kasparov (U)
+# Virtual Kasparov (U) [!]
 game_name = VIRTKASPAROV
 game_code = AVKE
 vender_code = 60

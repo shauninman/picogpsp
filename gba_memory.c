@@ -2542,6 +2542,40 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Final Fantasy Tactics Advance (U)", /* rom title            */
+      "FFTA_USVER.",               /* gamepak_title        */
+      "AFXE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800041e,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Game Boy Wars Advance 1+2 (J)",/* rom title            */
+      "GBWARS1+2",                 /* gamepak_title        */
+      "BGWJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Golden Sun: The Lost Age (U)",/* rom title            */
       "GOLDEN_SUN_B",              /* gamepak_title        */
       "AGFE",                      /* gamepak_code         */
@@ -2690,6 +2724,40 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0,                           /* idle_loop_target_pc  */
       0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "V-Rally 3 (E)",             /* rom title            */
+      "V_RALLY 3",                 /* gamepak_title        */
+      "AVRP",                      /* gamepak_code         */
+      "70",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80aa920,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Virtual Kasparov (U)",      /* rom title            */
+      "VIRTKASPAROV",              /* gamepak_title        */
+      "AVKE",                      /* gamepak_code         */
+      "60",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800093a,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
