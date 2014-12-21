@@ -65,37 +65,116 @@
 
 # bios_rom_hack_2C - like the above but allows Rayman Advance to work.
 
-# Castlevania: Circle of the Moon (E)
-game_name = DRACULA AGB1
-game_code = AAMP
-vender_code = A4
-idle_loop_eliminate_target = 080003d2
+# [!] - covered in gbaover
 
-# Castlevania: Circle of the Moon (U)
-game_name = DRACULA AGB1
-game_code = AAME
-vender_code = A4
-idle_loop_eliminate_target = 080003d2
+# 007 - Nightfire (U) [!]
+game_name = NIGHTFIRE
+game_code = A7OE
+vender_code = 69
+idle_loop_eliminate_target = 080031d6
 
-# Megaman Battle Network (E)
-game_name = MEGAMANEXEBN
-game_code = AREP
-vender_code = 08
-idle_loop_eliminate_target = 08000338
+# Advance Wars (E) [!]
+# This one was really annoying to find, I hope it's okay.. there
+# might be a better one somewhere.
+game_name = ADVANCEWARSP
+game_code = AWRP
+vender_code = 01
+idle_loop_eliminate_target = 0803880a
 
-# Megaman Battle Network (U)
-game_name = MEGAMAN_BN
-game_code = AREE
-vender_code = 08
-idle_loop_eliminate_target = 08000338
+# Advance Wars (U) [!]
+# This one was really annoying to find, I hope it's okay.. there
+# might be a better one somewhere.
+game_name = ADVANCEWARS
+game_code = AWRE
+vender_code = 01
+idle_loop_eliminate_target = 0803880a
 
-# Battle Network RockMan EXE (J)
+# Advance Wars 2 - Black Hole Rising (E) [!]
+game_name = ADVANCEWARS2
+game_code = AW2P
+vender_code = 01
+idle_loop_eliminate_target = 080371be
+
+# Advance Wars 2: Black Hole Rising (U) [!]
+game_name = ADVANCEWARS2
+game_code = AW2E
+vender_code = 01
+idle_loop_eliminate_target = 08036e2a
+
+# Battle Network RockMan EXE (J) [!]
 game_name = ROCKMAN_EXE
 game_code = AREJ
 vender_code = 08
 idle_loop_eliminate_target = 08000338
 
-# Megaman Battle Network 2 (U)
+# Bomberman Tournament (U) [!]
+game_name = BOMSTORYUSA
+game_code = ABSE
+vender_code = 52
+idle_loop_eliminate_target = 08000526
+
+# Bookworm (U) [!]
+game_name = BOOKWORM
+game_code = BKWE
+vender_code = 5G
+idle_loop_eliminate_target = 0800397c
+
+# Broken Sword - The Shadow of the Templars (U) [!]
+game_name = BROKENSWORD
+game_code = ABJE
+vender_code = 6L
+idle_loop_eliminate_target = 08000a26
+
+# Castlevania: Circle of the Moon (E) [!]
+game_name = DRACULA AGB1
+game_code = AAMP
+vender_code = A4
+idle_loop_eliminate_target = 080003d2
+
+# Castlevania: Circle of the Moon (U) [!]
+game_name = DRACULA AGB1
+game_code = AAME
+vender_code = A4
+idle_loop_eliminate_target = 080003d2
+
+# Disney's Aladdin (J) [!] 
+game_name = ALADDIN
+game_code = AJ6J
+vender_code = 08
+iwram_stack_optimize = no
+
+# Disney's Aladdin (E) [!]
+game_name = ALADDIN
+game_code = BADP
+vender_code = 08
+iwram_stack_optimize = no
+
+# Disney's Aladdin (U) [!]
+game_name = ALADDIN
+game_code = BADE
+vender_code = 08
+iwram_stack_optimize = no
+
+# Drill Dozer (U) [!]
+game_name = DRILL DOZER
+game_code = V49E
+vender_code = 01
+idle_loop_eliminate_target = 080006c2
+
+# Megaman Battle Network (E) [!]
+game_name = MEGAMANEXEBN
+game_code = AREP
+vender_code = 08
+idle_loop_eliminate_target = 08000338
+
+# Megaman Battle Network (U) [!]
+game_name = MEGAMAN_BN
+game_code = AREE
+vender_code = 08
+idle_loop_eliminate_target = 08000338
+
+
+# Megaman Battle Network 2 (U) [!]
 game_name = MEGAMAN_EXE2
 game_code = AE2E
 vender_code = 08
@@ -200,7 +279,7 @@ game_code = AMZE
 vender_code = 01
 idle_loop_eliminate_target = 08001cf2
 
-# Super Mario Advance (E/U)
+# Super Mario Advance (E/U) [!]
 game_name = SUPER MARIOA
 game_code = AMAE
 vender_code = 01
@@ -230,42 +309,27 @@ game_code = A3AE
 vender_code = 01
 idle_loop_eliminate_target = 08002ba4
 
-# Super Mario Advance 4 (U)
+# Super Mario Advance 4 (U) [!]
 game_name = SUPER MARIOD
 game_code = AX4E
 vender_code = 01
 idle_loop_eliminate_target = 08000732
 flash_rom_type = 128KB
 
-# Super Mario Advance 4 (J)
+# Super Mario Advance 4 (J) [!]
 game_name = SUPER MARIOD
 game_code = AX4J
 vender_code = 01
 idle_loop_eliminate_target = 08000732
 flash_rom_type = 128KB
 
-# Super Mario Advance 4 (E)
+# Super Mario Advance 4 (E) [!]
 game_name = SUPER MARIOD
 game_code = AX4P
 vender_code = 01
 idle_loop_eliminate_target = 08000732
 flash_rom_type = 128KB
 
-# Advance Wars (E)
-# This one was really annoying to find, I hope it's okay.. there
-# might be a better one somewhere.
-game_name = ADVANCEWARSP
-game_code = AWRP
-vender_code = 01
-idle_loop_eliminate_target = 0803880a
-
-# Advance Wars (U)
-# This one was really annoying to find, I hope it's okay.. there
-# might be a better one somewhere.
-game_name = ADVANCEWARS
-game_code = AWRE
-vender_code = 01
-idle_loop_eliminate_target = 0803880a
 
 # Pokemon Emerald (E/U)
 # I don't know why this has an idle loop when Ruby doesn't....
@@ -382,11 +446,6 @@ game_code = AXVF
 vender_code = 01
 flash_rom_type = 128KB
 
-# V-Rally 3 (E)
-game_name = V-RALLY 3
-game_code = AVRP
-vender_code = 70
-idle_loop_eliminate_target = 080aa920
 
 # Mario Vs Donkey Kong (U)
 game_name = MARIOVSDK
@@ -541,7 +600,7 @@ translation_gate_target = 03000820
 translation_gate_target = 030009ac
 translation_gate_target = 03007dac
 
-# Golden Sun: The Lost Age (U)
+# Golden Sun: The Lost Age (U) [!]
 # Probably the most horrifically coded GBA game in existence.
 game_name = GOLDEN_SUN_B
 game_code = AGFE
@@ -664,23 +723,6 @@ game_code = AN8P
 vender_code = 01
 iwram_stack_optimize = no
 
-# Advance Wars 2: Black Hole Rising (U)
-game_name = ADVANCEWARS2
-game_code = AW2E
-vender_code = 01
-idle_loop_eliminate_target = 08036e2a
-
-# Bomberman Tournament (U)
-game_name = BOMSTORYUSA
-game_code = ABSE
-vender_code = 52
-idle_loop_eliminate_target = 08000526
-
-# Broken Sword - The Shadow of the Templars (U)
-game_name = BROKENSWORD
-game_code = ABJE
-vender_code = 6L
-idle_loop_eliminate_target = 08000a26
 
 # Defender of The Crown (U)
 game_name = DOTC
@@ -688,11 +730,6 @@ game_code = ADHE
 vender_code = 5N
 idle_loop_eliminate_target = 080007ec
 
-# Drill Dozer (U)
-game_name = DRILL DOZER
-game_code = V49E
-vender_code = 01
-idle_loop_eliminate_target = 080006c2
 
 # F-Zero for Game Boy Advance (J)
 game_name = F-ZERO ADVAN
@@ -814,11 +851,6 @@ game_code = AYWE
 vender_code = A4
 idle_loop_eliminate_target = 08089792
 
-# Wario Ware, Inc. Mega Microgames (U)
-game_name = WARIOWAREINC
-game_code = AZWE
-vender_code = 01
-idle_loop_eliminate_target = 08000f66
 
 # Tom Clancy's Splinter Cell (U)
 game_name = SPLINTERCELL
@@ -905,29 +937,9 @@ game_code = BTJE
 vender_code = 4Z
 idle_loop_eliminate_target = 080009a4
 
-# Virtual Kasparov (U)
-game_name = VIRTKASPAROV
-game_code = AVKE
-vender_code = 60
-idle_loop_eliminate_target = 0800093a
 
-# Advance Wars 2 - Black Hole Rising (E)
-game_name = ADVANCEWARS2
-game_code = AW2P
-vender_code = 01
-idle_loop_eliminate_target = 080371be
 
-# Bookworm (U)
-game_name = BOOKWORM
-game_code = BKWE
-vender_code = 5G
-idle_loop_eliminate_target = 0800397c
 
-# 007 - Nightfire (U)
-game_name = NIGHTFIRE
-game_code = A7OE
-vender_code = 69
-idle_loop_eliminate_target = 080031d6
 
 # Asterix & Obelix XXL (E)
 game_name = ASTERIX
@@ -935,7 +947,6 @@ game_code = BLXP
 vender_code = 70
 idle_loop_eliminate_target = 0846d060
 
-# Was this game released in Japan? What as?
 # Ninja Five-0 (U)
 game_name = NINJA FIVE 0
 game_code = ANXE
@@ -1029,126 +1040,98 @@ vender_code = 00
 translation_gate_target = 03000f1c
 
 
-# J.LEAGUE プロサッカークラブをつくろう！アドバンス (J)
 # J League Pro Soccer Club wo Tsukurou Advance (J)
 game_name = SAKATUKUADV
 game_code = AC2J
 vender_code = 8P
 iwram_stack_optimize = no
 
-# アニマル横町 どきどき進級試験!の巻 (J)
 # Animal Yokochou Dokidoki Shinkyuu Shiken (J)
 game_name = ANIYOKO2
 game_code = BAXJ
 vender_code = A4
 iwram_stack_optimize = no
 
-# アラジン (J)
-# Disney's Aladdin (J)
-game_name = ALADDIN
-game_code = AJ6J
-vender_code = 08
-iwram_stack_optimize = no
 
-# うえきの法則 神器炸裂！能力者バトル (J)
-# Ueki no Housoku Jingi Sakuretsu! Nouryokusya Battle (J)
-game_name = UEKIJINGIBTL
-game_code = BUHJ
-vender_code = D9
-iwram_stack_optimize = no
 
-# オリエンタルブルー 青の天外 (J)
 # Oriental Blue - Ao no Tengai (J)
 game_name = ORIENTALBLUE
 game_code = AORJ
 vender_code = 01
 iwram_stack_optimize = no
 
-# カルチョビット (J)
 # Calciobit (J)
 game_name = CALCIOBIT01
 game_code = BIXJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# ゲームボーイウォーズアドバンス1+2 (J)
 # Game Boy Wars Advance 1+2 (J)
 game_name = GBWARS1+2
 game_code = BGWJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# こいぬちゃんのはじめてのおさんぽ (J)
 # Koinu-Chan no Hajimete no Osanpo (J)
 game_name = OSANPO
 game_code = BISJ
 vender_code = 1Q
 iwram_stack_optimize = no
 
-# チキン・リトル (J)
 # Chicken Little (J)
 game_name = CLITTLEJ    
 game_code = BCHJ
 vender_code = G9
 iwram_stack_optimize = no
 
-# とっとこハム太郎 ハムハムスポーツ (JU)
 # Tottoko Hamutaro Hamuhamu Sports (JU)
 game_name = HAMSPORTS
 game_code = B85A
 vender_code = 01
 iwram_stack_optimize = no
 
-# 西原理恵子の殿堂麻雀 (J)
 # Nishihara Rieko no Dendou Mahjong (J)
 game_name = DENDOHMAJANG
 game_code = ASMJ
 vender_code = AG
 iwram_stack_optimize = no
 
-# ボンバーマンジェッターズ ゲームコレクション (J)
 # Bomberman Jetters Game Collection (J)
 game_name = BOMBERMANJGC
 game_code = BOMJ
 vender_code = 18
 iwram_stack_optimize = no
 
-# ポケットモンスター リーフグリーン (J)
 # Pokemon Leaf Green (J)
 game_name = POKEMON LEAF
 game_code = BPGJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# マジカル封神 (J)
 # Magical Houshin (J)
 game_name = M HOUSHIN
 game_code = AJOJ
 vender_code = C8
 iwram_stack_optimize = no
 
-# メダル オブ オナー (J)
 # Medal of Honor (J)
 game_name = INFILTRATOR
 game_code = BMHJ
 vender_code = 13
 iwram_stack_optimize = no
 
-# ロボットポンコッツ2 クロスバージョン (J)
 # Robot Ponkotto 2 - Cross Version (J)
 game_name = ROBOPON2CROS
 game_code = ACVJ
 vender_code = 18
 iwram_stack_optimize = no
 
-# ロボットポンコッツ2 リングバージョン (J)
 # Robot Ponkotto 2 - Ring Version (J)
 game_name = ROBOPON2RING
 game_code = ARPJ
 vender_code = 18
 iwram_stack_optimize = no
 
-# 桃太郎電鉄G ～ゴールド・デッキを作れ！～ (J)
 # Momotarou Densetsu G - Gold Deck wo Tsukure! (J)
 game_name = MOMOTETSU-G
 game_code = BM2J
@@ -1175,14 +1158,26 @@ vender_code = EB
 iwram_stack_optimize = no
 flash_rom_type = 512KB
 
-# Disney's Aladdin (E)
-game_name = ALADDIN
-game_code = BADP
-vender_code = 08
+# Ueki no Housoku Jingi Sakuretsu! Nouryokusya Battle (J) [!]
+game_name = UEKIJINGIBTL
+game_code = BUHJ
+vender_code = D9
 iwram_stack_optimize = no
 
-# Disney's Aladdin (U)
-game_name = ALADDIN
-game_code = BADE
-vender_code = 08
-iwram_stack_optimize = no
+# V-Rally 3 (E)
+game_name = V-RALLY 3
+game_code = AVRP
+vender_code = 70
+idle_loop_eliminate_target = 080aa920
+
+# Virtual Kasparov (U)
+game_name = VIRTKASPAROV
+game_code = AVKE
+vender_code = 60
+idle_loop_eliminate_target = 0800093a
+
+# Wario Ware, Inc. Mega Microgames (U) [!]
+game_name = WARIOWAREINC
+game_code = AZWE
+vender_code = 01
+idle_loop_eliminate_target = 08000f66

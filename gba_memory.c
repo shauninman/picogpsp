@@ -2232,6 +2232,529 @@ static s32 parse_config_line(char *current_line, char *current_variable, char *c
   return 0;
 }
 
+typedef struct
+{
+   char romtitle[256];
+   char gamepak_title[256];
+   char gamepak_code[256];
+   char gamepak_maker[256];
+   int flash_size;
+   flash_device_id_type flash_device_id;
+   int save_type;
+   int rtc_enabled;
+   int mirroring_enabled;
+   int use_bios;
+   u32 idle_loop_target_pc;
+   u32 iwram_stack_optimize;
+   u32 translation_gate_target_1;
+   u32 translation_gate_target_2;
+   u32 translation_gate_target_3;
+} ini_t;
+
+static const ini_t gbaover[256] = {
+   {
+      "007 - Nightfire (U)",       /* rom title            */
+      "NIGHTFIRE",                 /* gamepak_title        */
+      "A7OE",                      /* gamepak_code         */
+      "69",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80031d6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Advance Wars (E)",          /* rom title            */
+      "ADVANCEWARSP",              /* gamepak_title        */
+      "AWRP",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x803880a,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Advance Wars (U)",          /* rom title            */
+      "ADVANCEWARS",               /* gamepak_title        */
+      "AWRE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x803880a,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Advance Wars 2: Black Hole Rising (E)", /* rom title            */
+      "ADVANCEWARS2",              /* gamepak_title        */
+      "AW2P",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8036e2a,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Advance Wars 2: Black Hole Rising (U)", /* rom title            */
+      "ADVANCEWARS2",              /* gamepak_title        */
+      "AW2E",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8036e2a,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Battle Network RockMan EXE (J)",/* rom title            */
+      "ROCKMAN_EXE",               /* gamepak_title        */
+      "AREJ",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000338,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Bomberman Tournament (U)",  /* rom title            */
+      "BOMSTORYUSA",               /* gamepak_title        */
+      "ABSE",                      /* gamepak_code         */
+      "52",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000526,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Bookworm (U)",              /* rom title            */
+      "BOOKWORM",                  /* gamepak_title        */
+      "BKWE",                      /* gamepak_code         */
+      "5G",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800397c,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Broken Sword - The Shadow of the Templars (U)",  /* rom title            */
+      "BROKENSWORD",               /* gamepak_title        */
+      "ABJE",                      /* gamepak_code         */
+      "6L",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000a26,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Castlevania (E)",           /* rom title            */
+      "DRACULA AGB1",              /* gamepak_title        */
+      "AAMP",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80003d2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Castlevania Circle Of The Moon (U)",/* rom title    */
+      "DRACULA AGB1",              /* gamepak_title        */
+      "AAME",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80003d2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Disney's Aladdin (J)",      /* rom title            */
+      "ALADDIN",                   /* gamepak_title        */
+      "AJ6J",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Disney's Aladdin (E)",      /* rom title            */
+      "ALADDIN",                   /* gamepak_title        */
+      "BADP",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Disney's Aladdin (U)",      /* rom title            */
+      "ALADDIN",                   /* gamepak_title        */
+      "BADE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Drill Dozer (U)",           /* rom title            */
+      "DRILL DOZER",               /* gamepak_title        */
+      "V49E",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80006c2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Golden Sun: The Lost Age (U)",/* rom title            */
+      "GOLDEN_SUN_B",              /* gamepak_title        */
+      "AGFE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x08013542,                  /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0x30009ac,                   /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network (E)",/* rom title            */
+      "MEGAMANEXEBN",              /* gamepak_title        */
+      "AREP",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000338,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network (U)",/* rom title            */
+      "MEGAMAN_BN",                /* gamepak_title        */
+      "AREE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000338,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 2 (U)",/* rom title            */
+      "MEGAMAN_EXE2",              /* gamepak_title        */
+      "AE2E",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000358,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Super Mario Advance (E/U)", /* rom title            */
+      "SUPER MARIOA",              /* gamepak_title        */
+      "AMAE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8001cf2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Super Mario Advance 4 (J)", /* rom title            */
+      "SUPER MARIOD",              /* gamepak_title        */
+      "AX4J",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000732,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Super Mario Advance 4 (E)", /* rom title            */
+      "SUPER MARIOD",              /* gamepak_title        */
+      "AX4P",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000732,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Super Mario Advance 4 (U)", /* rom title            */
+      "SUPER MARIOD",              /* gamepak_title        */
+      "AX4E",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000732,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Ueki no Housoku Jingi Sakuretsu! Nouryokusya Battle (J)",                    /* rom title            */
+      "UEKIJINGIBTL",              /* gamepak_title        */
+      "BUHJ",                      /* gamepak_code         */
+      "D9",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Wario Ware, Inc. Mega Microgames (U)",                    /* rom title            */
+      "WARIOWAREINC",              /* gamepak_title        */
+      "AZWE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000f66,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+#if 0
+   {
+      "Sample",                    /* rom title            */
+      "",                          /* gamepak_title        */
+      "",                          /* gamepak_code         */
+      "",                          /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+#endif
+};
+
+static s32 load_game_config_over(char *gamepak_title, char *gamepak_code, char *gamepak_maker)
+{
+  unsigned i = 0;
+
+  for (i = 0; i < 256; i++)
+  {
+     if (gbaover[i].romtitle[0] == '\0')
+        return -1;
+
+     printf("romtitle     : %s\n", gbaover[i].romtitle);
+     printf("gamepak title: %s\n", gbaover[i].gamepak_title);
+     printf("gamepak code : %s\n", gbaover[i].gamepak_code);
+     printf("gamepak maker: %s\n", gbaover[i].gamepak_maker);
+
+     printf("INPUT gamepak title: %s\n", gamepak_title);
+     printf("INPUT gamepak code : %s\n", gamepak_code);
+     printf("INPUT gamepak maker: %s\n", gamepak_maker);
+
+     if (strcmp(gbaover[i].gamepak_code, gamepak_code))
+        continue;
+
+     if (strcmp(gbaover[i].gamepak_title, gamepak_title))
+        continue;
+     
+     if (gbaover[i].idle_loop_target_pc != 0)
+        idle_loop_target_pc = gbaover[i].idle_loop_target_pc;
+
+     iwram_stack_optimize = gbaover[i].iwram_stack_optimize;
+     
+     flash_device_id      = gbaover[i].flash_device_id;
+
+     if (gbaover[i].translation_gate_target_1 != 0)
+     {
+        translation_gate_target_pc[translation_gate_targets] = gbaover[i].translation_gate_target_1;
+        translation_gate_targets++;
+     }
+
+     if (gbaover[i].translation_gate_target_2 != 0)
+     {
+        translation_gate_target_pc[translation_gate_targets] = gbaover[i].translation_gate_target_2;
+        translation_gate_targets++;
+     }
+
+     if (gbaover[i].translation_gate_target_3 != 0)
+     {
+        translation_gate_target_pc[translation_gate_targets] = gbaover[i].translation_gate_target_3;
+        translation_gate_targets++;
+     }
+
+     printf("found entry in over ini file.\n");
+
+     return 0;
+  }
+
+  return -1;
+}
+
 static s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_maker)
 {
   char current_line[256];
@@ -2239,13 +2762,6 @@ static s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamep
   char current_value[256];
   char config_path[512];
   FILE *config_file;
-
-  idle_loop_target_pc = 0xFFFFFFFF;
-  iwram_stack_optimize = 1;
-  translation_gate_targets = 0;
-  bios_rom[0x39] = 0x00;
-  bios_rom[0x2C] = 0x00;
-  flash_device_id = FLASH_DEVICE_MACRONIX_64KB;
 
   sprintf(config_path, "%s" PATH_SEPARATOR "%s", main_path, CONFIG_FILENAME);
 
@@ -2412,7 +2928,15 @@ u32 load_gamepak(const struct retro_game_info* info, const char *name)
    gamepak_code[4] = 0;
    gamepak_maker[2] = 0;
 
-   load_game_config(gamepak_title, gamepak_code, gamepak_maker);
+   idle_loop_target_pc = 0xFFFFFFFF;
+   iwram_stack_optimize = 1;
+   translation_gate_targets = 0;
+   bios_rom[0x39] = 0x00;
+   bios_rom[0x2C] = 0x00;
+   flash_device_id = FLASH_DEVICE_MACRONIX_64KB;
+
+   if ((load_game_config_over(gamepak_title, gamepak_code, gamepak_maker)) == -1)
+      load_game_config(gamepak_title, gamepak_code, gamepak_maker);
 
    change_ext(gamepak_filename, cheats_filename, ".cht");
    add_cheats(cheats_filename);
