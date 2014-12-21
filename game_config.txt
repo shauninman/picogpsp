@@ -137,6 +137,12 @@ game_code = AAME
 vender_code = A4
 idle_loop_eliminate_target = 080003d2
 
+# Defender of The Crown (U) [!]
+game_name = DOTC
+game_code = ADHE
+vender_code = 5N
+idle_loop_eliminate_target = 080007ec
+
 # Disney's Aladdin (J) [!] 
 game_name = ALADDIN
 game_code = AJ6J
@@ -724,11 +730,6 @@ vender_code = 01
 iwram_stack_optimize = no
 
 
-# Defender of The Crown (U)
-game_name = DOTC
-game_code = ADHE
-vender_code = 5N
-idle_loop_eliminate_target = 080007ec
 
 
 # F-Zero for Game Boy Advance (J)
@@ -864,7 +865,7 @@ game_code = BSLE
 vender_code = 41
 idle_loop_eliminate_target = 0807785e
 
-# Final Fantasy IV Advance (U)
+# Final Fantasy IV Advance (U) [!]
 game_name = FF4ADVANCE
 game_code = BZ4E
 vender_code = 01

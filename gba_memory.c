@@ -2440,6 +2440,23 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Defender Of The Crown (U)", /* rom title            */
+      "DOTC",                      /* gamepak_title        */
+      "ADHE",                      /* gamepak_code         */
+      "5N",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80007ec,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Disney's Aladdin (J)",      /* rom title            */
       "ALADDIN",                   /* gamepak_title        */
       "AJ6J",                      /* gamepak_code         */
@@ -2502,6 +2519,23 @@ static const ini_t gbaover[256] = {
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
       0x80006c2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Final Fantasy IV Advance (U)", /* rom title            */
+      "FF4ADVANCE",                /* gamepak_title        */
+      "BZ4E",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800fabe,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
