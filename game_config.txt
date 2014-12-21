@@ -545,7 +545,7 @@ game_code = BSLE
 vender_code = 41
 idle_loop_eliminate_target = 0807785e
 
-# The Pinball of The Dead
+# The Pinball of The Dead [!]
 game_name = PINBALL DEAD
 game_code = APDE
 vender_code = 78
@@ -563,13 +563,13 @@ game_code = B85A
 vender_code = 01
 iwram_stack_optimize = no
 
-# Pinball Challenge Deluxe (E)
+# Pinball Challenge Deluxe (E) [!]
 game_name = PINBALL CHAL
 game_code = APLP
 vender_code = 41
 idle_loop_eliminate_target = 080075a6
 
-# Prince of Persia - The Sands of Time (U)
+# Prince of Persia - The Sands of Time (U) [!]
 game_name = PRINCEPERSIA
 game_code = BPYE
 vender_code = 41

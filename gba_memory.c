@@ -3137,6 +3137,40 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Pinball Challenge Deluxe (E)",     /* rom title            */
+      "PINBALL CHAL",              /* gamepak_title        */
+      "APLP",                      /* gamepak_code         */
+      "41",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80075a6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Prince of Persia - The Sands of Time (U)",     /* rom title            */
+      "PRINCEPERSIA",              /* gamepak_title        */
+      "BPYE",                      /* gamepak_code         */
+      "41",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x808ff3a,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Rebelstar Tactical Command (U)", /* rom title            */
       "REBELSTAR",                 /* gamepak_title        */
       "BRLE",                      /* gamepak_code         */
@@ -3403,6 +3437,23 @@ static const ini_t gbaover[256] = {
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
       0x8002b5e,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "The Pinball of The Dead",                /* rom title            */
+      "PINBALL DEAD",              /* gamepak_title        */
+      "APDE",                      /* gamepak_code         */
+      "78",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800030,                    /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
