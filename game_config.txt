@@ -101,14 +101,14 @@ game_code = AW2E
 vender_code = 01
 idle_loop_eliminate_target = 08036e2a
 
-# Animal Yokochou Dokidoki Shinkyuu Shiken (J)
+# Animal Yokochou Dokidoki Shinkyuu Shiken (J) [!]
 game_name = ANIYOKO2
 game_code = BAXJ
 vender_code = A4
 iwram_stack_optimize = no
 
 # This is needed to make the game work.
-# Another World (Homebrew)
+# Another World (Homebrew) [!]
 game_name = FoxAnWorld
 game_code = Home
 vender_code = 00
@@ -961,7 +961,7 @@ game_code = AFFE
 vender_code = 08
 idle_loop_eliminate_target = 0800b428
 
-# Megaman Battle Chip Challenge (U)
+# Megaman Battle Chip Challenge (U) [!]
 game_name = BATTLECHIPGP
 game_code = A89E
 vender_code = 08
@@ -991,13 +991,13 @@ game_code = A9MP
 vender_code = 41
 idle_loop_eliminate_target = 03001cf8
 
-# Ninja Five-0 (U)
+# Ninja Five-0 (U) [!]
 game_name = NINJA FIVE 0
 game_code = ANXE
 vender_code = A4
 iwram_stack_optimize = no
 
-# Ninja Cop (E)
+# Ninja Cop (E) [!]
 game_name = NINJA COP
 game_code = ANXP
 vender_code = A4

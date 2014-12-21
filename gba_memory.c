@@ -2338,6 +2338,40 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Animal Yokochou Dokidoki Shinkyuu Shiken (J)",  /* rom title            */
+      "ANIYOKO2",                  /* gamepak_title        */
+      "BAXJ",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000f1c,                   /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Another World (Homebrew)",  /* rom title            */
+      "FoxAnWorld",                /* gamepak_title        */
+      "Home",                      /* gamepak_code         */
+      "00",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0x3000f1c,                   /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Asterix & Obelix XXL (E)",  /* rom title            */
       "ASTERIX",                   /* gamepak_title        */
       "BLXP",                      /* gamepak_code         */
@@ -3018,6 +3052,23 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Megaman Battle Chip Challenge (U)",/* rom title            */
+      "BATTLECHIPGP",              /* gamepak_title        */
+      "A89E",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000544,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Megaman Zero (E/U)",        /* rom title            */
       "MEGAMAN ZERO",              /* gamepak_title        */
       "AZCE",                      /* gamepak_code         */
@@ -3115,6 +3166,40 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0x3001cf8,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Ninja Cop (E)",          /* rom title            */
+      "NINJA COP",              /* gamepak_title        */
+      "ANXP",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Ninja Five-0 (U)",          /* rom title            */
+      "NINJA FIVE 0",              /* gamepak_title        */
+      "ANXE",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
