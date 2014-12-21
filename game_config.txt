@@ -114,7 +114,7 @@ game_code = Home
 vender_code = 00
 translation_gate_target = 03000f1c
 
-# Asterix & Obelix XXL (E)
+# Asterix & Obelix XXL (E) [!]
 game_name = ASTERIX
 game_code = BLXP
 vender_code = 70
@@ -126,7 +126,7 @@ game_code = AREJ
 vender_code = 08
 idle_loop_eliminate_target = 08000338
 
-# Bleach Advance (J)
+# Bleach Advance (J) [!]
 game_name = BLEACH ADV1
 game_code = BLEJ
 vender_code = 8P
@@ -192,7 +192,7 @@ game_code = V49E
 vender_code = 01
 idle_loop_eliminate_target = 080006c2
 
-# Doom 2 (U)
+# Doom 2 (U) [!]
 game_name = DOOM II
 game_code = A9DE
 vender_code = 52
@@ -211,27 +211,27 @@ game_code = BDSE
 vender_code = B2
 idle_loop_eliminate_target = 08010eb0
 
-# Donald Duck Advance (U)
+# Donald Duck Advance (U) [!]
 game_name = DISNEY'S DON
 game_code = ADKE
 vender_code = 41
 idle_loop_eliminate_target = 08002f30
 
-# Kirby: Nightmare in Dreamland (U)
+# Kirby: Nightmare in Dreamland (U) [!]
 game_name = AGB KIRBY DX
 game_code = A7KE
 vender_code = 01
 idle_loop_eliminate_target = 08000fae
 iwram_stack_optimize = no
 
-# Hoshi no Kirby: Yume no Izumi Deluxe (J)
+# Hoshi no Kirby: Yume no Izumi Deluxe (J) [!]
 game_name = AGB KIRBY DX
 game_code = A7KJ
 vender_code = 01
 idle_loop_eliminate_target = 08000f92
 iwram_stack_optimize = no
 
-# Kirby: Nightmare in Dreamland (E)
+# Kirby: Nightmare in Dreamland (E) [!]
 game_name = AGB KIRBY DX
 game_code = A7KP
 vender_code = 01
@@ -268,7 +268,7 @@ game_code = BGWJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# Gradius Galaxies (U)
+# Gradius Galaxies (U) [!]
 # Badly coded game with several idle loops. This one works for level
 # one at least.
 game_name = GRADIUSGALAX
@@ -456,26 +456,25 @@ game_code = BR5E
 vender_code = 08
 idle_loop_eliminate_target = 080003da
 
-# Megaman Zero (U/E)
+# Megaman Zero (U/E) [!]
 game_name = MEGAMAN ZERO
 game_code = AZCE
 vender_code = 08
 idle_loop_eliminate_target = 080004ee
 
-
-# Megaman Zero 2 (U)
+# Megaman Zero 2 (U) [!]
 game_name = MEGAMANZERO2
 game_code = A62E
 vender_code = 08
 idle_loop_eliminate_target = 08000664
 
-# Megaman Zero 3 (U)
+# Megaman Zero 3 (U) [!]
 game_name = MEGAMANZERO3
 game_code = BZ3E
 vender_code = 08
 idle_loop_eliminate_target = 08001a08
 
-# Megaman Zero 4 (U)
+# Megaman Zero 4 (U) [!]
 game_name = MEGAMANZERO4
 game_code = B4ZP
 vender_code = 08
@@ -487,37 +486,19 @@ game_code = BM2J
 vender_code = 18
 iwram_stack_optimize = no
 
-# Magical Houshin (J)
+# Magical Houshin (J) [!]
 game_name = M HOUSHIN
 game_code = AJOJ
 vender_code = C8
 iwram_stack_optimize = no
 
-# Medal of Honor (J)
+# Medal of Honor (J) [!]
 game_name = INFILTRATOR
 game_code = BMHJ
 vender_code = 13
 iwram_stack_optimize = no
 
-# Megaman Zero 2 (U)
-game_name = MEGAMANZERO2
-game_code = A62E
-vender_code = 08
-idle_loop_eliminate_target = 08000664
-
-# Megaman Zero 3 (U)
-game_name = MEGAMANZERO3
-game_code = BZ3E
-vender_code = 08
-idle_loop_eliminate_target = 08001a08
-
-# Megaman Zero 4 (U)
-game_name = MEGAMANZERO4
-game_code = B4ZE
-vender_code = 08
-idle_loop_eliminate_target = 0800090c
-
-# Metal Slug Advance (U)
+# Metal Slug Advance (U) [!]
 game_name = METAL SLUG
 game_code = BSME
 vender_code = B7
@@ -829,13 +810,13 @@ game_code = BPGJ
 vender_code = 01
 flash_rom_type = 128KB
 
-# Rockman Zero (J)
+# Rockman Zero (J) [!]
 game_name = ROCKMAN ZERO
 game_code = ARZJ
 vender_code = 08
 idle_loop_eliminate_target = 080004ee
 
-# Rebelstar: Tactical Command (U)
+# Rebelstar: Tactical Command (U) [!]
 # Badly coded game with several idle loops. I don't think any are
 # even close to dominant, and it jumps around too much when things
 # matter....
@@ -844,25 +825,25 @@ game_code = BRLE
 vender_code = AF
 idle_loop_eliminate_target = 0800041a
 
-# Rhythm Tengoku (J)
+# Rhythm Tengoku (J) [!]
 game_name = RHYTHMTENGOK
 game_code = BRIJ
 vender_code = 01
 idle_loop_eliminate_target = 080013d4
 
-# River City Ransom EX (J)
+# River City Ransom EX (J) [!]
 game_name = DOWNTOWN
 game_code = BDTJ
 vender_code = EB
 idle_loop_eliminate_target = 0800065a
 
-# River City Ransom EX (U)
+# River City Ransom EX (U) [!]
 game_name = RIVERCRANSOM
 game_code = BDTE
 vender_code = EB
 idle_loop_eliminate_target = 0800065a
 
-# Super Mario Advance (Demo/Kiosk) (U)
+# Super Mario Advance (Demo/Kiosk) (U) [!]
 game_name = SUPER MARIOA
 game_code = AMZE
 vender_code = 01
@@ -874,25 +855,25 @@ game_code = AMAE
 vender_code = 01
 idle_loop_eliminate_target = 08001cf2
 
-# Super Mario Advance 2 (E)
+# Super Mario Advance 2 (E) [!]
 game_name = SUPER MARIOB
 game_code = AA2P
 vender_code = 01
 idle_loop_eliminate_target = 08000534
 
-# Super Mario Advance 2 (U)
+# Super Mario Advance 2 (U) [!]
 game_name = SUPER MARIOB
 game_code = AA2E
 vender_code = 01
 idle_loop_eliminate_target = 08000534
 
-# Super Mario Advance 3 (J)
+# Super Mario Advance 3 (J) [!]
 game_name = SUPER MARIOC
 game_code = A3AJ
 vender_code = 01
 idle_loop_eliminate_target = 08002ba4
 
-# Super Mario Advance 3 (U)
+# Super Mario Advance 3 (U) [!]
 game_name = SUPER MARIOC
 game_code = A3AE
 vender_code = 01
@@ -920,13 +901,13 @@ idle_loop_eliminate_target = 08000732
 flash_rom_type = 128KB
 
 
-# Super Puzzle Fighter II Turbo (E)
+# Super Puzzle Fighter II Turbo (E) [!]
 game_name = PUZZLEFIGHT2
 game_code = AZ8P
 vender_code = 08
 idle_loop_eliminate_target = 08002b5e
 
-# Super Puzzle Fighter II Turbo (U)
+# Super Puzzle Fighter II Turbo (U) [!]
 game_name = PUZZLEFIGHT2
 game_code = AZ8E
 vender_code = 08
@@ -1008,7 +989,7 @@ game_code = A2QE
 vender_code = 9B
 idle_loop_eliminate_target = 081c7290
 
-# Motoracer Advance (E)
+# Motoracer Advance (E) [!]
 game_name = MOTORACERADV
 game_code = A9MP
 vender_code = 41
@@ -1097,10 +1078,7 @@ game_code = AC2J
 vender_code = 8P
 iwram_stack_optimize = no
 
-
-
-
-# Oriental Blue - Ao no Tengai (J)
+# Oriental Blue - Ao no Tengai (J) [!]
 game_name = ORIENTALBLUE
 game_code = AORJ
 vender_code = 01
