@@ -199,13 +199,13 @@ vender_code = 52
 translation_gate_target = 030041c8
 translation_gate_target = 03004fa0
 
-# Digimon Battle Spirit (U)
+# Digimon Battle Spirit (U) [!]
 game_name = DIGIMON BTSP
 game_code = A8SE
 vender_code = B2
 idle_loop_eliminate_target = 08011208
 
-# Digimon Battle Spirit 2 (U)
+# Digimon Battle Spirit 2 (U) [!]
 game_name = DIGIMON BS2
 game_code = BDSE
 vender_code = B2
@@ -276,8 +276,7 @@ game_code = AGAE
 vender_code = A4
 idle_loop_eliminate_target = 08013844
 
-
-# Golden Sun (U)
+# Golden Sun (U) [!]
 game_name = Golden_Sun_A
 game_code = AGSE
 vender_code = 01
@@ -552,20 +551,17 @@ game_code = APDE
 vender_code = 78
 idle_loop_eliminate_target = 08000300
 
-# Tringo (U)
+# Tringo (U) [!]
 game_name = TRINGO
 game_code = BTJE
 vender_code = 4Z
 idle_loop_eliminate_target = 080009a4
 
-# Tottoko Hamutaro Hamuhamu Sports (JU)
+# Tottoko Hamutaro Hamuhamu Sports (JU) [!]
 game_name = HAMSPORTS
 game_code = B85A
 vender_code = 01
 iwram_stack_optimize = no
-
-
-
 
 # Pinball Challenge Deluxe (E)
 game_name = PINBALL CHAL
@@ -1084,7 +1080,7 @@ game_code = AORJ
 vender_code = 01
 iwram_stack_optimize = no
 
-# Calciobit (J)
+# Calciobit (J) [!]
 game_name = CALCIOBIT01
 game_code = BIXJ
 vender_code = 01
@@ -1097,21 +1093,17 @@ game_code = BISJ
 vender_code = 1Q
 iwram_stack_optimize = no
 
-# Chicken Little (J)
+# Chicken Little (J) [!]
 game_name = CLITTLEJ    
 game_code = BCHJ
 vender_code = G9
 iwram_stack_optimize = no
 
-
-
-# Bomberman Jetters Game Collection (J)
+# Bomberman Jetters Game Collection (J) [!]
 game_name = BOMBERMANJGC
 game_code = BOMJ
 vender_code = 18
 iwram_stack_optimize = no
-
-
 
 # Robot Ponkotto 2 - Cross Version (J)
 game_name = ROBOPON2CROS

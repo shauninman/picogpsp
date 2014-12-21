@@ -2389,6 +2389,23 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Bomberman Jetters Game Collection (J)",  /* rom title            */
+      "BOMBERMANJGC",              /* gamepak_title        */
+      "BOMJ",                      /* gamepak_code         */
+      "18",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Bomberman Tournament (U)",  /* rom title            */
       "BOMSTORYUSA",               /* gamepak_title        */
       "ABSE",                      /* gamepak_code         */
@@ -2440,6 +2457,23 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Calciobit (J)",             /* rom title            */
+      "CALCIOBIT01",               /* gamepak_title        */
+      "BIXJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Castlevania (E)",           /* rom title            */
       "DRACULA AGB1",              /* gamepak_title        */
       "AAMP",                      /* gamepak_code         */
@@ -2474,6 +2508,23 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Chicken Little (J)",        /* rom title            */
+      "CLITTLEJ",                  /* gamepak_title        */
+      "BCHJ",                      /* gamepak_code         */
+      "G9",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Defender Of The Crown (U)", /* rom title            */
       "DOTC",                      /* gamepak_title        */
       "ADHE",                      /* gamepak_code         */
@@ -2486,6 +2537,40 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0x80007ec,                   /* idle_loop_target_pc  */
       0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Digimon Battle Spirit (U)", /* rom title            */
+      "DIGIMON BTSP",              /* gamepak_title        */
+      "A8SE",                      /* gamepak_code         */
+      "B2",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8011208,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Digimon Battle Spirit 2 (U)", /* rom title            */
+      "DIGIMON BS2",               /* gamepak_title        */
+      "BDSE",                      /* gamepak_code         */
+      "B2",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8010eb0,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
@@ -2727,6 +2812,23 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Golden Sun (U)",            /* rom title            */
+      "Golden_Sun_A",              /* gamepak_title        */
+      "AGSE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0x3000820,                   /* translation_gate_target_1 */
+      0x30009ac,                   /* translation_gate_target_2 */
+      0x3007dac,                   /* translation_gate_target_3 */
    },
    {
       "Golden Sun: The Lost Age (U)",/* rom title            */
@@ -3301,6 +3403,40 @@ static const ini_t gbaover[256] = {
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
       0x8002b5e,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Tottoko Hamutaro Hamuhamu Sports (J/U)",                /* rom title            */
+      "HAMSPORTS",                 /* gamepak_title        */
+      "B85A",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Tringo (U)",                /* rom title            */
+      "TRINGO",                    /* gamepak_title        */
+      "BTJE",                      /* gamepak_code         */
+      "42",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80009a4,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
