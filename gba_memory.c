@@ -3522,14 +3522,6 @@ static s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamep
             if(!strcmp(current_variable, "flash_rom_type") &&
               !strcmp(current_value, "128KB"))
               flash_device_id = FLASH_DEVICE_MACRONIX_128KB;
-
-            if(!strcmp(current_variable, "bios_rom_hack_39") &&
-              !strcmp(current_value, "yes"))
-              bios_rom[0x39] = 0xC0;
-
-            if(!strcmp(current_variable, "bios_rom_hack_2C") &&
-              !strcmp(current_value, "yes"))
-               bios_rom[0x2C] = 0x02;
           }
         }
 
@@ -3628,8 +3620,6 @@ u32 load_gamepak(const struct retro_game_info* info, const char *name)
    idle_loop_target_pc = 0xFFFFFFFF;
    iwram_stack_optimize = 1;
    translation_gate_targets = 0;
-   bios_rom[0x39] = 0x00;
-   bios_rom[0x2C] = 0x00;
    flash_device_id = FLASH_DEVICE_MACRONIX_64KB;
 
    if ((load_game_config_over(gamepak_title, gamepak_code, gamepak_maker)) == -1)
