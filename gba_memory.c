@@ -2525,6 +2525,57 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "F-Zero for Game Boy Advance (J)",        /* rom title            */
+      "F-ZERO ADVAN",              /* gamepak_title        */
+      "AFZJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000c2e,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "F-Zero - Maximum Velocity (U)",        /* rom title            */
+      "F-ZERO ADVAN",              /* gamepak_title        */
+      "AFZE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000c2e,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "F-Zero: Climax (U)",        /* rom title            */
+      "F-ZEROCLIMAX",              /* gamepak_title        */
+      "BFTJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Final Fantasy IV Advance (U)", /* rom title            */
       "FF4ADVANCE",                /* gamepak_title        */
       "BZ4E",                      /* gamepak_code         */
@@ -2553,6 +2604,40 @@ static const ini_t gbaover[256] = {
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
       0x800041e,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Final Fight One (E)",       /* rom title            */
+      "FINAL FIGHT",               /* gamepak_title        */
+      "AFFP",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800b428,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Final Fight One (U)",       /* rom title            */
+      "FINAL FIGHT",               /* gamepak_title        */
+      "AFFE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800b428,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
@@ -2589,6 +2674,23 @@ static const ini_t gbaover[256] = {
       0x08013542,                  /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0x30009ac,                   /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Vs Donkey Kong (U)",  /* rom title            */
+      "MARIOVSDK",                 /* gamepak_title        */
+      "BM5E",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8033eec,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
    },

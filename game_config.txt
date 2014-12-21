@@ -238,8 +238,19 @@ vender_code = 01
 idle_loop_eliminate_target = 08000fae
 iwram_stack_optimize = no
 
+# F-Zero for Game Boy Advance (J) [!]
+game_name = F-ZERO ADVAN
+game_code = AFZJ
+vender_code = 01
+idle_loop_eliminate_target = 08000c2e
 
-# F-Zero: Climax (J)
+# F-Zero - Maximum Velocity (U) [!]
+game_name = F-ZERO ADVAN
+game_code = AFZE
+vender_code = 01
+idle_loop_eliminate_target = 08000c2e
+
+# F-Zero: Climax (J) [!]
 game_name = F-ZEROCLIMAX
 game_code = BFTJ
 vender_code = 01
@@ -378,7 +389,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Vs Donkey Kong (U)
+# Mario Vs Donkey Kong (U) [!]
 game_name = MARIOVSDK
 game_code = BM5E
 vender_code = 01
@@ -573,17 +584,6 @@ vender_code = 01
 iwram_stack_optimize = no
 
 
-# F-Zero for Game Boy Advance (J)
-game_name = F-ZERO ADVAN
-game_code = AFZJ
-vender_code = 01
-idle_loop_eliminate_target = 08000c2e
-
-# F-Zero - Maximum Velocity (U)
-game_name = F-ZERO ADVAN
-game_code = AFZE
-vender_code = 01
-idle_loop_eliminate_target = 08000c2e
 
 
 # Pinball Challenge Deluxe (E)
@@ -972,13 +972,13 @@ idle_loop_eliminate_target = 0800fabe
 # or try 00000430
 
 
-# Final Fight One (E)
+# Final Fight One (E) [!]
 game_name = FINAL FIGHT
 game_code = AFFP
 vender_code = 08
 idle_loop_eliminate_target = 0800b428
 
-# Final Fight One (U)
+# Final Fight One (U) [!]
 game_name = FINAL FIGHT
 game_code = AFFE
 vender_code = 08
