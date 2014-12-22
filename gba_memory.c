@@ -2916,6 +2916,23 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Koinu-Chan no Hajimete no Osanpo (J)",        /* rom title            */
+      "OSANPO",                    /* gamepak_title        */
+      "BISJ",                      /* gamepak_code         */
+      "IQ",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Kirby: Nightmare in Dreamland (E)",        /* rom title            */
       "AGB KIRBY DX",              /* gamepak_title        */
       "A7KP",                      /* gamepak_code         */
@@ -2967,18 +2984,35 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
-      "Medal of Honor (J)",        /* rom title            */
-      "INFILTRATOR",               /* gamepak_title        */
-      "BMHJ",                      /* gamepak_code         */
-      "13",                        /* gamepak_maker        */
+      "Magical Quest 2 Starring Mickey & Minnie (U)",       /* rom title            */
+      "M&M MAGICAL2",              /* gamepak_title        */
+      "AQME",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
       0,                           /* flash_size           */
       0,                           /* flash_device_id      */
       0,                           /* save_type            */
       0,                           /* rtc_enabled          */
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
-      0,                           /* idle_loop_target_pc  */
-      0,                           /* iwram_stack_optimize */
+      0x801d340,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Magical Quest 3 Starring Mickey & Donald (U)",       /* rom title            */
+      "M&D MAGICAL3",              /* gamepak_title        */
+      "BMQE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8016064,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
@@ -2996,6 +3030,23 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0x8033eec,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Medal of Honor (J)",        /* rom title            */
+      "INFILTRATOR",               /* gamepak_title        */
+      "BMHJ",                      /* gamepak_code         */
+      "13",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
@@ -3200,6 +3251,23 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0,                           /* idle_loop_target_pc  */
       0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Open Season (U)",           /* rom title            */
+      "OPEN SEASON",               /* gamepak_title        */
+      "BOAE",                      /* gamepak_code         */
+      "41",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8066378,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */

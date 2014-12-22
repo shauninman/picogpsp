@@ -503,13 +503,13 @@ game_code = BSME
 vender_code = B7
 idle_loop_eliminate_target = 08000298
 
-# Magical Quest 2 Starring Mickey & Minnie (U)
+# Magical Quest 2 Starring Mickey & Minnie (U) [!]
 game_name = M&M MAGICAL2
 game_code = AQME
 vender_code = 08
 idle_loop_eliminate_target = 0801d340
 
-# Magical Quest 3 Starring Mickey & Donald (U)
+# Magical Quest 3 Starring Mickey & Donald (U) [!]
 game_name = M&D MAGICAL3
 game_code = BMQE
 vender_code = 08
@@ -1087,7 +1087,7 @@ vender_code = 01
 flash_rom_type = 128KB
 
 
-# Koinu-Chan no Hajimete no Osanpo (J)
+# Koinu-Chan no Hajimete no Osanpo (J) [!]
 game_name = OSANPO
 game_code = BISJ
 vender_code = 1Q
@@ -1118,7 +1118,7 @@ vender_code = 18
 iwram_stack_optimize = no
 
 
-# Open Season (U)
+# Open Season (U) [!]
 game_name = OPEN SEASON
 game_code = BOAE
 vender_code = 41
