@@ -126,7 +126,9 @@ else ifeq ($(platform), qnx)
 
 	CC = qcc -Vgcc_ntoarmv7le
 	AR = qcc -Vgcc_ntoarmv7le
-	CFLAGS += -D__BLACKBERRY_QNX__
+	CFLAGS += -D__BLACKBERRY_QNX_
+	HAVE_DYNAREC := 1
+	CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
 
 # PS3
 else ifeq ($(platform), ps3)
