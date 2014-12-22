@@ -298,25 +298,25 @@ game_name = MARIO&LUIGIU
 game_code = A88E
 vender_code = 01
 
-# Mario Party Advance (U)
+# Mario Party Advance (U) [!]
 game_name = MARIOPARTYUS
 game_code = B8ME
 vender_code = 01
 iwram_stack_optimize = no
 
-# Mario Party Advance (J)
+# Mario Party Advance (J) [!]
 game_name = MARIOPARTYJA
 game_code = B8MJ
 vender_code = 01
 iwram_stack_optimize = no
 
-# Mario Party Advance (E)
+# Mario Party Advance (E) [!]
 game_name = MARIOPARTYEU
 game_code = B8MP
 vender_code = 01
 iwram_stack_optimize = no
 
-# Mario Golf: Advance Tour (U)
+# Mario Golf: Advance Tour (U) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGE
 vender_code = 01
@@ -325,7 +325,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Golf: GBA Tour (J)
+# Mario Golf: GBA Tour (J) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGJ
 vender_code = 01
@@ -334,7 +334,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Golf: Advance Tour (E)
+# Mario Golf: Advance Tour (E) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGP
 vender_code = 01
@@ -343,7 +343,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Golf: Advance Tour (S)
+# Mario Golf: Advance Tour (S) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGS
 vender_code = 01
@@ -352,7 +352,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Golf: Advance Tour (F)
+# Mario Golf: Advance Tour (F) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGF
 vender_code = 01
@@ -361,7 +361,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Golf: Advance Tour (I)
+# Mario Golf: Advance Tour (I) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGI
 vender_code = 01
@@ -370,7 +370,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Golf: Advance Tour (G)
+# Mario Golf: Advance Tour (G) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGD
 vender_code = 01
@@ -379,7 +379,7 @@ idle_loop_eliminate_target = 08014e0a
 translation_gate_target = 03000d00
 translation_gate_target = 03000a30
 
-# Mario Golf: Advance Tour (A)
+# Mario Golf: Advance Tour (A) [!]
 game_name = MARIOGOLFGBA
 game_code = BMGU
 vender_code = 01
@@ -413,43 +413,43 @@ game_code = AE2E
 vender_code = 08
 idle_loop_eliminate_target = 08000358
 
-# Megaman Battle Network 3 White (U)
+# Megaman Battle Network 3 White (U) [!]
 game_name = MEGA_EXE3_WH
 game_code = A6BE
 vender_code = 08
 idle_loop_eliminate_target = 0800036c
 
-# Megaman Battle Network 3 Blue (U)
+# Megaman Battle Network 3 Blue (U) [!]
 game_name = MEGA_EXE3_BL
 game_code = A3XE
 vender_code = 08
 idle_loop_eliminate_target = 0800036c
 
-# Megaman Battle Network 4 Red Sun (U)
+# Megaman Battle Network 4 Red Sun (U) [!]
 game_name = MEGAMANBN4RS
 game_code = B4WE
 vender_code = 08
 idle_loop_eliminate_target = 080003a6
 
-# Megaman Battle Network 4 Blue Moon (U)
+# Megaman Battle Network 4 Blue Moon (U) [!]
 game_name = MEGAMANBN4BM
 game_code = B4BE
 vender_code = 08
 idle_loop_eliminate_target = 080003a6
 
-# Megaman Battle Network 5 Team Protoman (U)
+# Megaman Battle Network 5 Team Protoman (U) [!]
 game_name = MEGAMAN5_TP_
 game_code = BRBE
 vender_code = 08
 idle_loop_eliminate_target = 080003ca
 
-# Megaman Battle Network 5 Team Colonel (U)
+# Megaman Battle Network 5 Team Colonel (U) [!]
 game_name = MEGAMAN5_TC_
 game_code = BRKE
 vender_code = 08
 idle_loop_eliminate_target = 080003ca
 
-# Megaman Battle Network 6 Cybeast Gregar (U)
+# Megaman Battle Network 6 Cybeast Gregar (U) [!]
 game_name = MEGAMAN6_GXX
 game_code = BR5E
 vender_code = 08
@@ -479,7 +479,7 @@ game_code = B4ZP
 vender_code = 08
 idle_loop_eliminate_target = 0800090c
 
-# Momotarou Densetsu G - Gold Deck wo Tsukure! (J)
+# Momotarou Densetsu G - Gold Deck wo Tsukure! (J) [!]
 game_name = MOMOTETSU-G
 game_code = BM2J
 vender_code = 18

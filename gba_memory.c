@@ -3018,6 +3018,142 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Mario Golf: Advance Tour (U)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Golf: Advance Tour (J)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Golf: Advance Tour (E)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGP",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Golf: Advance Tour (S)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGS",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Golf: Advance Tour (F)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGF",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Golf: Advance Tour (I)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGI",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Golf: Advance Tour (G)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGD",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Golf: Advance Tour (A)",  /* rom title            */
+      "MARIOGOLFGBA",              /* gamepak_title        */
+      "BMGU",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8014e0a,                   /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0x3000d00,                   /* translation_gate_target_1 */
+      0x3000a30,                   /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Mario Vs Donkey Kong (U)",  /* rom title            */
       "MARIOVSDK",                 /* gamepak_title        */
       "BM5E",                      /* gamepak_code         */
@@ -3030,6 +3166,57 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0x8033eec,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Party Advance (U)",  /* rom title            */
+      "MARIOPARTYUS",              /* gamepak_title        */
+      "B8ME",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Party Advance (J)",  /* rom title            */
+      "MARIOPARTYJA",              /* gamepak_title        */
+      "B8MJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Mario Party Advance (E)",  /* rom title            */
+      "MARIOPARTYEU",              /* gamepak_title        */
+      "B8MP",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
@@ -3097,6 +3284,125 @@ static const ini_t gbaover[256] = {
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
       0x8000358,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 3 White (U)",/* rom title            */
+      "MEGA_EXE3_WH",              /* gamepak_title        */
+      "A6BE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800036c,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 3 Blue (U)",/* rom title            */
+      "MEGA_EXE3_BL",              /* gamepak_title        */
+      "A3XE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x800036c,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 4 Red Sun (U)",/* rom title            */
+      "MEGAMANBN4RS",              /* gamepak_title        */
+      "B4WE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80003a6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 4 Blue Moon (U)",/* rom title            */
+      "MEGAMANBN4BM",              /* gamepak_title        */
+      "B4BE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80003a6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 5 Team Protoman (U)",/* rom title            */
+      "MEGAMAN5_TP_",              /* gamepak_title        */
+      "BRBE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80003ca,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 5 Team Colonel (U)",/* rom title            */
+      "MEGAMAN5_TC_",              /* gamepak_title        */
+      "BRKE",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80003ca,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Megaman Battle Network 6 Cybeast Gregar (U)",/* rom title            */
+      "MEGAMAN6_GXX",              /* gamepak_title        */
+      "BR5E",                      /* gamepak_code         */
+      "08",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80003da,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
@@ -3200,6 +3506,23 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0x8000298,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Momotarou Densetsu G - Gold Deck wo Tsukure! (J)",     /* rom title            */
+      "MOMOTETSU-G",              /* gamepak_title        */
+      "BM2J",                      /* gamepak_code         */
+      "18",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
