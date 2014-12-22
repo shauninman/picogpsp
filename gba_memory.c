@@ -3732,6 +3732,74 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Robopon 2 Cross Version (U)",          /* rom title            */
+      "ROBOPON2CROS",              /* gamepak_title        */
+      "ACVE",                      /* gamepak_code         */
+      "EB",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0 /* Flash 512K */,          /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Robopon 2 Ring Version (U)",          /* rom title            */
+      "ROBOPON2RING",              /* gamepak_title        */
+      "ARPE",                      /* gamepak_code         */
+      "EB",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0 /* Flash 512K */,          /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Robot Ponkotto 2 - Cross Version (J)",          /* rom title            */
+      "ROBOPON2CROS",              /* gamepak_title        */
+      "ACVJ",                      /* gamepak_code         */
+      "18",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Robot Ponkotto 2 - Ring Version (J)",          /* rom title            */
+      "ROBOPON2RING",              /* gamepak_title        */
+      "ARPJ",                      /* gamepak_code         */
+      "18",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Super Mario Advance (Demo/Kiosk)", /* rom title            */
       "SUPER MARIOA",              /* gamepak_title        */
       "AMZE",                      /* gamepak_code         */

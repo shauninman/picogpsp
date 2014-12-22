@@ -1105,18 +1105,17 @@ game_code = BOMJ
 vender_code = 18
 iwram_stack_optimize = no
 
-# Robot Ponkotto 2 - Cross Version (J)
+# Robot Ponkotto 2 - Cross Version (J) [!]
 game_name = ROBOPON2CROS
 game_code = ACVJ
 vender_code = 18
 iwram_stack_optimize = no
 
-# Robot Ponkotto 2 - Ring Version (J)
+# Robot Ponkotto 2 - Ring Version (J) [!]
 game_name = ROBOPON2RING
 game_code = ARPJ
 vender_code = 18
 iwram_stack_optimize = no
-
 
 # Open Season (U) [!]
 game_name = OPEN SEASON
@@ -1124,14 +1123,14 @@ game_code = BOAE
 vender_code = 41
 idle_loop_eliminate_target = 08066378
 
-# Robopon 2 Cross Version (U)
+# Robopon 2 Cross Version (U) [!]
 game_name = ROBOPON2CROS
 game_code = ACVE
 vender_code = EB
 iwram_stack_optimize = no
 flash_rom_type = 512KB
 
-# Robopon 2 Ring Version (U)
+# Robopon 2 Ring Version (U) [!]
 game_name = ROBOPON2RING
 game_code = ARPE
 vender_code = EB
