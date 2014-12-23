@@ -97,8 +97,8 @@ else ifeq ($(platform), osx)
 		HAVE_MMAP = 1
 	endif
 
-# iOS
 else ifeq ($(platform), ios)
+	# iOS
 	TARGET := $(TARGET_NAME)_libretro_ios.dylib
 	fpic := -fPIC
 	SHARED := -dynamiclib
@@ -116,9 +116,21 @@ else ifeq ($(platform), ios)
 		CC += -miphoneos-version-min=5.0
 		CFLAGS += -miphoneos-version-min=5.0
 	endif
+else ifeq ($(platform), theos_ios)
+	# iOS Theos
+	DEPLOYMENT_IOSVERSION = 5.0
+	TARGET = iphone:latest:$(DEPLOYMENT_IOSVERSION)
+	ARCHS = armv7 armv7s
+	TARGET_IPHONEOS_DEPLOYMENT_VERSION=$(DEPLOYMENT_IOSVERSION)
+	THEOS_BUILD_DIR := objs
+	include $(THEOS)/makefiles/common.mk
 
-# QNX
+	CFLAGS += -DIOS -DHAVE_POSIX_MEMALIGN -marm
+	CPU_ARCH := arm
+
+LIBRARY_NAME = $(TARGET_NAME)_libretro_ios
 else ifeq ($(platform), qnx)
+	# QNX
 	TARGET := $(TARGET_NAME)_libretro_qnx.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T
@@ -278,6 +290,12 @@ ifeq ($(FRONTEND_SUPPORTS_RGB565), 1)
 endif
 
 
+ifeq ($(platform), theos_ios)
+COMMON_FLAGS := -DIOS $(COMMON_DEFINES) $(INCFLAGS) -I$(THEOS_INCLUDE_PATH) -Wno-error
+$(LIBRARY_NAME)_CFLAGS += $(COMMON_FLAGS) $(CFLAGS)
+${LIBRARY_NAME}_FILES = $(SOURCES_C) $(SOURCES_ASM)
+include $(THEOS_MAKE_PATH)/library.mk
+else
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
@@ -303,3 +321,4 @@ clean:
 	rm -f $(OBJECTS) $(TARGET)
 
 .PHONY: clean
+endif
