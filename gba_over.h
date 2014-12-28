@@ -612,6 +612,7 @@ static const ini_t gbaover[256] = {
       0x3007dac,                   /* translation_gate_target_3 */
    },
    {
+      /* Probably the most horrifically coded GBA game in existence. */
       "Golden Sun: The Lost Age (U)",/* rom title            */
       "GOLDEN_SUN_B",              /* gamepak_title        */
       "AGFE",                      /* gamepak_code         */
@@ -629,6 +630,9 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      /* Badly coded game with several idle loops. This one works for level
+       * one at least.
+       */
       "Gradius Galaxies (U)",      /* rom title            */
       "GRADIUSGALAX",              /* gamepak_title        */
       "AGAE",                      /* gamepak_code         */
@@ -663,10 +667,10 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
-      "Koinu-Chan no Hajimete no Osanpo (J)",        /* rom title            */
-      "OSANPO",                    /* gamepak_title        */
-      "BISJ",                      /* gamepak_code         */
-      "IQ",                        /* gamepak_maker        */
+      "J-League Pro Soccer Club wo Tsukurou Advance (J)",        /* rom title            */
+      "SAKATUKUADV",               /* gamepak_title        */
+      "AC2J",                      /* gamepak_code         */
+      "8P",                        /* gamepak_maker        */
       0,                           /* flash_size           */
       0,                           /* flash_device_id      */
       0,                           /* save_type            */
@@ -675,6 +679,40 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0,                           /* idle_loop_target_pc  */
       0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Kim Possible 2 (U)",        /* rom title            */
+      "KIMPOSSIBLE2",              /* gamepak_title        */
+      "BKME",                      /* gamepak_code         */
+      "4Q",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008a2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Kim Possible 2 (E)",        /* rom title            */
+      "KIMPOSSIBLE2",              /* gamepak_title        */
+      "BKMP",                      /* gamepak_code         */
+      "4Q",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008a2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
@@ -709,6 +747,23 @@ static const ini_t gbaover[256] = {
       0,                           /* use_bios             */
       0x8000fae,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Koinu-Chan no Hajimete no Osanpo (J)",        /* rom title            */
+      "OSANPO",                    /* gamepak_title        */
+      "BISJ",                      /* gamepak_code         */
+      "IQ",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
@@ -1275,6 +1330,57 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Monster Force (U)",         /* rom title            */
+      "MONSTERFORCE",              /* gamepak_title        */
+      "AM8E",                      /* gamepak_code         */
+      "7D",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8000b00,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Monster Rancher Advance (U)", /* rom title            */
+      "MONSRANCHERA",              /* gamepak_title        */
+      "AMFE",                      /* gamepak_code         */
+      "9B",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x809f394,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Monster Rancher Advance 2 (U)", /* rom title            */
+      "MONSTERRANC2",              /* gamepak_title        */
+      "A2QE",                      /* gamepak_code         */
+      "9B",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x81c7290,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Motoracer Advance (E)",     /* rom title            */
       "MOTORACERADV",              /* gamepak_title        */
       "A9MP",                      /* gamepak_code         */
@@ -1313,6 +1419,23 @@ static const ini_t gbaover[256] = {
       "NINJA FIVE 0",              /* gamepak_title        */
       "ANXE",                      /* gamepak_code         */
       "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Nishihara Rieko no Dendou Mahjong (J)",          /* rom title            */
+      "DENDOHMAJANG",              /* gamepak_title        */
+      "ASMJ",                      /* gamepak_code         */
+      "AG",                        /* gamepak_maker        */
       0,                           /* flash_size           */
       0,                           /* flash_device_id      */
       0,                           /* save_type            */
@@ -1377,6 +1500,568 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Pokemon Emerald (E/U)",     /* rom title            */
+      "POKEMON EMER",              /* gamepak_title        */
+      "BPEE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008ce,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Emerald (J)",       /* rom title            */
+      "POKEMON EMER",              /* gamepak_title        */
+      "BPEJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008ce,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Emerald (G)",       /* rom title            */
+      "POKEMON EMER",              /* gamepak_title        */
+      "BPED",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008ce,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Emerald (F)",       /* rom title            */
+      "POKEMON EMER",              /* gamepak_title        */
+      "BPEF",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008ce,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Emerald (S)",       /* rom title            */
+      "POKEMON EMER",              /* gamepak_title        */
+      "BPES",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008ce,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Emerald (I)",       /* rom title            */
+      "POKEMON EMER",              /* gamepak_title        */
+      "BPEI",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008ce,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Sapphire (U)",      /* rom title            */
+      "POKEMON SAPP",              /* gamepak_title        */
+      "AXPE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Sapphire (J)",      /* rom title            */
+      "POKEMON SAPP",              /* gamepak_title        */
+      "AXPJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Sapphire (G)",      /* rom title            */
+      "POKEMON SAPP",              /* gamepak_title        */
+      "AXPD",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Sapphire (I)",      /* rom title            */
+      "POKEMON SAPP",              /* gamepak_title        */
+      "AXPI",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Sapphire (S)",      /* rom title            */
+      "POKEMON SAPP",              /* gamepak_title        */
+      "AXPS",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Sapphire (F)",      /* rom title            */
+      "POKEMON SAPP",              /* gamepak_title        */
+      "AXPF",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Ruby (U)",          /* rom title            */
+      "POKEMON RUBY",              /* gamepak_title        */
+      "AXVE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Ruby (J)",          /* rom title            */
+      "POKEMON RUBY",              /* gamepak_title        */
+      "AXVJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Ruby (G)",          /* rom title            */
+      "POKEMON RUBY",              /* gamepak_title        */
+      "AXVD",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Ruby (I)",          /* rom title            */
+      "POKEMON RUBY",              /* gamepak_title        */
+      "AXVI",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Ruby (S)",          /* rom title            */
+      "POKEMON RUBY",              /* gamepak_title        */
+      "AXVS",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon Ruby (F)",          /* rom title            */
+      "POKEMON RUBY",              /* gamepak_title        */
+      "AXVF",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Fire Red (J)",     /* rom title            */
+      "POKEMON FIRE",              /* gamepak_title        */
+      "BPRJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Fire Red (E/U)",   /* rom title            */
+      "POKEMON FIRE",              /* gamepak_title        */
+      "BPRE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Fire Red (S)",     /* rom title            */
+      "POKEMON FIRE",              /* gamepak_title        */
+      "BPRS",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Fire Red (G)",     /* rom title            */
+      "POKEMON FIRE",              /* gamepak_title        */
+      "BPRG",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Fire Red (I)",     /* rom title            */
+      "POKEMON FIRE",              /* gamepak_title        */
+      "BPRI",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Fire Red (F)",     /* rom title            */
+      "POKEMON FIRE",              /* gamepak_title        */
+      "BPRF",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      /* Hey, this one is the same as Fire Red, who'd have thought? :B */
+      "Pokemon: Leaf Green (E/U)", /* rom title            */
+      "POKEMON LEAF",              /* gamepak_title        */
+      "BPGE",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b2,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Leaf Green (S)",   /* rom title            */
+      "POKEMON LEAF",              /* gamepak_title        */
+      "BPGS",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Leaf Green (G)",   /* rom title            */
+      "POKEMON LEAF",              /* gamepak_title        */
+      "BPGD",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Leaf Green (I)",   /* rom title            */
+      "POKEMON LEAF",              /* gamepak_title        */
+      "BPGI",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Leaf Green (F)",   /* rom title            */
+      "POKEMON LEAF",              /* gamepak_title        */
+      "BPGF",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80008b6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Leaf Green (J)",   /* rom title            */
+      "POKEMON LEAF",              /* gamepak_title        */
+      "BPGJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Fushigi no Dungeon Aka no Kyuujotai (J)",   /* rom title            */
+      "POKE DUNGEON",              /* gamepak_title        */
+      "B24J",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Red Rescue Team (U)",   /* rom title            */
+      "POKE DUNGEON",              /* gamepak_title        */
+      "B24E",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Pokemon: Red Rescue Team (E)",   /* rom title            */
+      "POKE DUNGEON",              /* gamepak_title        */
+      "B24P",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "Prince of Persia - The Sands of Time (U)",     /* rom title            */
       "PRINCEPERSIA",              /* gamepak_title        */
       "BPYE",                      /* gamepak_code         */
@@ -1393,7 +2078,12 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_2 */
       0,                           /* translation_gate_target_3 */
    },
+   
    {
+      /* Badly coded game with several idle loops. I don't think any are
+       * even close to dominant, and it jumps around too much when things
+       * matter....
+       */
       "Rebelstar Tactical Command (U)", /* rom title            */
       "REBELSTAR",                 /* gamepak_title        */
       "BRLE",                      /* gamepak_code         */
@@ -1534,6 +2224,125 @@ static const ini_t gbaover[256] = {
       "ROBOPON2RING",              /* gamepak_title        */
       "ARPJ",                      /* gamepak_code         */
       "18",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Sennen Kazoku (J)",         /* rom title            */
+      "SENNENKAZOKU",              /* gamepak_title        */
+      "BKAJ",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      FLASH_DEVICE_MACRONIX_128KB, /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Shining Soul (J)",          /* rom title            */
+      "SHINING SOUL",              /* gamepak_title        */
+      "AHUJ",                      /* gamepak_code         */
+      "8P",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Shining Soul (U)",          /* rom title            */
+      "SHINING SOUL",              /* gamepak_title        */
+      "AHUE",                      /* gamepak_code         */
+      "EB",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Shining Soul (E)",          /* rom title            */
+      "SHINING SOUL",              /* gamepak_title        */
+      "AHUP",                      /* gamepak_code         */
+      "8P",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Shining Soul 2 (J)",        /* rom title            */
+      "SHININGSOUL2",              /* gamepak_title        */
+      "AU2J",                      /* gamepak_code         */
+      "8P",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Shining Soul 2 (U)",        /* rom title            */
+      "SHININGSOUL2",              /* gamepak_title        */
+      "AU2E",                      /* gamepak_code         */
+      "EB",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Shining Soul 2 (E)",        /* rom title            */
+      "SHININGSOUL2",              /* gamepak_title        */
+      "AU2P",                      /* gamepak_code         */
+      "EB",                        /* gamepak_maker        */
       0,                           /* flash_size           */
       0,                           /* flash_device_id      */
       0,                           /* save_type            */
@@ -1734,6 +2543,57 @@ static const ini_t gbaover[256] = {
       0,                           /* translation_gate_target_3 */
    },
    {
+      "Tales of Phantasia (U)",    /* rom title            */
+      "PHANTASIA",                 /* gamepak_title        */
+      "AN8E",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Tales of Phantasia (J)",    /* rom title            */
+      "PHANTASIA",                 /* gamepak_title        */
+      "AN8J",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Tales of Phantasia (E)",    /* rom title            */
+      "PHANTASIA",                 /* gamepak_title        */
+      "AN8P",                      /* gamepak_code         */
+      "01",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0,                           /* idle_loop_target_pc  */
+      0,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
       "The Pinball of The Dead",                /* rom title            */
       "PINBALL DEAD",              /* gamepak_title        */
       "APDE",                      /* gamepak_code         */
@@ -1745,6 +2605,40 @@ static const ini_t gbaover[256] = {
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
       0x800030,                    /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Tom Clancy's Splinter Cell (U)",                /* rom title            */
+      "SPLINTERCELL",              /* gamepak_title        */
+      "A04E",                      /* gamepak_code         */
+      "41",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x807a0c4,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Tom Clancy's Splinter Cell: Pandora Tomorrow (U)",                /* rom title            */
+      "TOM CLANCY'S",              /* gamepak_title        */
+      "BSLE",                      /* gamepak_code         */
+      "41",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x807785e,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
@@ -1847,6 +2741,91 @@ static const ini_t gbaover[256] = {
       0,                           /* mirroring_enabled    */
       0,                           /* use_bios             */
       0x8000f66,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Yu-Gi-Oh! - Dungeon Dice Monsters (U)",                    /* rom title            */
+      "YU-GI-OH DDM",              /* gamepak_title        */
+      "AYDE",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x802cc6a,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Yu-Gi-Oh! - The Eternal Duelist Soul (U)",                    /* rom title            */
+      "YU-GI-OH!EDS",              /* gamepak_title        */
+      "AY5E",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8075d96,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Yu-Gi-Oh! - The Sacred Cards (U)",                    /* rom title            */
+      "YUGIOH DM7",                /* gamepak_title        */
+      "AY7E",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8003bd6,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Yu-Gi-Oh! - World Championship Tournament 2004 (U)",                    /* rom title            */
+      "YWCT2004USA",               /* gamepak_title        */
+      "BYWE",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x80831da,                   /* idle_loop_target_pc  */
+      1,                           /* iwram_stack_optimize */
+      0,                           /* translation_gate_target_1 */
+      0,                           /* translation_gate_target_2 */
+      0,                           /* translation_gate_target_3 */
+   },
+   {
+      "Yu-Gi-Oh! - Worldwide Edition - Stairway to the Destined Duel (U)",                    /* rom title            */
+      "YUGIOHWWE",                 /* gamepak_title        */
+      "AYWE",                      /* gamepak_code         */
+      "A4",                        /* gamepak_maker        */
+      0,                           /* flash_size           */
+      0,                           /* flash_device_id      */
+      0,                           /* save_type            */
+      0,                           /* rtc_enabled          */
+      0,                           /* mirroring_enabled    */
+      0,                           /* use_bios             */
+      0x8089792,                   /* idle_loop_target_pc  */
       1,                           /* iwram_stack_optimize */
       0,                           /* translation_gate_target_1 */
       0,                           /* translation_gate_target_2 */
