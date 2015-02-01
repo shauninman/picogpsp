@@ -97,6 +97,11 @@ else ifeq ($(platform), osx)
 		HAVE_MMAP = 1
 	endif
 
+ifndef ($(NOUNIVERSAL))
+   CFLAGS += $(ARCHFLAGS)
+   LDFLAGS += $(ARCHFLAGS)
+endif
+
 else ifeq ($(platform), ios)
 	# iOS
 	TARGET := $(TARGET_NAME)_libretro_ios.dylib
