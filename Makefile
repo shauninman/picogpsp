@@ -96,14 +96,13 @@ else ifeq ($(platform), osx)
 	ifeq ($(HAVE_DYNAREC),1)
 		HAVE_MMAP = 1
 	endif
+	ifndef ($(NOUNIVERSAL))
+		CFLAGS += $(ARCHFLAGS)
+		LDFLAGS += $(ARCHFLAGS)
+	endif
 
-ifndef ($(NOUNIVERSAL))
-   CFLAGS += $(ARCHFLAGS)
-   LDFLAGS += $(ARCHFLAGS)
-endif
-
+# iOS
 else ifeq ($(platform), ios)
-	# iOS
 	TARGET := $(TARGET_NAME)_libretro_ios.dylib
 	fpic := -fPIC
 	SHARED := -dynamiclib
@@ -121,8 +120,9 @@ else ifeq ($(platform), ios)
 		CC += -miphoneos-version-min=5.0
 		CFLAGS += -miphoneos-version-min=5.0
 	endif
+
+# iOS Theos
 else ifeq ($(platform), theos_ios)
-	# iOS Theos
 	DEPLOYMENT_IOSVERSION = 5.0
 	TARGET = iphone:latest:$(DEPLOYMENT_IOSVERSION)
 	ARCHS = armv7 armv7s
@@ -132,10 +132,10 @@ else ifeq ($(platform), theos_ios)
 
 	CFLAGS += -DIOS -DHAVE_POSIX_MEMALIGN -marm
 	CPU_ARCH := arm
+	LIBRARY_NAME = $(TARGET_NAME)_libretro_ios
 
-LIBRARY_NAME = $(TARGET_NAME)_libretro_ios
+# QNX
 else ifeq ($(platform), qnx)
-	# QNX
 	TARGET := $(TARGET_NAME)_libretro_qnx.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T
@@ -209,19 +209,20 @@ else ifneq (,$(findstring armv,$(platform)))
 	SHARED := -shared -Wl,--version-script=link.T
 	CPU_ARCH := arm
 	fpic := -fPIC
-	CC = gcc
-	ifneq (,$(findstring cortexa8,$(platform)))
+	ifneq (,$(findstring cortexa5,$(platform)))
+		CFLAGS += -marm -mcpu=cortex-a5
+		ASFLAGS += -mcpu=cortex-a5
+	else ifneq (,$(findstring cortexa8,$(platform)))
 		CFLAGS += -marm -mcpu=cortex-a8
 		ASFLAGS += -mcpu=cortex-a8
 	else ifneq (,$(findstring cortexa9,$(platform)))
 		CFLAGS += -marm -mcpu=cortex-a9
 		ASFLAGS += -mcpu=cortex-a9
-	endif
-	CFLAGS += -marm
-	ifneq (,$(findstring neon,$(platform)))
-		CFLAGS += -mfpu=neon
-		ASFLAGS += -mfpu=neon
-		HAVE_NEON = 1
+	else ifneq (,$(findstring cortexa15a7,$(platform)))
+		CFLAGS += -marm -mcpu=cortex-a15.cortex-a7
+		ASFLAGS += -mcpu=cortex-a15.cortex-a7
+	else
+		CFLAGS += -marm
 	endif
 	ifneq (,$(findstring softfloat,$(platform)))
 		CFLAGS += -mfloat-abi=softfp
@@ -230,9 +231,11 @@ else ifneq (,$(findstring armv,$(platform)))
 		CFLAGS += -mfloat-abi=hard
 		ASFLAGS += -mfloat-abi=hard
 	endif
-	HAVE_DYNAREC := 1
-	CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
-	LDFLAGS := -Wl,--no-undefined
+	# Disable dynarec for now, issue 11
+	#HAVE_DYNAREC := 1
+	#CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
+	CFLAGS += -DARM -DARM_ARCH
+	LDFLAGS := -Wl,--no-undefined	
 
 # emscripten
 else ifeq ($(platform), emscripten)
