@@ -79,6 +79,15 @@ ifeq ($(platform), unix)
 	ifeq ($(HAVE_DYNAREC),1)
 		HAVE_MMAP = 1
 	endif
+else ifeq ($(platform), linux-portable)
+	TARGET := $(TARGET_NAME)_libretro.so
+	fpic := -fPIC -nostdlib
+	SHARED := -shared $(FORCE_32BIT) -Wl,--version-script=link.T
+	LIBM :=
+	CFLAGS += $(FORCE_32BIT)
+	ifeq ($(HAVE_DYNAREC),1)
+		HAVE_MMAP = 1
+	endif
 
 # OS X
 else ifeq ($(platform), osx)
