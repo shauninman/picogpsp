@@ -79,6 +79,8 @@ ifeq ($(platform), unix)
 	ifeq ($(HAVE_DYNAREC),1)
 		HAVE_MMAP = 1
 	endif
+
+# Linux portable
 else ifeq ($(platform), linux-portable)
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC -nostdlib
@@ -240,10 +242,12 @@ else ifneq (,$(findstring armv,$(platform)))
 		CFLAGS += -mfloat-abi=hard
 		ASFLAGS += -mfloat-abi=hard
 	endif
-	# Disable dynarec for now, issue 11
-	#HAVE_DYNAREC := 1
-	#CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
 	CFLAGS += -DARM -DARM_ARCH
+	# Dynarec works at least in rpi, take a look at issue #11
+	ifeq (,$(findstring no-dynarec,$(platform)))
+		HAVE_DYNAREC := 1
+		CFLAGS += -DARM_MEMORY_DYNAREC
+	endif
 	LDFLAGS := -Wl,--no-undefined	
 
 # emscripten
