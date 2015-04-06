@@ -2262,6 +2262,12 @@ static s32 load_game_config_over(char *gamepak_title, char *gamepak_code, char *
      if (gbaover[i].romtitle[0] == '\0')
         return -1;
 
+     if (strcmp(gbaover[i].gamepak_code, gamepak_code))
+        continue;
+
+     if (strcmp(gbaover[i].gamepak_title, gamepak_title))
+        continue;
+     
      printf("romtitle     : %s\n", gbaover[i].romtitle);
      printf("gamepak title: %s\n", gbaover[i].gamepak_title);
      printf("gamepak code : %s\n", gbaover[i].gamepak_code);
@@ -2271,12 +2277,6 @@ static s32 load_game_config_over(char *gamepak_title, char *gamepak_code, char *
      printf("INPUT gamepak code : %s\n", gamepak_code);
      printf("INPUT gamepak maker: %s\n", gamepak_maker);
 
-     if (strcmp(gbaover[i].gamepak_code, gamepak_code))
-        continue;
-
-     if (strcmp(gbaover[i].gamepak_title, gamepak_title))
-        continue;
-     
      if (gbaover[i].idle_loop_target_pc != 0)
         idle_loop_target_pc = gbaover[i].idle_loop_target_pc;
 
