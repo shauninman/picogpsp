@@ -190,6 +190,22 @@ else ifeq ($(platform), psp1)
 	CFLAGS += -DPSP -G0
 	STATIC_LINKING = 1
 
+# CTR(3DS)
+else ifeq ($(platform), ctr)
+	TARGET := $(TARGET_NAME)_libretro_ctr.a
+	CC = $(DEVKITARM)/bin/arm-none-eabi-gcc$(EXE_EXT)
+	CXX = $(DEVKITARM)/bin/arm-none-eabi-g++$(EXE_EXT)
+	AR = $(DEVKITARM)/bin/arm-none-eabi-ar$(EXE_EXT)
+	CFLAGS += -DARM11 -D_3DS
+	CFLAGS += -march=armv6k -mtune=mpcore -mfloat-abi=hard
+	CFLAGS += -Wall -mword-relocations
+	CFLAGS += -fomit-frame-pointer -ffast-math
+	CPU_ARCH := arm
+	#no dynarec support for now
+	#HAVE_DYNAREC := 1
+	#CFLAGS += -DARM_MEMORY_DYNAREC
+	STATIC_LINKING = 1
+
 # Xbox 360
 else ifeq ($(platform), xenon)
 	TARGET := $(TARGET_NAME)_libretro_xenon360.a
