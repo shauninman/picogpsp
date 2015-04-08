@@ -201,9 +201,8 @@ else ifeq ($(platform), ctr)
 	CFLAGS += -Wall -mword-relocations
 	CFLAGS += -fomit-frame-pointer -ffast-math
 	CPU_ARCH := arm
-	#no dynarec support for now
-	#HAVE_DYNAREC := 1
-	#CFLAGS += -DARM_MEMORY_DYNAREC
+	# dynarec currently requires ninjahax to work
+	HAVE_DYNAREC = 1
 	STATIC_LINKING = 1
 
 # Xbox 360

@@ -34,6 +34,13 @@ u8* bios_translation_cache;
 u8 *rom_translation_ptr;
 u8 *ram_translation_ptr;
 u8 *bios_translation_ptr;
+#elif defined(_3DS)
+u8 __attribute__((aligned(0x1000))) rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
+u8 __attribute__((aligned(0x1000))) ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
+u8 __attribute__((aligned(0x1000))) bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
+u8 *rom_translation_ptr = rom_translation_cache;
+u8 *ram_translation_ptr = ram_translation_cache;
+u8 *bios_translation_ptr = bios_translation_cache;
 #elif defined(ARM_MEMORY_DYNAREC)
 __asm__(".section .jit,\"awx\",%progbits");
 
@@ -226,7 +233,10 @@ extern u8 bit_count[256];
 
 #if defined(PSP_BUILD)
 #define translate_invalidate_dcache() sceKernelDcacheWritebackAll()
-
+#elif defined(_3DS)
+int32_t HB_FlushInvalidateCache();
+#define translate_invalidate_dcache() HB_FlushInvalidateCache()
+#define invalidate_icache_region(addr, size) (void)0
 #elif defined(ARM_ARCH)
 static int sys_cacheflush(void *addr, unsigned long size)
 {

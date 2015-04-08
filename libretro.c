@@ -8,6 +8,14 @@
 #include "libretro.h"
 #include "memmap.h"
 
+#if defined(_3DS) && defined(HAVE_DYNAREC)
+int32_t hbInit(void);
+void hbExit(void);
+int32_t HB_FlushInvalidateCache(void);
+int32_t HB_ReprotectMemory(void* addr, uint32_t pages, uint32_t mode, uint32_t* reprotectedPages);
+int hb_service_available;
+#endif
+
 #ifndef MAX_PATH
 #define MAX_PATH (512)
 #endif
@@ -104,6 +112,19 @@ void retro_init(void)
 {
    init_gamepak_buffer();
    init_sound(1);
+#if defined(_3DS) && defined(HAVE_DYNAREC)
+   hb_service_available = !hbInit();
+   if (hb_service_available)
+   {
+      HB_ReprotectMemory(rom_translation_cache,
+                         ROM_TRANSLATION_CACHE_SIZE / 0x1000, 0b111, NULL);
+      HB_ReprotectMemory(ram_translation_cache,
+                         RAM_TRANSLATION_CACHE_SIZE / 0x1000, 0b111, NULL);
+      HB_ReprotectMemory(bios_translation_cache,
+                         BIOS_TRANSLATION_CACHE_SIZE / 0x1000, 0b111, NULL);
+      HB_FlushInvalidateCache();
+   }
+#endif
 
 }
 
@@ -116,6 +137,9 @@ void retro_deinit(void)
    munmap(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE);
    munmap(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE);
    munmap(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE);
+#endif
+#if defined(_3DS) && defined(HAVE_DYNAREC)
+   hbExit();
 #endif
 }
 
@@ -275,6 +299,9 @@ bool retro_load_game(const struct retro_game_info* info)
    rom_translation_ptr = rom_translation_cache;
    ram_translation_ptr = ram_translation_cache;
    bios_translation_ptr = bios_translation_cache;
+#elif defined(_3DS)
+   if(!hb_service_available)
+      dynarec_enable = 0;
 #endif
    }
    else
