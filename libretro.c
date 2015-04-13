@@ -8,12 +8,16 @@
 #include "libretro.h"
 #include "memmap.h"
 
-#if defined(_3DS) && defined(HAVE_DYNAREC)
+#if defined(_3DS)
+void* linearMemAlign(size_t size, size_t alignment);
+void linearFree(void* mem);
+#if defined(HAVE_DYNAREC)
 int32_t hbInit(void);
 void hbExit(void);
 int32_t HB_FlushInvalidateCache(void);
 int32_t HB_ReprotectMemory(void* addr, uint32_t pages, uint32_t mode, uint32_t* reprotectedPages);
 int hb_service_available;
+#endif
 #endif
 
 #ifndef MAX_PATH
@@ -126,6 +130,12 @@ void retro_init(void)
    }
 #endif
 
+#ifdef _3DS
+   gba_screen_pixels = (uint16_t*)linearMemAlign(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t), 128);
+#else
+   gba_screen_pixels = (uint16_t*)malloc(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t));
+#endif
+
 }
 
 void retro_deinit(void)
@@ -140,6 +150,11 @@ void retro_deinit(void)
 #endif
 #if defined(_3DS) && defined(HAVE_DYNAREC)
    hbExit();
+#endif
+#ifdef _3DS
+   linearFree(gba_screen_pixels);
+#else
+   free(gba_screen_pixels);
 #endif
 }
 

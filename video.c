@@ -19,7 +19,7 @@
 
 #include "common.h"
 
-u16 gba_screen_pixels[GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT];
+u16* gba_screen_pixels;
 
 #define get_screen_pixels()   gba_screen_pixels
 #define get_screen_pitch()    GBA_SCREEN_PITCH

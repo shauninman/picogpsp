@@ -54,6 +54,6 @@ typedef enum
   filter_bilinear
 } video_filter_type;
 
-extern u16 gba_screen_pixels[GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT];
+extern u16* gba_screen_pixels;
 
 #endif
