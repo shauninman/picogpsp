@@ -163,14 +163,18 @@ void print_register_usage(void)
   u32 rn = (opcode >> 16) & 0x0F;                                             \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 rm = opcode & 0x0F;                                                     \
+  (void)rd;                                                                   \
+  (void)rn;                                                                   \
   using_register(arm, rd, op_dest);                                           \
   using_register(arm, rn, op_src);                                            \
   using_register(arm, rm, op_src)                                             \
 
 #define arm_decode_data_proc_imm(opcode)                                      \
+  u32 imm;                                                                    \
   u32 rn = (opcode >> 16) & 0x0F;                                             \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
-  u32 imm;                                                                    \
+  (void)rd;                                                                   \
+  (void)rn;                                                                   \
   ror(imm, opcode & 0xFF, ((opcode >> 8) & 0x0F) * 2);                        \
   using_register(arm, rd, op_dest);                                           \
   using_register(arm, rn, op_src)                                             \
@@ -179,13 +183,17 @@ void print_register_usage(void)
   u32 psr_field = (opcode >> 16) & 0x0F;                                      \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
   u32 rm = opcode & 0x0F;                                                     \
+  (void)rd;                                                                   \
+  (void)rm;                                                                   \
+  (void)psr_field;                                                            \
   using_register(arm, rd, op_dest);                                           \
   using_register(arm, rm, op_src)                                             \
 
 #define arm_decode_psr_imm(opcode)                                            \
+  u32 imm;                                                                    \
   u32 psr_field = (opcode >> 16) & 0x0F;                                      \
   u32 rd = (opcode >> 12) & 0x0F;                                             \
-  u32 imm;                                                                    \
+  (void)rd;                                                                   \
   ror(imm, opcode & 0xFF, ((opcode >> 8) & 0x0F) * 2);                        \
   using_register(arm, rd, op_dest)                                            \
 
@@ -198,6 +206,7 @@ void print_register_usage(void)
   u32 rn = (opcode >> 12) & 0x0F;                                             \
   u32 rs = (opcode >> 8) & 0x0F;                                              \
   u32 rm = opcode & 0x0F;                                                     \
+  (void)rn;                                                                   \
   using_register(arm, rd, op_dest);                                           \
   using_register(arm, rn, op_src);                                            \
   using_register(arm, rm, op_src)                                             \
@@ -295,6 +304,7 @@ void print_register_usage(void)
 #define thumb_decode_hireg_op()                                               \
   u32 rs = (opcode >> 3) & 0x0F;                                              \
   u32 rd = ((opcode >> 4) & 0x08) | (opcode & 0x07);                          \
+  (void)rd;                                                                   \
   using_register(thumb, rd, op_src_dest);                                     \
   using_register(thumb, rs, op_src)                                           \
 
@@ -1656,6 +1666,8 @@ void execute_arm(u32 cycles)
   cpu_alert_type cpu_alert;
 
   u32 old_pc;
+
+  (void)old_pc;
 
   if(!pc_address_block)
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);
