@@ -24,17 +24,17 @@
 
 typedef enum
 {
-  BUTTON_L = 0x200,
-  BUTTON_R = 0x100,
-  BUTTON_DOWN = 0x80,
-  BUTTON_UP = 0x40,
-  BUTTON_LEFT = 0x20,
-  BUTTON_RIGHT = 0x10,
-  BUTTON_START = 0x08,
+  BUTTON_L      = 0x200,
+  BUTTON_R      = 0x100,
+  BUTTON_DOWN   = 0x80,
+  BUTTON_UP     = 0x40,
+  BUTTON_LEFT   = 0x20,
+  BUTTON_RIGHT  = 0x10,
+  BUTTON_START  = 0x08,
   BUTTON_SELECT = 0x04,
-  BUTTON_B = 0x02,
-  BUTTON_A = 0x01,
-  BUTTON_NONE = 0x00
+  BUTTON_B      = 0x02,
+  BUTTON_A      = 0x01,
+  BUTTON_NONE   = 0x00
 } input_buttons_type;
 
 typedef struct
@@ -56,8 +56,8 @@ static const map btn_map[] = {
    { RETRO_DEVICE_ID_JOYPAD_A,      BUTTON_A }
 };
 
-void init_input();
-u32 update_input();
+void init_input(void);
+u32 update_input(void);
 void input_write_savestate(void);
 void input_read_savestate(void);
 

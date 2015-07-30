@@ -84,13 +84,9 @@ void main_read_savestate(void);
 
 
 #ifdef PSP_BUILD
-
 u32 file_length(char *filename, s32 dummy);
-
 #else
-
 u32 file_length(const char *dummy, FILE *fp);
-
 #endif
 
 extern u32 real_frame_count;

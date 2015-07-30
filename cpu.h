@@ -50,21 +50,21 @@ typedef enum
 
 typedef enum
 {
-  IRQ_NONE = 0x0000,
-  IRQ_VBLANK = 0x0001,
-  IRQ_HBLANK = 0x0002,
-  IRQ_VCOUNT = 0x0004,
-  IRQ_TIMER0 = 0x0008,
-  IRQ_TIMER1 = 0x0010,
-  IRQ_TIMER2 = 0x0020,
-  IRQ_TIMER3 = 0x0040,
-  IRQ_SERIAL = 0x0080,
-  IRQ_DMA0 = 0x0100,
-  IRQ_DMA1 = 0x0200,
-  IRQ_DMA2 = 0x0400,
-  IRQ_DMA3 = 0x0800,
-  IRQ_KEYPAD = 0x1000,
-  IRQ_GAMEPAK = 0x2000,
+  IRQ_NONE     = 0x0000,
+  IRQ_VBLANK   = 0x0001,
+  IRQ_HBLANK   = 0x0002,
+  IRQ_VCOUNT   = 0x0004,
+  IRQ_TIMER0   = 0x0008,
+  IRQ_TIMER1   = 0x0010,
+  IRQ_TIMER2   = 0x0020,
+  IRQ_TIMER3   = 0x0040,
+  IRQ_SERIAL   = 0x0080,
+  IRQ_DMA0     = 0x0100,
+  IRQ_DMA1     = 0x0200,
+  IRQ_DMA2     = 0x0400,
+  IRQ_DMA3     = 0x0800,
+  IRQ_KEYPAD   = 0x1000,
+  IRQ_GAMEPAK  = 0x2000
 } irq_type;
 
 typedef enum
