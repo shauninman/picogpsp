@@ -339,11 +339,18 @@ typedef struct {
 
 
 /* op2 is reg shift by imm */
-typedef union {
+typedef union
+{
   ARMDPI_op2_reg_shift r2;
-  struct {
+  struct
+  {
+#ifdef MSB_FIRST
+    arminstr_t shift : 5;
+    arminstr_t _dummy_r2 : 7;
+#else
     arminstr_t _dummy_r2 : 7;
     arminstr_t shift : 5;
+#endif
   } imm;
 } ARMDPI_op2_reg_imm;
 
@@ -351,9 +358,15 @@ typedef union {
 typedef union {
   ARMDPI_op2_reg_shift r2;
   struct {
+#ifdef MSB_FIRST
+    arminstr_t rs        : 4;
+    arminstr_t pad       : 1; /* always 0, to differentiate from HXFER etc. */
+    arminstr_t _dummy_r2 : 7;
+#else
     arminstr_t _dummy_r2 : 7;
     arminstr_t pad       : 1; /* always 0, to differentiate from HXFER etc. */
     arminstr_t rs        : 4;
+#endif
   } reg;
 } ARMDPI_op2_reg_reg;
 
@@ -366,6 +379,16 @@ typedef union {
   ARMDPI_op2_reg_reg op2_reg_reg;
 
   struct {
+#ifdef MSB_FIRST
+    arminstr_t cond   :  4;
+    arminstr_t tag    :  2; /* 0 0 */
+    arminstr_t type   :  1; /* type of op2, 0 = register, 1 = immediate */
+    arminstr_t opcode :  4; /* arithmetic/logic operation */
+    arminstr_t s      :  1; /* S-bit controls PSR update */
+    arminstr_t rn     :  4; /* first operand reg */
+    arminstr_t rd     :  4; /* destination reg */
+    arminstr_t op2    : 12; /* raw operand 2 */
+#else
     arminstr_t op2    : 12; /* raw operand 2 */
     arminstr_t rd     :  4; /* destination reg */
     arminstr_t rn     :  4; /* first operand reg */
@@ -374,6 +397,7 @@ typedef union {
     arminstr_t type   :  1; /* type of op2, 0 = register, 1 = immediate */
     arminstr_t tag    :  2; /* 0 0 */
     arminstr_t cond   :  4;
+#endif
   } all;
 } ARMInstrDPI;
 
@@ -671,7 +695,21 @@ typedef struct {
 /*  Word/byte transfer */
 typedef union {
   ARMDPI_op2_reg_imm op2_reg_imm;
-  struct {
+  struct
+  {
+#ifdef MSB_FIRST
+    arminstr_t cond    :  4;
+    arminstr_t tag     :  2; /* 0 1 */
+    arminstr_t type    :  1; /* imm(0) / register(1) */
+    arminstr_t p       :  1; /* post-index(0) / pre-index(1) */
+    arminstr_t u       :  1; /* down(0) / up(1) */
+    arminstr_t b       :  1;
+    arminstr_t wb      :  1;
+    arminstr_t ls      :  1;
+    arminstr_t rn      :  4;
+    arminstr_t rd      :  4;
+    arminstr_t op2_imm : 12;
+#else
     arminstr_t op2_imm : 12;
     arminstr_t rd      :  4;
     arminstr_t rn      :  4;
@@ -683,6 +721,7 @@ typedef union {
     arminstr_t type    :  1; /* imm(0) / register(1) */
     arminstr_t tag     :  2; /* 0 1 */
     arminstr_t cond    :  4;
+#endif
   } all;
 } ARMInstrWXfer;
 
@@ -1070,7 +1109,20 @@ typedef struct {
 /* Move register to PSR. */
 typedef union {
   ARMDPI_op2_imm op2_imm;
-  struct {
+  struct
+  {
+#ifdef MSB_FIRST
+    arminstr_t cond : 4;
+    arminstr_t tag  : 2; /* 0 */
+    arminstr_t type : 1;
+    arminstr_t tag2 : 2; /* 0x2 */
+    arminstr_t sel  : 1;
+    arminstr_t tag3 : 2; /* 0x2 */
+    arminstr_t fld  : 4;
+    arminstr_t tag4 : 4; /* 0xF */
+    arminstr_t pad  : 8; /* 0 */
+    arminstr_t rm   : 4;
+#else
     arminstr_t rm   : 4;
     arminstr_t pad  : 8; /* 0 */
     arminstr_t tag4 : 4; /* 0xF */
@@ -1081,6 +1133,7 @@ typedef union {
     arminstr_t type : 1;
     arminstr_t tag  : 2; /* 0 */
     arminstr_t cond : 4;
+#endif
   } all;
 } ARMInstrMSR;
 
