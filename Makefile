@@ -100,9 +100,7 @@ else ifeq ($(platform), osx)
 	endif
 	OSXVER = `sw_vers -productVersion | cut -d. -f 2`
 	OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
-	ifeq ($(OSX_LT_MAVERICKS),"YES")
-		fpic += -mmacosx-version-min=10.5
-	endif
+	fpic += -mmacosx-version-min=10.1
 	SHARED := -dynamiclib
 	ifeq ($(HAVE_DYNAREC),1)
 		HAVE_MMAP = 1
