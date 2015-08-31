@@ -188,6 +188,16 @@ else ifeq ($(platform), psp1)
 	CFLAGS += -DPSP -G0
 	STATIC_LINKING = 1
 
+# Vita
+else ifeq ($(platform), vita)
+	TARGET := $(TARGET_NAME)_libretro_vita.a
+	CC = arm-vita-eabi-gcc$(EXE_EXT)
+	AR = arm-vita-eabi-ar$(EXE_EXT)
+	CFLAGS += -DVITA
+	STATIC_LINKING = 1
+	HAVE_DYNAREC := 1
+	CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
+
 # CTR(3DS)
 else ifeq ($(platform), ctr)
 	TARGET := $(TARGET_NAME)_libretro_ctr.a
