@@ -209,7 +209,7 @@ else ifeq ($(platform), ctr)
 	CFLAGS += -Wall -mword-relocations
 	CFLAGS += -fomit-frame-pointer -ffast-math
 	CPU_ARCH := arm
-	# dynarec currently requires ninjahax to work
+	# dynarec unavailable on ninjhax 2.0
 	HAVE_DYNAREC = 1
 	STATIC_LINKING = 1
 
@@ -322,6 +322,7 @@ ifeq ($(CPU_ARCH), arm)
 DEFINES += -DARM_ARCH
 endif
 
+
 WARNINGS_DEFINES =
 CODE_DEFINES =
 
@@ -331,6 +332,23 @@ CFLAGS += $(DEFINES) $(COMMON_DEFINES)
 
 ifeq ($(FRONTEND_SUPPORTS_RGB565), 1)
 	CFLAGS += -DFRONTEND_SUPPORTS_RGB565
+endif
+
+
+ifeq ($(platform), ctr)
+ifeq ($(HAVE_DYNAREC), 1)
+OBJECTS += 3ds/3ds_utils.o 3ds/libkhax/khaxinit.o
+
+ifeq ($(strip $(CTRULIB)),)
+$(error "Please set CTRULIB in your environment. export CTRULIB=<path to>ctrulib")
+endif
+
+CFLAGS  += -I$(CTRULIB)/include
+
+3ds/libkhax/khaxinit.o: 3ds/libkhax/khaxinit.cpp
+	$(CXX) $(INCFLAGS) $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11 $(OPTIMIZE) -c  -o $@ $<
+
+endif
 endif
 
 

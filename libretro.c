@@ -12,11 +12,11 @@
 void* linearMemAlign(size_t size, size_t alignment);
 void linearFree(void* mem);
 #if defined(HAVE_DYNAREC)
-int32_t hbInit(void);
-void hbExit(void);
-int32_t HB_FlushInvalidateCache(void);
-int32_t HB_ReprotectMemory(void* addr, uint32_t pages, uint32_t mode, uint32_t* reprotectedPages);
-int hb_service_available;
+#include "3ds/3ds_utils.h"
+#define MEMOP_PROT   6
+int32_t svcDuplicateHandle(uint32_t* out, uint32_t original);
+int32_t svcControlProcessMemory(uint32_t process, void* addr0, void* addr1, uint32_t size, uint32_t type, uint32_t perm);
+int ctr_has_full_svc_access;
 #endif
 #endif
 
@@ -117,16 +117,19 @@ void retro_init(void)
    init_gamepak_buffer();
    init_sound(1);
 #if defined(_3DS) && defined(HAVE_DYNAREC)
-   hb_service_available = !hbInit();
-   if (hb_service_available)
+   ctr_has_full_svc_access = ctr_svchack_init();
+   if (ctr_has_full_svc_access)
    {
-      HB_ReprotectMemory(rom_translation_cache,
-                         ROM_TRANSLATION_CACHE_SIZE / 0x1000, 0b111, NULL);
-      HB_ReprotectMemory(ram_translation_cache,
-                         RAM_TRANSLATION_CACHE_SIZE / 0x1000, 0b111, NULL);
-      HB_ReprotectMemory(bios_translation_cache,
-                         BIOS_TRANSLATION_CACHE_SIZE / 0x1000, 0b111, NULL);
-      HB_FlushInvalidateCache();
+      uint32_t currentHandle;
+      svcDuplicateHandle(&currentHandle, 0xFFFF8001);
+      svcControlProcessMemory(currentHandle, rom_translation_cache, 0x0,
+                              ROM_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
+      svcControlProcessMemory(currentHandle, ram_translation_cache, 0x0,
+                              RAM_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
+      svcControlProcessMemory(currentHandle, bios_translation_cache, 0x0,
+                              BIOS_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
+
+      ctr_flush_invalidate_cache();
    }
 #endif
 
@@ -149,7 +152,7 @@ void retro_deinit(void)
    munmap(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE);
 #endif
 #if defined(_3DS) && defined(HAVE_DYNAREC)
-   hbExit();
+   ctr_svchack_exit();
 #endif
 #ifdef _3DS
    linearFree(gba_screen_pixels);
@@ -315,7 +318,7 @@ bool retro_load_game(const struct retro_game_info* info)
    ram_translation_ptr = ram_translation_cache;
    bios_translation_ptr = bios_translation_cache;
 #elif defined(_3DS)
-   if(!hb_service_available)
+   if(!ctr_has_full_svc_access)
       dynarec_enable = 0;
 #endif
    }

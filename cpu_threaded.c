@@ -234,8 +234,8 @@ extern u8 bit_count[256];
 #if defined(PSP_BUILD)
 #define translate_invalidate_dcache() sceKernelDcacheWritebackAll()
 #elif defined(_3DS)
-int32_t HB_FlushInvalidateCache();
-#define translate_invalidate_dcache() HB_FlushInvalidateCache()
+#include "3ds/3ds_utils.h"
+#define translate_invalidate_dcache() ctr_flush_invalidate_cache()
 #define invalidate_icache_region(addr, size) (void)0
 #elif defined(ARM_ARCH)
 static int sys_cacheflush(void *addr, unsigned long size)
