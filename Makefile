@@ -208,6 +208,7 @@ else ifeq ($(platform), ctr)
 	CFLAGS += -march=armv6k -mtune=mpcore -mfloat-abi=hard
 	CFLAGS += -Wall -mword-relocations
 	CFLAGS += -fomit-frame-pointer -ffast-math
+	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 	CPU_ARCH := arm
 	# dynarec unavailable on ninjhax 2.0
 	HAVE_DYNAREC = 1
@@ -345,9 +346,6 @@ endif
 
 CFLAGS  += -I$(CTRULIB)/include
 
-3ds/libkhax/khaxinit.o: 3ds/libkhax/khaxinit.cpp
-	$(CXX) $(INCFLAGS) $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11 $(OPTIMIZE) -c  -o $@ $<
-
 endif
 endif
 
@@ -378,6 +376,9 @@ libco/libco.o: libco/libco.c
 
 %.o: %.c
 	$(CC) $(INCFLAGS) $(CFLAGS) $(OPTIMIZE) -c  -o $@ $<
+
+%.o: %.cpp
+	$(CXX) $(INCFLAGS) $(CXXFLAGS) $(OPTIMIZE) -c  -o $@ $<
 
 clean-objs:
 	rm -rf $(OBJECTS)
