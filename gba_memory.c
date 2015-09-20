@@ -2458,7 +2458,9 @@ u32 load_gamepak(const struct retro_game_info* info, const char *name)
    gamepak_filename[sizeof(gamepak_filename) - 1] = 0;
 
    p = strrchr(gamepak_filename, PATH_SEPARATOR_CHAR);
-   if (!p)
+   if (p)
+      p++;
+   else
       p = gamepak_filename;
 
    snprintf(backup_filename, sizeof(backup_filename), "%s/%s", save_path, p);
