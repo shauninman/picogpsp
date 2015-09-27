@@ -15,6 +15,7 @@ void linearFree(void* mem);
 #include "3ds/3ds_utils.h"
 #define MEMOP_PROT   6
 int32_t svcDuplicateHandle(uint32_t* out, uint32_t original);
+int32_t svcCloseHandle(uint32_t handle);
 int32_t svcControlProcessMemory(uint32_t process, void* addr0, void* addr1, uint32_t size, uint32_t type, uint32_t perm);
 int ctr_has_full_svc_access;
 #endif
@@ -128,6 +129,7 @@ void retro_init(void)
                               RAM_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
       svcControlProcessMemory(currentHandle, bios_translation_cache, 0x0,
                               BIOS_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
+      svcCloseHandle(currentHandle);
 
       ctr_flush_invalidate_cache();
    }
