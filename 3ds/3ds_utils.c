@@ -64,30 +64,24 @@ void ctr_flush_invalidate_cache(void)
 
 int ctr_svchack_init(void)
 {
-   Handle tempHandle;
-   Result res = srvGetServiceHandle(&tempHandle, "am:u");
-   if(res == 0)
+   extern unsigned int __service_ptr;
+   if(__service_ptr)
    {
-      /* CFW */
-      svcCloseHandle(tempHandle);
-      ninjhax_version = 0;
-      ctr_enable_all_svc();
-      return 1;
-   }
-   else if(hbInit() == 0)
-   {
-      /* ninjhax 1.0 */
-      ninjhax_version = 1;
-      hbExit();
-      khaxInit();
-      return 1;
-   }
-   else
-   {
-      /* ninjhax 2.0 */
-
+      if(hbInit() == 0)
+      {
+         /* ninjhax 1.0 */
+         ninjhax_version = 1;
+         hbExit();
+         khaxInit();
+         return 1;
+      }
+      ninjhax_version = 2;
       return 0;
    }
+   /* CFW */
+   ninjhax_version = 0;
+   ctr_enable_all_svc();
+   return 1;
 }
 
 
