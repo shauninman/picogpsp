@@ -197,8 +197,7 @@ else ifeq ($(platform), vita)
 	AR = arm-vita-eabi-ar$(EXE_EXT)
 	CFLAGS += -DVITA
 	STATIC_LINKING = 1
-	HAVE_DYNAREC := 1
-	CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
+	CPU_ARCH := arm
 
 # CTR(3DS)
 else ifeq ($(platform), ctr)
