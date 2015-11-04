@@ -12,12 +12,15 @@
 void* linearMemAlign(size_t size, size_t alignment);
 void linearFree(void* mem);
 #if defined(HAVE_DYNAREC)
+#include <malloc.h>
 #include "3ds/3ds_utils.h"
 #define MEMOP_PROT   6
+#define MEMOP_MAP 4
+#define MEMOP_UNMAP 5
 int32_t svcDuplicateHandle(uint32_t* out, uint32_t original);
 int32_t svcCloseHandle(uint32_t handle);
 int32_t svcControlProcessMemory(uint32_t process, void* addr0, void* addr1, uint32_t size, uint32_t type, uint32_t perm);
-int ctr_has_full_svc_access;
+static int translation_caches_inited = 0;
 #endif
 #endif
 
@@ -115,30 +118,42 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
 
 void retro_init(void)
 {
-   init_gamepak_buffer();
-   init_sound(1);
 #if defined(_3DS) && defined(HAVE_DYNAREC)
-   ctr_has_full_svc_access = ctr_svchack_init();
-   if (ctr_has_full_svc_access)
+   if (__ctr_svchax && !translation_caches_inited)
    {
       uint32_t currentHandle;
-      svcDuplicateHandle(&currentHandle, 0xFFFF8001);
-      svcControlProcessMemory(currentHandle, rom_translation_cache, 0x0,
-                              ROM_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
-      svcControlProcessMemory(currentHandle, ram_translation_cache, 0x0,
-                              RAM_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
-      svcControlProcessMemory(currentHandle, bios_translation_cache, 0x0,
-                              BIOS_TRANSLATION_CACHE_SIZE, MEMOP_PROT, 0b111);
-      svcCloseHandle(currentHandle);
+      rom_translation_cache_ptr  = memalign(0x1000, ROM_TRANSLATION_CACHE_SIZE);
+      ram_translation_cache_ptr  = memalign(0x1000, RAM_TRANSLATION_CACHE_SIZE);
+      bios_translation_cache_ptr = memalign(0x1000, BIOS_TRANSLATION_CACHE_SIZE);
 
+      svcDuplicateHandle(&currentHandle, 0xFFFF8001);
+      svcControlProcessMemory(currentHandle,
+                              rom_translation_cache, rom_translation_cache_ptr,
+                              ROM_TRANSLATION_CACHE_SIZE, MEMOP_MAP, 0b111);
+      svcControlProcessMemory(currentHandle,
+                              ram_translation_cache, ram_translation_cache_ptr,
+                              RAM_TRANSLATION_CACHE_SIZE, MEMOP_MAP, 0b111);
+      svcControlProcessMemory(currentHandle,
+                              bios_translation_cache, bios_translation_cache_ptr,
+                              BIOS_TRANSLATION_CACHE_SIZE, MEMOP_MAP, 0b111);
+      svcCloseHandle(currentHandle);
+      rom_translation_ptr = rom_translation_cache;
+      ram_translation_ptr = ram_translation_cache;
+      bios_translation_ptr = bios_translation_cache;
       ctr_flush_invalidate_cache();
+      translation_caches_inited = 1;
    }
 #endif
 
+   if (!gamepak_rom)
+      init_gamepak_buffer();
+   init_sound(1);
+
+   if(!gba_screen_pixels)
 #ifdef _3DS
-   gba_screen_pixels = (uint16_t*)linearMemAlign(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t), 128);
+      gba_screen_pixels = (uint16_t*)linearMemAlign(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t), 128);
 #else
-   gba_screen_pixels = (uint16_t*)malloc(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t));
+      gba_screen_pixels = (uint16_t*)malloc(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t));
 #endif
 
 }
@@ -154,13 +169,33 @@ void retro_deinit(void)
    munmap(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE);
 #endif
 #if defined(_3DS) && defined(HAVE_DYNAREC)
-   ctr_svchack_exit();
+
+   if (__ctr_svchax && translation_caches_inited)
+   {
+      uint32_t currentHandle;
+      svcDuplicateHandle(&currentHandle, 0xFFFF8001);
+      svcControlProcessMemory(currentHandle,
+                              rom_translation_cache, rom_translation_cache_ptr,
+                              ROM_TRANSLATION_CACHE_SIZE, MEMOP_UNMAP, 0b111);
+      svcControlProcessMemory(currentHandle,
+                              ram_translation_cache, ram_translation_cache_ptr,
+                              RAM_TRANSLATION_CACHE_SIZE, MEMOP_UNMAP, 0b111);
+      svcControlProcessMemory(currentHandle,
+                              bios_translation_cache, bios_translation_cache_ptr,
+                              BIOS_TRANSLATION_CACHE_SIZE, MEMOP_UNMAP, 0b111);
+      svcCloseHandle(currentHandle);
+      free(rom_translation_cache_ptr);
+      free(ram_translation_cache_ptr);
+      free(bios_translation_cache_ptr);
+      translation_caches_inited = 0;
+   }
 #endif
 #ifdef _3DS
    linearFree(gba_screen_pixels);
 #else
    free(gba_screen_pixels);
 #endif
+   gba_screen_pixels = NULL;
 }
 
 static retro_time_t retro_perf_dummy_get_time_usec() { return 0; }
@@ -173,12 +208,20 @@ void retro_set_environment(retro_environment_t cb)
 {
    struct retro_log_callback log;
 
-   static const struct retro_variable vars[] = {
+   static struct retro_variable vars[] = {
 #ifdef HAVE_DYNAREC
       { "gpsp_drc", "Dynamic recompiler (restart); enabled|disabled" },
 #endif
       { NULL, NULL },
    };
+
+#if defined(_3DS) && (HAVE_DYNAREC)
+   if(!__ctr_svchax)
+   {
+      vars[0].key   = 0;
+      vars[0].value = NULL;
+   }
+#endif
 
    environ_cb = cb;
 
@@ -338,8 +381,10 @@ bool retro_load_game(const struct retro_game_info* info)
    ram_translation_ptr = ram_translation_cache;
    bios_translation_ptr = bios_translation_cache;
 #elif defined(_3DS)
-   if(!ctr_has_full_svc_access)
-      dynarec_enable = 0;
+   dynarec_enable = __ctr_svchax;
+   rom_translation_ptr = rom_translation_cache;
+   ram_translation_ptr = ram_translation_cache;
+   bios_translation_ptr = bios_translation_cache;
 #endif
    }
    else

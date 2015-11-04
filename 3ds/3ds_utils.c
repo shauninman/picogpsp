@@ -1,23 +1,11 @@
 
-#include "3ds.h"
-#include "libkhax/khax.h"
-
-static int ninjhax_version = 0;
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <3ds.h>
+#include "3ds_utils.h"
 
 typedef s32 (*ctr_callback_type)(void);
-
-static void ctr_enable_all_svc_kernel(void)
-{
-   __asm__ volatile("cpsid aif");
-
-   u32*  svc_access_control = *(*(u32***)0xFFFF9000 + 0x22) - 0x6;
-
-   svc_access_control[0]=0xFFFFFFFE;
-   svc_access_control[1]=0xFFFFFFFF;
-   svc_access_control[2]=0xFFFFFFFF;
-   svc_access_control[3]=0x3FFFFFFF;
-}
-
 
 static void ctr_invalidate_ICache_kernel(void)
 {
@@ -36,22 +24,14 @@ static void ctr_flush_DCache_kernel(void)
 
 }
 
-
-static void ctr_enable_all_svc(void)
-{
-   svcBackdoor((ctr_callback_type)ctr_enable_all_svc_kernel);
-}
-
 void ctr_invalidate_ICache(void)
 {
-//   __asm__ volatile("svc 0x2E\n\t");
    svcBackdoor((ctr_callback_type)ctr_invalidate_ICache_kernel);
 
 }
 
 void ctr_flush_DCache(void)
 {
-//   __asm__ volatile("svc 0x4B\n\t");
    svcBackdoor((ctr_callback_type)ctr_flush_DCache_kernel);
 }
 
@@ -60,33 +40,4 @@ void ctr_flush_invalidate_cache(void)
 {
    ctr_flush_DCache();
    ctr_invalidate_ICache();
-}
-
-int ctr_svchack_init(void)
-{
-   extern unsigned int __service_ptr;
-   if(__service_ptr)
-   {
-      if(hbInit() == 0)
-      {
-         /* ninjhax 1.0 */
-         ninjhax_version = 1;
-         hbExit();
-         khaxInit();
-         return 1;
-      }
-      ninjhax_version = 2;
-      return 0;
-   }
-   /* CFW */
-   ninjhax_version = 0;
-   ctr_enable_all_svc();
-   return 1;
-}
-
-
-void ctr_svchack_exit(void)
-{
-   if (ninjhax_version == 1)
-      khaxExit();
 }

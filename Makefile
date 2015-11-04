@@ -211,7 +211,7 @@ else ifeq ($(platform), ctr)
 	CFLAGS += -fomit-frame-pointer -ffast-math
 	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 	CPU_ARCH := arm
-	# dynarec unavailable on ninjhax 2.0
+	# dynarec unavailable with the HBL on FW > 9.2
 	HAVE_DYNAREC = 1
 	STATIC_LINKING = 1
 
@@ -330,7 +330,7 @@ CODE_DEFINES =
 
 COMMON_DEFINES += $(CODE_DEFINES) $(WARNINGS_DEFINES) -DNDEBUG=1 $(fpic)
 
-CFLAGS += $(DEFINES) $(COMMON_DEFINES)
+CFLAGS += $(DEFINES) $(COMMON_DEFINES) -Werror=implicit-function-declaration
 
 ifeq ($(FRONTEND_SUPPORTS_RGB565), 1)
 	CFLAGS += -DFRONTEND_SUPPORTS_RGB565

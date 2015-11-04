@@ -135,10 +135,17 @@ s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
 
 #endif
 
-#ifdef HAVE_MMAP
+#if defined(HAVE_MMAP)
 extern u8* rom_translation_cache;
 extern u8* ram_translation_cache;
 extern u8* bios_translation_cache;
+#elif defined(_3DS)
+#define rom_translation_cache ((u8*)0x02000000 - ROM_TRANSLATION_CACHE_SIZE)
+#define ram_translation_cache (rom_translation_cache - RAM_TRANSLATION_CACHE_SIZE)
+#define bios_translation_cache (ram_translation_cache - BIOS_TRANSLATION_CACHE_SIZE)
+extern u8* rom_translation_cache_ptr;
+extern u8* ram_translation_cache_ptr;
+extern u8* bios_translation_cache_ptr;
 #else
 extern u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
 extern u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
