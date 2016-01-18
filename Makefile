@@ -339,7 +339,7 @@ endif
 
 ifeq ($(platform), ctr)
 ifeq ($(HAVE_DYNAREC), 1)
-OBJECTS += 3ds/3ds_utils.o 3ds/libkhax/khaxinit.o
+OBJECTS += 3ds/3ds_utils.o
 
 ifeq ($(strip $(CTRULIB)),)
 $(error "Please set CTRULIB in your environment. export CTRULIB=<path to>ctrulib")
