@@ -215,13 +215,26 @@ else ifeq ($(platform), ctr)
 	HAVE_DYNAREC = 1
 	STATIC_LINKING = 1
 
+# Raspberry Pi 3
+else ifeq ($(platform), rpi3)
+	TARGET := $(TARGET_NAME)_libretro.so
+	fpic := -fPIC
+	SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
+	CFLAGS += -DARM -DARM_ARCH
+	CFLAGS += -marm -mcpu=cortex-a53 -mfpu=neon-fp-armv8 -mfloat-abi=hard
+	CFLAGS += -fomit-frame-pointer -ffast-math
+	CFLAGS += -DARM_MEMORY_DYNAREC
+	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
+	CPU_ARCH := arm
+	HAVE_DYNAREC = 1
+
 # Raspberry Pi 2
 else ifeq ($(platform), rpi2)
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
 	CFLAGS += -DARM -DARM_ARCH
-	CFLAGS += -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard -funsafe-math-optimizations
+	CFLAGS += -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
 	CFLAGS += -fomit-frame-pointer -ffast-math
 	CFLAGS += -DARM_MEMORY_DYNAREC
 	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
@@ -234,7 +247,7 @@ else ifeq ($(platform), rpi1)
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
 	CFLAGS += -DARM11 -DARM_ARCH
-	CFLAGS += -marm -mfpu=vfp -mfloat-abi=hard -march=armv6j -funsafe-math-optimizations
+	CFLAGS += -marm -mfpu=vfp -mfloat-abi=hard -march=armv6j
 	CFLAGS += -fomit-frame-pointer -ffast-math
 	CFLAGS += -DARM_MEMORY_DYNAREC
 	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
