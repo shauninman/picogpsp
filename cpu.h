@@ -146,6 +146,11 @@ extern u8* bios_translation_cache;
 extern u8* rom_translation_cache_ptr;
 extern u8* ram_translation_cache_ptr;
 extern u8* bios_translation_cache_ptr;
+#elif defined(VITA)
+extern u8* rom_translation_cache;
+extern u8* ram_translation_cache;
+extern u8* bios_translation_cache;
+extern int sceBlock;
 #else
 extern u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
 extern u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
