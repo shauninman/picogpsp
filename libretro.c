@@ -8,6 +8,12 @@
 #include "libretro.h"
 #include "memmap.h"
 
+
+#if defined(VITA)
+#include <psp2/kernel/sysmem.h>
+static int translation_caches_inited = 0;
+#endif
+
 #if defined(_3DS)
 void* linearMemAlign(size_t size, size_t alignment);
 void linearFree(void* mem);
@@ -118,6 +124,7 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
 
 void retro_init(void)
 {
+  
 #if defined(_3DS) && defined(HAVE_DYNAREC)
    if (__ctr_svchax && !translation_caches_inited)
    {
@@ -143,6 +150,35 @@ void retro_init(void)
       ctr_flush_invalidate_cache();
       translation_caches_inited = 1;
    }
+#endif
+
+#if defined(VITA)
+      if(!translation_caches_inited){
+      void* currentHandle;
+
+      sceBlock = sceKernelAllocMemBlockForVM("code", ROM_TRANSLATION_CACHE_SIZE +
+                                                    RAM_TRANSLATION_CACHE_SIZE + 
+                                                    BIOS_TRANSLATION_CACHE_SIZE);
+      if (sceBlock < 0)
+      {
+        return sceBlock;
+      }
+
+      // get base address
+      int ret = sceKernelGetMemBlockBase(sceBlock, &currentHandle);
+      if (ret < 0)
+      {
+        return ret;
+      }
+      rom_translation_cache  = (u8*)currentHandle;
+      ram_translation_cache  = rom_translation_cache + ROM_TRANSLATION_CACHE_SIZE;
+      bios_translation_cache = ram_translation_cache + RAM_TRANSLATION_CACHE_SIZE;
+      rom_translation_ptr = rom_translation_cache;
+      ram_translation_ptr = ram_translation_cache;
+      bios_translation_ptr = bios_translation_cache;
+      translation_caches_inited = 1;
+}
+
 #endif
 
    if (!gamepak_rom)
@@ -190,6 +226,15 @@ void retro_deinit(void)
       translation_caches_inited = 0;
    }
 #endif
+
+#if defined(VITA)
+    if(translation_caches_inited){
+        sceKernelFreeMemBlock(sceBlock);
+
+      translation_caches_inited = 0;
+    }
+#endif
+
 #ifdef _3DS
    linearFree(gba_screen_pixels);
 #else

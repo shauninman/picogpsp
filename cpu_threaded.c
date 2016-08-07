@@ -22,6 +22,9 @@
 // - block memory needs psr swapping and user mode reg swapping
 
 #include "common.h"
+#if defined(VITA)
+#include <psp2/kernel/sysmem.h>
+#endif
 
 u8 *last_rom_translation_ptr = NULL;
 u8 *last_ram_translation_ptr = NULL;
@@ -34,7 +37,15 @@ u8* bios_translation_cache;
 u8 *rom_translation_ptr;
 u8 *ram_translation_ptr;
 u8 *bios_translation_ptr;
-#elif defined(_3DS)
+#elif defined(VITA)
+u8* rom_translation_cache;
+u8* ram_translation_cache;
+u8* bios_translation_cache;
+u8 *rom_translation_ptr;
+u8 *ram_translation_ptr;
+u8 *bios_translation_ptr;
+int sceBlock;
+#elif defined(_3DS) 
 u8* rom_translation_cache_ptr;
 u8* ram_translation_cache_ptr;
 u8* bios_translation_cache_ptr;
@@ -233,6 +244,16 @@ extern u8 bit_count[256];
 
 #if defined(PSP_BUILD)
 #define translate_invalidate_dcache() sceKernelDcacheWritebackAll()
+#elif defined(VITA)
+#define RW_INIT sceKernelOpenVMDomain
+#define RW_END sceKernelCloseVMDomain
+#define translate_invalidate_dcache() (void)0
+
+#define invalidate_icache_region(addr, size)																	\
+{																																							\
+	sceKernelSyncVMDomain(sceBlock, addr, size);																\
+} 																																						
+
 #elif defined(_3DS)
 #include "3ds/3ds_utils.h"
 #define translate_invalidate_dcache() ctr_flush_invalidate_cache()
@@ -2850,7 +2871,7 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
        (ROM_BRANCH_HASH_SIZE - 1);                                            \
       u32 *block_ptr = rom_branch_hash[hash_target];                          \
       u32 **block_ptr_address = rom_branch_hash + hash_target;                \
-                                                                              \
+			RW_INIT();                                        										  \
       while(block_ptr)                                                        \
       {                                                                       \
         if(block_ptr[0] == pc)                                                \
@@ -2858,11 +2879,10 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
           block_address = (u8 *)(block_ptr + 2) + block_prologue_size;        \
           break;                                                              \
         }                                                                     \
-                                                                              \
         block_ptr_address = (u32 **)(block_ptr + 1);                          \
         block_ptr = (u32 *)block_ptr[1];                                      \
       }                                                                       \
-                                                                              \
+			RW_END();																															  \
       if(!block_ptr)                                                          \
       {                                                                       \
         __label__ redo;                                                       \
@@ -2870,12 +2890,14 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
                                                                               \
         redo:                                                                 \
                                                                               \
-        translation_recursion_level++;                                        \
+        translation_recursion_level++;																				\
+				RW_INIT();                                        										\
         ((u32 *)rom_translation_ptr)[0] = pc;                                 \
         ((u32 **)rom_translation_ptr)[1] = NULL;                              \
         *block_ptr_address = (u32 *)rom_translation_ptr;                      \
         rom_translation_ptr += 8;                                             \
         block_address = rom_translation_ptr + block_prologue_size;            \
+				RW_END();																															\
         block_lookup_translate_##type(rom, 0);                                \
         translation_recursion_level--;                                        \
                                                                               \
@@ -3776,4 +3798,3 @@ void dump_translation_cache(void)
    bios_translation_ptr - bios_translation_cache);
   file_close(bios_cache);
 }
-
