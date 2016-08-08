@@ -12,6 +12,13 @@
 #if defined(VITA)
 #include <psp2/kernel/sysmem.h>
 static int translation_caches_inited = 0;
+static inline int align(int x, int n) {
+  return (((x >> n) + 1) << n );
+}
+
+#define FOUR_KB_ALIGN(x) align(x, 12)
+#define MB_ALIGN(x) align(x, 20)
+
 #endif
 
 #if defined(_3DS)
@@ -156,20 +163,26 @@ void retro_init(void)
       if(!translation_caches_inited){
       void* currentHandle;
 
-      sceBlock = sceKernelAllocMemBlockForVM("code", ROM_TRANSLATION_CACHE_SIZE +
+      sceBlock = sceKernelAllocMemBlockForVM("code", MB_ALIGN(FOUR_KB_ALIGN(ROM_TRANSLATION_CACHE_SIZE +
                                                     RAM_TRANSLATION_CACHE_SIZE + 
-                                                    BIOS_TRANSLATION_CACHE_SIZE);
+                                                    BIOS_TRANSLATION_CACHE_SIZE)));
+      FILE * fd = fopen("ux0:/temp/test.txt","w+");
+      fprintf(fd,"%x\n",sceBlock);
       if (sceBlock < 0)
       {
-        return sceBlock;
+        return;
       }
 
       // get base address
       int ret = sceKernelGetMemBlockBase(sceBlock, &currentHandle);
       if (ret < 0)
       {
-        return ret;
+        return;
       }
+      fprintf(fd,"%x %x\n",currentHandle,ret);
+
+      fclose(fd);
+
       rom_translation_cache  = (u8*)currentHandle;
       ram_translation_cache  = rom_translation_cache + ROM_TRANSLATION_CACHE_SIZE;
       bios_translation_cache = ram_translation_cache + RAM_TRANSLATION_CACHE_SIZE;
