@@ -24,6 +24,7 @@
 #include "common.h"
 #if defined(VITA)
 #include <psp2/kernel/sysmem.h>
+#include <stdio.h>
 #endif
 
 u8 *last_rom_translation_ptr = NULL;
@@ -251,7 +252,7 @@ extern u8 bit_count[256];
 
 #define invalidate_icache_region(addr, size)																	\
 {																																							\
-	sceKernelSyncVMDomain(sceBlock, addr, size);																\
+	int ret = sceKernelSyncVMDomain(sceBlock, addr, size);											\
 } 																																						
 
 #elif defined(_3DS)
@@ -2837,8 +2838,10 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
   u8 *block_address;                                                          \
                                                                               \
   /* Starting at the beginning, we allow for one translation cache flush. */  \
-  if(translation_recursion_level == 0)                                        \
+  if(translation_recursion_level == 0){                                       \
     translation_flush_count = 0;                                              \
+		RW_INIT();                                        										  	\
+	}																																						\
   block_lookup_address_pc_##type();                                           \
                                                                               \
   switch(pc >> 24)                                                            \
@@ -2871,7 +2874,6 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
        (ROM_BRANCH_HASH_SIZE - 1);                                            \
       u32 *block_ptr = rom_branch_hash[hash_target];                          \
       u32 **block_ptr_address = rom_branch_hash + hash_target;                \
-			RW_INIT();                                        										  \
       while(block_ptr)                                                        \
       {                                                                       \
         if(block_ptr[0] == pc)                                                \
@@ -2882,7 +2884,6 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
         block_ptr_address = (u32 **)(block_ptr + 1);                          \
         block_ptr = (u32 *)block_ptr[1];                                      \
       }                                                                       \
-			RW_END();																															  \
       if(!block_ptr)                                                          \
       {                                                                       \
         __label__ redo;                                                       \
@@ -2891,13 +2892,11 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
         redo:                                                                 \
                                                                               \
         translation_recursion_level++;																				\
-				RW_INIT();                                        										\
         ((u32 *)rom_translation_ptr)[0] = pc;                                 \
         ((u32 **)rom_translation_ptr)[1] = NULL;                              \
         *block_ptr_address = (u32 *)rom_translation_ptr;                      \
         rom_translation_ptr += 8;                                             \
         block_address = rom_translation_ptr + block_prologue_size;            \
-				RW_END();																															\
         block_lookup_translate_##type(rom, 0);                                \
         translation_recursion_level--;                                        \
                                                                               \
@@ -2937,7 +2936,9 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
       block_address = (u8 *)(-1);                                             \
       break;                                                                  \
   }                                                                           \
-                                                                              \
+	if(translation_recursion_level == 0)                                    		\
+		RW_END();                                           		\
+		                                                                      		\
   return block_address;                                                       \
 }                                                                             \
 
@@ -3291,7 +3292,8 @@ s32 translate_block_arm(u32 pc, translation_region_type
   u8 *translation_cache_limit = NULL;                                         
   s32 i;                                                                      
   u32 flag_status;                                                            
-  block_exit_type external_block_exits[MAX_EXITS];                            
+  block_exit_type external_block_exits[MAX_EXITS];      
+	RW_INIT();                      
   generate_block_extra_vars_arm();                                         
   arm_fix_pc();                                                            
                                                                               
@@ -3399,7 +3401,7 @@ s32 translate_block_arm(u32 pc, translation_region_type
           flush_translation_cache_bios();                                     
           break;                                                              
       }                                                                       
-                                                                              
+      RW_END();                                                                        
       return -1;                                                              
     }                                                                         
                                                                               
@@ -3476,12 +3478,14 @@ s32 translate_block_arm(u32 pc, translation_region_type
   {                                                                           
     branch_target = external_block_exits[i].branch_target;                    
     arm_link_block();                                                      
-    if(!translation_target)                                            
-      return -1;                                                              
+    if(!translation_target){                                          
+			RW_END();            
+			return -1;
+		}                                                  
     generate_branch_patch_unconditional(                                      
      external_block_exits[i].branch_source, translation_target);              
   }                                                                           
-                                                                              
+  RW_END();                                                                
   return 0;                                                                   
 }
 
@@ -3508,7 +3512,8 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   u8 *translation_cache_limit = NULL;                                         
   s32 i;                                                                      
   u32 flag_status;                                                            
-  block_exit_type external_block_exits[MAX_EXITS];                            
+  block_exit_type external_block_exits[MAX_EXITS];         
+	RW_INIT();                   
   generate_block_extra_vars_thumb();                                         
   thumb_fix_pc();                                                            
                                                                               
@@ -3616,7 +3621,7 @@ s32 translate_block_thumb(u32 pc, translation_region_type
           flush_translation_cache_bios();                                     
           break;                                                              
       }                                                                       
-                                                                              
+			RW_END();                                                                
       return -1;                                                              
     }                                                                         
                                                                               
@@ -3693,12 +3698,14 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   {                                                                           
     branch_target = external_block_exits[i].branch_target;                    
     thumb_link_block();                                                      
-    if(!translation_target)                                            
-      return -1;                                                              
+    if(!translation_target){         
+			RW_END();                                                                                              
+      return -1;           
+		}                                                   
     generate_branch_patch_unconditional(                                      
      external_block_exits[i].branch_source, translation_target);              
   }                                                                           
-                                                                              
+	RW_END();                                                                                                                                              
   return 0;
 }
 
