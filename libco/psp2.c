@@ -1,6 +1,6 @@
 /*
-  libco.arm (2015-06-18)
-  author: byuu
+  libco.arm (2016-08-14)
+  author: frangarcj
   license: public domain
 */
 
@@ -104,7 +104,6 @@ cothread_t co_create(unsigned int size, void (*entrypoint)(void)) {
 
 void co_delete(cothread_t handle) {
   free(handle);
-  sceKernelFreeMemBlock(block);
 }
 
 void co_switch(cothread_t handle) {
