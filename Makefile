@@ -195,11 +195,12 @@ else ifeq ($(platform), vita)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).a
 	CC = arm-vita-eabi-gcc$(EXE_EXT)
 	AR = arm-vita-eabi-ar$(EXE_EXT)
-	CFLAGS += -DVITA
-	CFLAGS += -marm -mcpu=cortex-a9
-	ASFLAGS += -mcpu=cortex-a9
+	CFLAGS += -DVITA -g
+	CFLAGS += -mthumb -mcpu=cortex-a9 -mfloat-abi=hard
+	CFLAGS += -Wall -mword-relocations
+	CFLAGS += -fomit-frame-pointer -ffast-math
+	ASFLAGS += -mthumb -mcpu=cortex-a9
 	STATIC_LINKING = 1
-	HAVE_DYNAREC = 1
 	CPU_ARCH := arm
 
 # CTR(3DS)

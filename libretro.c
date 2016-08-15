@@ -9,7 +9,7 @@
 #include "memmap.h"
 
 
-#if defined(VITA)
+#if defined(VITA) && defined(HAVE_DYNAREC)
 #include <psp2/kernel/sysmem.h>
 static int translation_caches_inited = 0;
 static inline int align(int x, int n) {
@@ -159,15 +159,13 @@ void retro_init(void)
    }
 #endif
 
-#if defined(VITA)
+#if defined(VITA) && defined(HAVE_DYNAREC)
       if(!translation_caches_inited){
       void* currentHandle;
 
       sceBlock = sceKernelAllocMemBlockForVM("code", MB_ALIGN(FOUR_KB_ALIGN(ROM_TRANSLATION_CACHE_SIZE +
                                                     RAM_TRANSLATION_CACHE_SIZE + 
                                                     BIOS_TRANSLATION_CACHE_SIZE)));
-      FILE * fd = fopen("ux0:/temp/test.txt","w+");
-      fprintf(fd,"%x\n",sceBlock);
       if (sceBlock < 0)
       {
         return;
@@ -179,9 +177,6 @@ void retro_init(void)
       {
         return;
       }
-      fprintf(fd,"%x %x\n",currentHandle,ret);
-
-      fclose(fd);
 
       rom_translation_cache  = (u8*)currentHandle;
       ram_translation_cache  = rom_translation_cache + ROM_TRANSLATION_CACHE_SIZE;
@@ -240,7 +235,7 @@ void retro_deinit(void)
    }
 #endif
 
-#if defined(VITA)
+#if defined(VITA) && defined(HAVE_DYNAREC)
     if(translation_caches_inited){
         sceKernelFreeMemBlock(sceBlock);
 
@@ -487,7 +482,6 @@ bool retro_load_game(const struct retro_game_info* info)
    }
 
    gamepak_filename[0] = 0;
-
    if (load_gamepak(info, info->path) != 0)
    {
       error_msg("Could not load the game file.");

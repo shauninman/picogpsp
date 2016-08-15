@@ -49,10 +49,8 @@ void execute_swi_thumb(u32 pc);
 void execute_store_u32_safe(u32 address, u32 source);
 
 #define write32(value)                                                        \
-  VITA_RW_INIT();                                                             \
   *((u32 *)translation_ptr) = value;                                          \
-  translation_ptr += 4;                                                       \
-  VITA_RW_END()                                                               \
+  translation_ptr += 4                                                       \
   
 #define arm_relative_offset(source, offset)                                   \
   (((((u32)offset - (u32)source) - 8) >> 2) & 0xFFFFFF)                       \
@@ -409,17 +407,13 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
   cycle_count = 0                                                             \
 
 #define generate_branch_patch_conditional(dest, offset)                       \
-  VITA_RW_INIT();                                                                  \
   *((u32 *)(dest)) = (*((u32 *)dest) & 0xFF000000) |                          \
-   arm_relative_offset(dest, offset);                                          \
-  VITA_RW_END();                                                                   \
+   arm_relative_offset(dest, offset)                                          \
 
 
 #define generate_branch_patch_unconditional(dest, offset)                     \
-  VITA_RW_INIT();                                                                   \
   *((u32 *)(dest)) = (*((u32 *)dest) & 0xFF000000) |                          \
-   arm_relative_offset(dest, offset);                                          \
-  VITA_RW_END();                                                                   \
+   arm_relative_offset(dest, offset)                                          \
 
 // A different function is called for idle updates because of the relative
 // location of the embedded PC. The idle version could be optimized to put
