@@ -241,13 +241,25 @@ extern u8 bit_count[256];
 
 #endif
 
+static INLINE void RW_INIT(void)
+{
+#ifdef VITA
+   sceKernelOpenVMDomain();
+#endif
+}
+
+static INLINE void RW_END(void)
+{
+#ifdef VITA
+   sceKernelCloseVMDomain();
+#endif
+}
+
 /* Cache invalidation */
 
 #if defined(PSP_BUILD)
 #define translate_invalidate_dcache() sceKernelDcacheWritebackAll()
 #elif defined(VITA)
-#define RW_INIT sceKernelOpenVMDomain
-#define RW_END sceKernelCloseVMDomain
 #define translate_invalidate_dcache() (void)0
 
 #define invalidate_icache_region(addr, size)																	\
@@ -257,8 +269,10 @@ extern u8 bit_count[256];
 
 #elif defined(_3DS)
 #include "3ds/3ds_utils.h"
+
 #define translate_invalidate_dcache() ctr_flush_invalidate_cache()
 #define invalidate_icache_region(addr, size) (void)0
+
 #elif defined(ARM_ARCH)
 static int sys_cacheflush(void *addr, unsigned long size)
 {
@@ -3293,7 +3307,7 @@ s32 translate_block_arm(u32 pc, translation_region_type
   s32 i;                                                                      
   u32 flag_status;                                                            
   block_exit_type external_block_exits[MAX_EXITS];      
-	RW_INIT();                      
+  RW_INIT();                      
   generate_block_extra_vars_arm();                                         
   arm_fix_pc();                                                            
                                                                               
@@ -3513,7 +3527,7 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   s32 i;                                                                      
   u32 flag_status;                                                            
   block_exit_type external_block_exits[MAX_EXITS];         
-	RW_INIT();                   
+  RW_INIT();                   
   generate_block_extra_vars_thumb();                                         
   thumb_fix_pc();                                                            
                                                                               
