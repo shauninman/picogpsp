@@ -19,6 +19,12 @@ static inline int align(int x, int n) {
 #define FOUR_KB_ALIGN(x) align(x, 12)
 #define MB_ALIGN(x) align(x, 20)
 
+int _newlib_vm_size_user = ROM_TRANSLATION_CACHE_SIZE +
+                           RAM_TRANSLATION_CACHE_SIZE + 
+                           BIOS_TRANSLATION_CACHE_SIZE;
+
+int getVMBlock();
+
 #endif
 
 #if defined(_3DS)
@@ -163,9 +169,8 @@ void retro_init(void)
       if(!translation_caches_inited){
       void* currentHandle;
 
-      sceBlock = sceKernelAllocMemBlockForVM("code", MB_ALIGN(FOUR_KB_ALIGN(ROM_TRANSLATION_CACHE_SIZE +
-                                                    RAM_TRANSLATION_CACHE_SIZE + 
-                                                    BIOS_TRANSLATION_CACHE_SIZE)));
+      sceBlock = getVMBlock();
+      
       if (sceBlock < 0)
       {
         return;
@@ -237,9 +242,7 @@ void retro_deinit(void)
 
 #if defined(VITA) && defined(HAVE_DYNAREC)
     if(translation_caches_inited){
-        sceKernelFreeMemBlock(sceBlock);
-
-      translation_caches_inited = 0;
+        translation_caches_inited = 0;
     }
 #endif
 
@@ -435,6 +438,11 @@ bool retro_load_game(const struct retro_game_info* info)
    bios_translation_ptr = bios_translation_cache;
 #elif defined(_3DS)
    dynarec_enable = __ctr_svchax;
+   rom_translation_ptr = rom_translation_cache;
+   ram_translation_ptr = ram_translation_cache;
+   bios_translation_ptr = bios_translation_cache;
+#elif defined(VITA)
+   dynarec_enable = 1;
    rom_translation_ptr = rom_translation_cache;
    ram_translation_ptr = ram_translation_cache;
    bios_translation_ptr = bios_translation_cache;

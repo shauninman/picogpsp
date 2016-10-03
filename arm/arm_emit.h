@@ -21,10 +21,7 @@
 #define ARM_EMIT_H
 
 #include "arm_codegen.h"
-#if defined(VITA)
-#define VITA_RW_INIT sceKernelOpenVMDomain
-#define VITA_RW_END sceKernelCloseVMDomain
-#endif
+
 u32 arm_update_gba_arm(u32 pc);
 u32 arm_update_gba_thumb(u32 pc);
 u32 arm_update_gba_idle_arm(u32 pc);

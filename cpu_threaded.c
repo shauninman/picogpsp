@@ -260,12 +260,21 @@ static INLINE void RW_END(void)
 #if defined(PSP_BUILD)
 #define translate_invalidate_dcache() sceKernelDcacheWritebackAll()
 #elif defined(VITA)
-#define translate_invalidate_dcache() (void)0
+#define translate_invalidate_dcache_one(which)                                \
+  if (which##_translation_ptr > last_##which##_translation_ptr)               \
+  {   	                                             \
+    sceKernelSyncVMDomain(sceBlock,last_##which##_translation_ptr,          \
+      which##_translation_ptr - last_##which##_translation_ptr);              \
+  }
 
-#define invalidate_icache_region(addr, size)																	\
-{																																							\
-	int ret = sceKernelSyncVMDomain(sceBlock, addr, size);											\
-} 																																						
+#define translate_invalidate_dcache()                                         \
+{                                                                             \
+  translate_invalidate_dcache_one(rom)                                        \
+  translate_invalidate_dcache_one(ram)                                        \
+  translate_invalidate_dcache_one(bios)                                       \
+}
+
+#define invalidate_icache_region(addr, size) (void)0
 
 #elif defined(_3DS)
 #include "3ds/3ds_utils.h"
@@ -2854,7 +2863,7 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
   /* Starting at the beginning, we allow for one translation cache flush. */  \
   if(translation_recursion_level == 0){                                       \
     translation_flush_count = 0;                                              \
-		RW_INIT();                                        										  	\
+		RW_INIT();                                              \
 	}																																						\
   block_lookup_address_pc_##type();                                           \
                                                                               \
@@ -2950,8 +2959,6 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
       block_address = (u8 *)(-1);                                             \
       break;                                                                  \
   }                                                                           \
-	if(translation_recursion_level == 0)                                    		\
-		RW_END();                                           		\
 		                                                                      		\
   return block_address;                                                       \
 }                                                                             \
@@ -3415,7 +3422,6 @@ s32 translate_block_arm(u32 pc, translation_region_type
           flush_translation_cache_bios();                                     
           break;                                                              
       }                                                                       
-      RW_END();                                                                        
       return -1;                                                              
     }                                                                         
                                                                               
@@ -3493,13 +3499,11 @@ s32 translate_block_arm(u32 pc, translation_region_type
     branch_target = external_block_exits[i].branch_target;                    
     arm_link_block();                                                      
     if(!translation_target){                                          
-			RW_END();            
 			return -1;
 		}                                                  
     generate_branch_patch_unconditional(                                      
      external_block_exits[i].branch_source, translation_target);              
   }                                                                           
-  RW_END();                                                                
   return 0;                                                                   
 }
 
@@ -3635,7 +3639,6 @@ s32 translate_block_thumb(u32 pc, translation_region_type
           flush_translation_cache_bios();                                     
           break;                                                              
       }                                                                       
-			RW_END();                                                                
       return -1;                                                              
     }                                                                         
                                                                               
@@ -3713,13 +3716,11 @@ s32 translate_block_thumb(u32 pc, translation_region_type
     branch_target = external_block_exits[i].branch_target;                    
     thumb_link_block();                                                      
     if(!translation_target){         
-			RW_END();                                                                                              
       return -1;           
 		}                                                   
     generate_branch_patch_unconditional(                                      
      external_block_exits[i].branch_source, translation_target);              
   }                                                                           
-	RW_END();                                                                                                                                              
   return 0;
 }
 
