@@ -2863,7 +2863,7 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
   /* Starting at the beginning, we allow for one translation cache flush. */  \
   if(translation_recursion_level == 0){                                       \
     translation_flush_count = 0;                                              \
-		RW_INIT();                                              \
+		                                                              \
 	}																																						\
   block_lookup_address_pc_##type();                                           \
                                                                               \
@@ -2959,7 +2959,7 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
       block_address = (u8 *)(-1);                                             \
       break;                                                                  \
   }                                                                           \
-		                                                                      		\
+                                                               		      \
   return block_address;                                                       \
 }                                                                             \
 
