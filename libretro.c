@@ -189,6 +189,7 @@ void retro_init(void)
       rom_translation_ptr = rom_translation_cache;
       ram_translation_ptr = ram_translation_cache;
       bios_translation_ptr = bios_translation_cache;
+      sceKernelOpenVMDomain();
       translation_caches_inited = 1;
 }
 
