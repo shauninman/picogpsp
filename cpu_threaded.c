@@ -3314,7 +3314,6 @@ s32 translate_block_arm(u32 pc, translation_region_type
   s32 i;                                                                      
   u32 flag_status;                                                            
   block_exit_type external_block_exits[MAX_EXITS];      
-  RW_INIT();                      
   generate_block_extra_vars_arm();                                         
   arm_fix_pc();                                                            
                                                                               
@@ -3531,7 +3530,6 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   s32 i;                                                                      
   u32 flag_status;                                                            
   block_exit_type external_block_exits[MAX_EXITS];         
-  RW_INIT();                   
   generate_block_extra_vars_thumb();                                         
   thumb_fix_pc();                                                            
                                                                               
