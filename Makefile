@@ -62,6 +62,10 @@ else ifneq ($(findstring Darwin,$(UNAME)),)
 endif
 
 TARGET_NAME	:= gpsp
+GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
+ifneq ($(GIT_VERSION)," unknown")
+	CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+endif
 LIBM		   := -lm
 CORE_DIR    := .
 LDFLAGS     :=
