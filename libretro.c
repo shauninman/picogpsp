@@ -422,6 +422,9 @@ static void set_input_descriptors()
 
 bool retro_load_game(const struct retro_game_info* info)
 {
+   if (!info)
+      return false;
+
    check_variables(1);
    set_input_descriptors();
 
