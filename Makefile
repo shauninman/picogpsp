@@ -126,9 +126,13 @@ else ifneq (,$(findstring ios,$(platform)))
 		IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
 	endif
 
-	CC = cc -arch armv7 -isysroot $(IOSSDK)
+	ifeq ($(platform),ios-arm64)
+		CC = cc -arch arm64 -isysroot $(IOSSDK)
+	else
+		CC = cc -arch armv7 -isysroot $(IOSSDK)
+	endif
 	CFLAGS += -DIOS -DHAVE_POSIX_MEMALIGN -marm
-ifeq ($(platform),ios9)
+ifeq ($(platform),$(filter $(platform),ios9 ios-arm64))
 	CC += -miphoneos-version-min=8.0
 	CFLAGS += -miphoneos-version-min=8.0
 else
