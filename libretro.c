@@ -570,11 +570,11 @@ void retro_run(void)
 {
    bool updated = false;
 
+   update_input();
+
    input_poll_cb();
 
    switch_to_cpu_thread();
-
-   update_input();
 
    render_audio();
 
