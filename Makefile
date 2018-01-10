@@ -189,6 +189,13 @@ else ifeq ($(platform), psl1ght)
 	AR = $(PS3DEV)/ppu/bin/ppu-ar$(EXE_EXT)
 	CFLAGS += -DMSB_FIRST -D__ppc__
 	STATIC_LINKING = 1
+	
+# Nintendo Switch (libtransistor)
+else ifeq ($(platform), switch)
+	EXT=a
+        TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
+        include $(LIBTRANSISTOR_HOME)/libtransistor.mk
+        STATIC_LINKING=1
 
 # PSP
 else ifeq ($(platform), psp1)
