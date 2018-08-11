@@ -532,6 +532,8 @@ unsigned retro_get_region(void)
 
 void* retro_get_memory_data(unsigned id)
 {
+   if ( id == RETRO_MEMORY_SYSTEM_RAM )
+      return ewram ;
    //   switch (id)
    //   {
    //   case RETRO_MEMORY_SAVE_RAM:
@@ -543,7 +545,10 @@ void* retro_get_memory_data(unsigned id)
 
 size_t retro_get_memory_size(unsigned id)
 {
-   //   switch (id)
+
+   if ( id == RETRO_MEMORY_SYSTEM_RAM )
+      return 1024 * 256 * 2 ;
+  //   switch (id)
    //   {
    //   case RETRO_MEMORY_SAVE_RAM:
    //      switch(backup_type)
