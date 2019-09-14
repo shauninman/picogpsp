@@ -215,6 +215,10 @@ else ifeq ($(platform), psp1)
 	CC = psp-gcc$(EXE_EXT)
 	AR = psp-ar$(EXE_EXT)
 	CFLAGS += -DPSP -G0
+	CFLAGS += -I$(shell psp-config --pspsdk-path)/include
+	CFLAGS += -march=allegrex -mfp32 -mgp32 -mlong32 -mabi=eabi
+	CFLAGS += -fomit-frame-pointer -ffast-math -fstrict-aliasing
+	CFLAGS += -falign-functions=32 -falign-loops -falign-labels -falign-jumps
 	STATIC_LINKING = 1
 
 # Vita
