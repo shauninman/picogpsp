@@ -343,7 +343,7 @@ gamepak_swap_entry_type *gamepak_memory_map;
 // This is global so that it can be kept open for large ROMs to swap
 // pages from, so there's no slowdown with opening and closing the file
 // a lot.
-#ifdef PSP_BUILD
+#ifdef PSP
 
 file_tag_type gamepak_file_large = -1;
 
@@ -2391,9 +2391,7 @@ static s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamep
     fclose(config_file);
   }
 
-#ifndef PSP_BUILD
   printf("game config missing\n");
-#endif
   return -1;
 }
 
@@ -2418,7 +2416,7 @@ static s32 load_gamepak_raw(const char *name)
 
       file_close(gamepak_file);
 
-#ifdef PSP_BUILD
+#ifdef PSP
       gamepak_file_large = -1;
 #else
       gamepak_file_large = NULL;

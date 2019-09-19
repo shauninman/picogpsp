@@ -119,7 +119,7 @@ s32 translate_block_arm(u32 pc, translation_region_type translation_region,
 s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
  u32 smc_enable);
 
-#if defined(PSP_BUILD)
+#if defined(PSP)
 
 #define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4)
 #define RAM_TRANSLATION_CACHE_SIZE (1024 * 384)

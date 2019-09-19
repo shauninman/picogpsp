@@ -49,7 +49,7 @@
 // Huge thanks to pollux for the heads up on using native file I/O
 // functions on PSP for vastly improved memstick performance.
 
-#ifdef PSP_BUILD
+#ifdef PSP
   #define fastcall
 
   #include <pspkernel.h>
@@ -90,12 +90,6 @@
   #include <stdio.h>
 #else
 
-#define GBA_SCREEN_WIDTH  (240)
-#define GBA_SCREEN_HEIGHT (160)
-#define GBA_SCREEN_PITCH  (240)
-
-void switch_to_main_thread(void);
-
   typedef unsigned char u8;
   typedef signed char s8;
   typedef unsigned short int u16;
@@ -132,6 +126,12 @@ void switch_to_main_thread(void);
   #define file_tag_type FILE *
 
 #endif
+
+#define GBA_SCREEN_WIDTH  (240)
+#define GBA_SCREEN_HEIGHT (160)
+#define GBA_SCREEN_PITCH  (240)
+
+void switch_to_main_thread(void);
 
 // These must be variables, not constants.
 
