@@ -3343,8 +3343,13 @@ ror_zero_shift:
 
 execute_arm_translate:
   addu $17, $4, $0                # load cycle counter register
-  lui $16, %hi(reg)               # load base register
-  addiu $16, %lo(reg)
+
+  lui $4, %hi(arm_reg)            # load arm_reg address into $4
+  addiu $4, %lo(arm_reg)
+
+  jal move_reg                    # update reg to point to arm_reg
+  addu $16, $4, $0                # copy address of arm_reg into $16
+
   extract_flags                   # load flag variables
 
   and $1, $1, 0x20                # see if Thumb bit is set in flags
@@ -3405,9 +3410,10 @@ iac_loop:
 memory_map_read:
   .space 0x8000
 
-reg:
+# This must be between memory_map_read and memory_map_write because it's used
+# to calculate their addresses elsewhere in this file.
+arm_reg:
   .space 0x100
 
 memory_map_write:
   .space 0x8000
-

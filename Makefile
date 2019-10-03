@@ -220,6 +220,8 @@ else ifeq ($(platform), psp1)
 	CFLAGS += -fomit-frame-pointer -ffast-math
 	CFLAGS += -falign-functions=32 -falign-loops -falign-labels -falign-jumps
 	STATIC_LINKING = 1
+	HAVE_DYNAREC = 1
+	CPU_ARCH := mips
 
 # Vita
 else ifeq ($(platform), vita)
