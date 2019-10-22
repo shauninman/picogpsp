@@ -83,8 +83,8 @@ void main_write_savestate(void);
 void main_read_savestate(void);
 
 
-#ifdef PSP_BUILD
-u32 file_length(char *filename, s32 dummy);
+#ifdef PSP
+u32 file_length(const char *filename, s32 dummy);
 #else
 u32 file_length(const char *dummy, FILE *fp);
 #endif

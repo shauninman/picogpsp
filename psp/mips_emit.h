@@ -1553,8 +1553,12 @@ typedef enum
 
 #define arm_generate_op_imm(name, load_op)                                    \
   arm_decode_data_proc_imm(opcode);                                           \
+  ror(imm, imm, imm_ror);                                                     \
   arm_op_check_##load_op();                                                   \
   generate_op_##name##_imm(arm_to_mips_reg[rd], arm_to_mips_reg[rn])          \
+
+#define arm_generate_op_imm_flags(name, load_op)                              \
+  arm_generate_op_imm(name, load_op)                                          \
 
 #define arm_data_proc(name, type, flags_op)                                   \
 {                                                                             \
@@ -2137,10 +2141,16 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   mips_emit_addiu(arm_to_mips_reg[_rd], reg_r13, (imm * 4));                  \
 }                                                                             \
 
-#define thumb_adjust_sp(value)                                                \
+#define thumb_adjust_sp_up()                                                  \
+  mips_emit_addiu(reg_r13, reg_r13, (imm * 4));                               \
+
+#define thumb_adjust_sp_down()                                                \
+  mips_emit_addiu(reg_r13, reg_r13, -(imm * 4));                              \
+
+#define thumb_adjust_sp(direction)                                            \
 {                                                                             \
   thumb_decode_add_sp();                                                      \
-  mips_emit_addiu(reg_r13, reg_r13, (value));                                 \
+  thumb_adjust_sp_##direction();                                              \
 }                                                                             \
 
 // Decode types: shift, alu_op
@@ -2202,6 +2212,9 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 
 #define thumb_access_memory_generate_address_reg_imm(offset, reg_rb, reg_ro)  \
   mips_emit_addiu(reg_a0, arm_to_mips_reg[reg_rb], (offset))                  \
+
+#define thumb_access_memory_generate_address_reg_imm_sp(offset, reg_rb, reg_ro) \
+  mips_emit_addiu(reg_a0, arm_to_mips_reg[reg_rb], (offset * 4))              \
 
 #define thumb_access_memory_generate_address_reg_reg(offset, reg_rb, reg_ro)  \
   mips_emit_addu(reg_a0, arm_to_mips_reg[reg_rb], arm_to_mips_reg[reg_ro])    \
