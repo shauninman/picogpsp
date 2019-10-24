@@ -502,7 +502,7 @@ cpu_threaded.o: cpu_threaded.c
 	$(CC) $(CFLAGS) -Wno-unused-variable -Wno-unused-label $(OPTIMIZE_SAFE) $(INCDIRS) -c -o $@ $<
 
 libco/libco.o: libco/libco.c
-	$(CC) $(INCFLAGS) $(CFLAGS) -O3 -DNDEBUG -c  -o $@ $<
+	$(CC) $(INCFLAGS) $(CFLAGS) $(OPTIMIZE) -c  -o $@ $<
 
 %.o: %.S
 	$(CC) $(ASFLAGS) $(CFLAGS) $(OPTIMIZE) -c -o $@ $<
