@@ -54,9 +54,20 @@ typedef struct
   timer_status_type status;
 } timer_type;
 
+typedef enum
+{
+  auto_frameskip,
+  manual_frameskip,
+  no_frameskip
+} frameskip_type;
+
 extern u32 cpu_ticks;
 extern u32 execute_cycles;
+extern frameskip_type current_frameskip_type;
+extern u32 frameskip_value;
+extern u32 random_skip;
 extern u32 global_cycles_per_instruction;
+extern u32 skip_next_frame;
 
 extern u32 cycle_memory_access;
 extern u32 cycle_pc_relative_access;
@@ -91,7 +102,6 @@ u32 file_length(const char *dummy, FILE *fp);
 
 extern u32 real_frame_count;
 extern u32 virtual_frame_count;
-extern u32 max_frameskip;
 extern u32 num_skipped_frames;
 extern int dynarec_enable;
 

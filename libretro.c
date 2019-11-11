@@ -47,6 +47,14 @@ static int translation_caches_inited = 0;
 #define MAX_PATH (512)
 #endif
 
+frameskip_type current_frameskip_type = no_frameskip;
+u32 frameskip_value = 4;
+u32 random_skip = 0;
+
+u32 skip_next_frame = 0;
+
+u32 frameskip_counter = 0;
+
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
 static retro_input_poll_t input_poll_cb;
@@ -312,6 +320,9 @@ void retro_set_environment(retro_environment_t cb)
 #ifdef HAVE_DYNAREC
       { "gpsp_drc", "Dynamic recompiler (restart); enabled|disabled" },
 #endif
+      { "gpsp_frameskip_type", "Frameskip type; off|manual" },
+      { "gpsp_frameskip_value", "Frameskip value; 1|2|3|4|5|6|7|8|9|0" },
+      { "gpsp_frameskip_variation", "Frameskip variation; uniform|random" },
       { NULL, NULL },
    };
 
@@ -422,9 +433,9 @@ static void extract_directory(char* buf, const char* path, size_t size)
 
 static void check_variables(int started_from_load)
 {
-#ifdef HAVE_DYNAREC
    struct retro_variable var;
 
+#ifdef HAVE_DYNAREC
    var.key = "gpsp_drc";
    var.value = NULL;
 
@@ -441,6 +452,31 @@ static void check_variables(int started_from_load)
    else
       dynarec_enable = 1;
 #endif
+
+   var.key = "gpsp_frameskip_value";
+   var.value = 0;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      frameskip_value = strtol(var.value, NULL, 10);
+
+   var.key = "gpsp_frameskip_type";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "off"))
+         current_frameskip_type = no_frameskip;
+      else if (!strcmp(var.value, "manual"))
+         current_frameskip_type = manual_frameskip;
+   }
+
+   var.key = "gpsp_frameskip_variation";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "uniform"))
+         random_skip = 0;
+      else if (!strcmp(var.value, "random"))
+         random_skip = 1;
+   }
 }
 
 static void set_input_descriptors()
@@ -621,11 +657,33 @@ void retro_run(void)
 
    input_poll_cb();
 
+   s32 used_frameskip = frameskip_value;
+
+   skip_next_frame = 0;
+
+   if(current_frameskip_type == manual_frameskip)
+   {
+      frameskip_counter = (frameskip_counter + 1) %
+      (used_frameskip + 1);
+      if(random_skip)
+      {
+         if(frameskip_counter != (rand() % (used_frameskip + 1)))
+         skip_next_frame = 1;
+      }
+      else
+      {
+         if(frameskip_counter)
+         skip_next_frame = 1;
+      }
+   }
+
    switch_to_cpu_thread();
 
    render_audio();
 
-   video_run();
+   /* Skip the video callback when skipping frames so the frontend can properly report FPS */
+   if (!skip_next_frame)
+      video_run();
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       check_variables(0);
