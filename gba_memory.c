@@ -421,12 +421,24 @@ u8 read_backup(u32 address)
     value = gamepak_backup[address];
   else if(flash_mode == FLASH_ID_MODE)
   {
-    /* ID manufacturer type */
-    if(address == 0x0000)
-      value = flash_manufacturer_id;
-    /* ID device type */
-    else if(address == 0x0001)
-      value = flash_device_id;
+    if (flash_size == FLASH_SIZE_128KB)
+    {
+      /* ID manufacturer type */
+      if(address == 0x0000)
+        value = FLASH_MANUFACTURER_MACRONIX;
+      /* ID device type */
+      else if(address == 0x0001)
+        value = FLASH_DEVICE_MACRONIX_128KB;
+    }
+    else
+    {
+      /* ID manufacturer type */
+      if(address == 0x0000)
+        value = FLASH_MANUFACTURER_PANASONIC;
+      /* ID device type */
+      else if(address == 0x0001)
+        value = FLASH_DEVICE_PANASONIC_64KB;
+    }
   }
   else
     value = flash_bank_ptr[address];
@@ -2283,6 +2295,8 @@ static s32 load_game_config_over(char *gamepak_title, char *gamepak_code, char *
      iwram_stack_optimize = gbaover[i].iwram_stack_optimize;
      
      flash_device_id      = gbaover[i].flash_device_id;
+     if (flash_device_id == FLASH_DEVICE_MACRONIX_128KB)
+      flash_size = FLASH_SIZE_128KB;
 
      if (gbaover[i].translation_gate_target_1 != 0)
      {
@@ -2479,6 +2493,7 @@ u32 load_gamepak(const struct retro_game_info* info, const char *name)
    iwram_stack_optimize = 1;
    translation_gate_targets = 0;
    flash_device_id = FLASH_DEVICE_MACRONIX_64KB;
+   flash_size = FLASH_SIZE_64KB;
 
    if ((load_game_config_over(gamepak_title, gamepak_code, gamepak_maker)) == -1)
       load_game_config(gamepak_title, gamepak_code, gamepak_maker);
@@ -3396,7 +3411,7 @@ void init_memory(void)
   backup_type = BACKUP_NONE;
 
   sram_size = SRAM_SIZE_32KB;
-  flash_size = FLASH_SIZE_64KB;
+  //flash_size = FLASH_SIZE_64KB;
 
   flash_bank_ptr = gamepak_backup;
   flash_command_position = 0;
