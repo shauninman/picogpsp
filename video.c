@@ -4437,6 +4437,9 @@ void update_scanline(void)
 
   order_layers((dispcnt >> 8) & active_layers[video_mode]);
 
+  if(skip_next_frame)
+    return;
+
   // If the screen is in in forced blank draw pure white.
   if(dispcnt & 0x80)
   {
