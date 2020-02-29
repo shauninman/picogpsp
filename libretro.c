@@ -193,6 +193,8 @@ void retro_init(void)
    if (__ctr_svchax && !translation_caches_inited)
    {
       uint32_t currentHandle;
+      check_rosalina();
+      
       rom_translation_cache_ptr  = memalign(0x1000, ROM_TRANSLATION_CACHE_SIZE);
       ram_translation_cache_ptr  = memalign(0x1000, RAM_TRANSLATION_CACHE_SIZE);
       bios_translation_cache_ptr = memalign(0x1000, BIOS_TRANSLATION_CACHE_SIZE);

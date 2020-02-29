@@ -251,7 +251,6 @@ else ifeq ($(platform), ctr)
 	CFLAGS += -fomit-frame-pointer -ffast-math
 	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 	CPU_ARCH := arm
-	# dynarec unavailable with the HBL on FW > 9.2
 	HAVE_DYNAREC = 1
 	STATIC_LINKING = 1
 
@@ -469,7 +468,7 @@ endif
 
 ifeq ($(platform), ctr)
 ifeq ($(HAVE_DYNAREC), 1)
-OBJECTS += 3ds/3ds_utils.o
+OBJECTS += 3ds/3ds_utils.o 3ds/3ds_cache_utils.o
 
 ifeq ($(strip $(CTRULIB)),)
 $(error "Please set CTRULIB in your environment. export CTRULIB=<path to>ctrulib")
