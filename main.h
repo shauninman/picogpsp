@@ -100,8 +100,6 @@ u32 file_length(const char *filename, s32 dummy);
 u32 file_length(const char *dummy, FILE *fp);
 #endif
 
-extern u32 real_frame_count;
-extern u32 virtual_frame_count;
 extern u32 num_skipped_frames;
 extern int dynarec_enable;
 

@@ -47,6 +47,10 @@ static int translation_caches_inited = 0;
 #define MAX_PATH (512)
 #endif
 
+// 59.72750057 hz
+#define GBA_FPS ((float) GBC_BASE_RATE) / (308 * 228 * 4)
+#define MAX_FRAME_TIME 1.0f / ((float) GBA_FPS)
+
 frameskip_type current_frameskip_type = no_frameskip;
 u32 frameskip_value = 4;
 u32 random_skip = 0;
@@ -54,6 +58,10 @@ u32 random_skip = 0;
 u32 skip_next_frame = 0;
 
 u32 frameskip_counter = 0;
+
+u32 num_skipped_frames = 0;
+
+static float frame_time;
 
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
@@ -181,8 +189,7 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
    info->geometry.max_width = GBA_SCREEN_WIDTH;
    info->geometry.max_height = GBA_SCREEN_HEIGHT;
    info->geometry.aspect_ratio = 0;
-   // 59.72750057 hz
-   info->timing.fps = ((float) GBC_BASE_RATE) / (308 * 228 * 4);
+   info->timing.fps = ((float) GBA_FPS);
    info->timing.sample_rate = GBA_SOUND_FREQUENCY;
 }
 
@@ -322,8 +329,8 @@ void retro_set_environment(retro_environment_t cb)
 #ifdef HAVE_DYNAREC
       { "gpsp_drc", "Dynamic recompiler (restart); enabled|disabled" },
 #endif
-      { "gpsp_frameskip_type", "Frameskip type; off|manual" },
-      { "gpsp_frameskip_value", "Frameskip value; 1|2|3|4|5|6|7|8|9|0" },
+      { "gpsp_frameskip_type", "Frameskip type; off|manual|automatic" },
+      { "gpsp_frameskip_value", "Frameskip value; 1|2|3|4|5|6|7|8|9" },
       { "gpsp_frameskip_variation", "Frameskip variation; uniform|random" },
       { NULL, NULL },
    };
@@ -466,6 +473,8 @@ static void check_variables(int started_from_load)
    {
       if (!strcmp(var.value, "off"))
          current_frameskip_type = no_frameskip;
+      else if (!strcmp(var.value, "automatic"))
+         current_frameskip_type = auto_frameskip;
       else if (!strcmp(var.value, "manual"))
          current_frameskip_type = manual_frameskip;
    }
@@ -498,6 +507,11 @@ static void set_input_descriptors()
    };
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, descriptors);
+}
+
+static void frame_time_cb(retro_usec_t usec)
+{
+   frame_time = usec / 1000000.0;
 }
 
 bool retro_load_game(const struct retro_game_info* info)
@@ -540,6 +554,9 @@ bool retro_load_game(const struct retro_game_info* info)
 #else
    dynarec_enable = 0;
 #endif
+
+   struct retro_frame_time_callback frame_cb = { frame_time_cb, 1000000 / ((float) GBA_FPS) };
+   environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &frame_cb);
 
    char filename_bios[MAX_PATH];
    const char* dir = NULL;
@@ -663,7 +680,22 @@ void retro_run(void)
 
    skip_next_frame = 0;
 
-   if(current_frameskip_type == manual_frameskip)
+   if(current_frameskip_type == auto_frameskip)
+   {
+      if(frame_time > MAX_FRAME_TIME)
+      {
+         if(num_skipped_frames < frameskip_value)
+         {
+            skip_next_frame = 1;
+            num_skipped_frames++;
+         }
+         else
+         {
+            num_skipped_frames = 0;
+         }
+      }
+   }
+   else if(current_frameskip_type == manual_frameskip)
    {
       frameskip_counter = (frameskip_counter + 1) %
       (used_frameskip + 1);
