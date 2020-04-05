@@ -514,6 +514,27 @@ static void frame_time_cb(retro_usec_t usec)
    frame_time = usec / 1000000.0;
 }
 
+static void set_memory_descriptors(void)
+{
+   const uint64_t mem = RETRO_MEMORY_SYSTEM_RAM;
+   struct retro_memory_descriptor desc[9] = {
+      { mem, iwram, 0x00000 + 0x8000, 0x3000000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x00000 + 0x8000, 0x2000000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x10000 + 0x8000, 0x2008000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x20000 + 0x8000, 0x2010000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x30000 + 0x8000, 0x2018000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x40000 + 0x8000, 0x2020000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x50000 + 0x8000, 0x2028000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x60000 + 0x8000, 0x2030000, 0, 0, 0x8000, NULL },
+      { mem, ewram, 0x70000 + 0x8000, 0x2038000, 0, 0, 0x8000, NULL }
+   };
+   struct retro_memory_map retromap = {
+      desc,
+      sizeof(desc) / sizeof(desc[0])
+   };
+   environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &retromap);
+}
+
 bool retro_load_game(const struct retro_game_info* info)
 {
    if (!info)
@@ -603,6 +624,8 @@ bool retro_load_game(const struct retro_game_info* info)
    reset_gba();
 
    init_context_switch();
+
+   set_memory_descriptors();
 
    return true;
 }
