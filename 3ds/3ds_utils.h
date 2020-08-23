@@ -7,7 +7,6 @@ void ctr_flush_invalidate_cache(void);
 
 extern __attribute((weak)) unsigned int __ctr_svchax;
 
-bool has_rosalina;
 void check_rosalina();
 void ctr_clear_cache(void);
 

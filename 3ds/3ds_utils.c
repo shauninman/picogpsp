@@ -6,6 +6,7 @@
 #include "3ds_utils.h"
 
 typedef s32 (*ctr_callback_type)(void);
+static bool has_rosalina;
 
 void check_rosalina() {
   int64_t version;
