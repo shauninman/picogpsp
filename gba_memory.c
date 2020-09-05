@@ -367,39 +367,10 @@ u32 gbc_sound_update = 0;
 // If the GBC audio waveform is modified:
 u32 gbc_sound_wave_update = 0;
 
-typedef enum
-{
-  BACKUP_SRAM,
-  BACKUP_FLASH,
-  BACKUP_EEPROM,
-  BACKUP_NONE
-} backup_type_type;
-
-typedef enum
-{
-  SRAM_SIZE_32KB,
-  SRAM_SIZE_64KB
-} sram_size_type;
-
 // Keep it 32KB until the upper 64KB is accessed, then make it 64KB.
 
 backup_type_type backup_type = BACKUP_NONE;
 sram_size_type sram_size = SRAM_SIZE_32KB;
-
-typedef enum
-{
-  FLASH_BASE_MODE,
-  FLASH_ERASE_MODE,
-  FLASH_ID_MODE,
-  FLASH_WRITE_MODE,
-  FLASH_BANKSWITCH_MODE
-} flash_mode_type;
-
-typedef enum
-{
-  FLASH_SIZE_64KB,
-  FLASH_SIZE_128KB
-} flash_size_type;
 
 flash_mode_type flash_mode = FLASH_BASE_MODE;
 u32 flash_command_position = 0;
@@ -458,25 +429,6 @@ u8 read_backup(u32 address)
 
 // EEPROM is 512 bytes by default; it is autodetecte as 8KB if
 // 14bit address DMAs are made (this is done in the DMA handler).
-
-typedef enum
-{
-  EEPROM_512_BYTE,
-  EEPROM_8_KBYTE
-} eeprom_size_type;
-
-typedef enum
-{
-  EEPROM_BASE_MODE,
-  EEPROM_READ_MODE,
-  EEPROM_READ_HEADER_MODE,
-  EEPROM_ADDRESS_MODE,
-  EEPROM_WRITE_MODE,
-  EEPROM_WRITE_ADDRESS_MODE,
-  EEPROM_ADDRESS_FOOTER_MODE,
-  EEPROM_WRITE_FOOTER_MODE
-} eeprom_mode_type;
-
 
 eeprom_size_type eeprom_size = EEPROM_512_BYTE;
 eeprom_mode_type eeprom_mode = EEPROM_BASE_MODE;
@@ -2197,7 +2149,8 @@ u32 save_backup(char *name)
 
 void update_backup(void)
 {
-  save_backup(backup_filename);
+  if (!use_libretro_save_method)
+    save_backup(backup_filename);
 }
 
 #define CONFIG_FILENAME "game_config.txt"
@@ -2480,7 +2433,8 @@ u32 load_gamepak(const struct retro_game_info* info, const char *name)
    if (p)
       strcpy(p, ".sav");
 
-   load_backup(backup_filename);
+   if (!use_libretro_save_method)
+     load_backup(backup_filename);
 
    memcpy(gamepak_title, gamepak_rom + 0xA0, 12);
    memcpy(gamepak_code, gamepak_rom + 0xAC, 4);

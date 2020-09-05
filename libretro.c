@@ -8,6 +8,7 @@
 #include "libretro.h"
 #include "memmap.h"
 
+#include "gba_memory.h"
 
 #if defined(VITA) && defined(HAVE_DYNAREC)
 #include <psp2/kernel/sysmem.h>
@@ -73,6 +74,7 @@ struct retro_perf_callback perf_cb;
 static cothread_t main_thread;
 static cothread_t cpu_thread;
 int dynarec_enable;
+int use_libretro_save_method = 0;
 
 u32 idle_loop_target_pc = 0xFFFFFFFF;
 u32 iwram_stack_optimize = 1;
@@ -332,6 +334,7 @@ void retro_set_environment(retro_environment_t cb)
       { "gpsp_frameskip_type", "Frameskip type; off|manual|automatic" },
       { "gpsp_frameskip_value", "Frameskip value; 1|2|3|4|5|6|7|8|9" },
       { "gpsp_frameskip_variation", "Frameskip variation; uniform|random" },
+      { "gpsp_save_method", "Backup Save Method (Restart); gpSP|libretro" },
       { NULL, NULL },
    };
 
@@ -488,6 +491,19 @@ static void check_variables(int started_from_load)
       else if (!strcmp(var.value, "random"))
          random_skip = 1;
    }
+
+   if (started_from_load)
+   {
+      var.key = "gpsp_save_method";
+      var.value = NULL;
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      {
+         if (!strcmp(var.value, "libretro"))
+            use_libretro_save_method = 1;
+         else
+            use_libretro_save_method = 0;
+      }
+   }
 }
 
 static void set_input_descriptors()
@@ -540,6 +556,7 @@ bool retro_load_game(const struct retro_game_info* info)
    if (!info)
       return false;
 
+   use_libretro_save_method = 0;
    check_variables(1);
    set_input_descriptors();
 
@@ -614,6 +631,7 @@ bool retro_load_game(const struct retro_game_info* info)
       info_msg("It is strongly recommended that you obtain the correct BIOS file.");
    }
 
+   memset(gamepak_backup, -1, sizeof(gamepak_backup));
    gamepak_filename[0] = 0;
    if (load_gamepak(info, info->path) != 0)
    {
@@ -629,7 +647,6 @@ bool retro_load_game(const struct retro_game_info* info)
 
    return true;
 }
-
 
 bool retro_load_game_special(unsigned game_type,
                              const struct retro_game_info* info, size_t num_info)
@@ -650,43 +667,66 @@ unsigned retro_get_region(void)
 
 void* retro_get_memory_data(unsigned id)
 {
-   if ( id == RETRO_MEMORY_SYSTEM_RAM )
-      return ewram ;
-   //   switch (id)
-   //   {
-   //   case RETRO_MEMORY_SAVE_RAM:
-   //      return gamepak_backup;
-   //   }
+   switch (id)
+   {
+   case RETRO_MEMORY_SYSTEM_RAM:
+      return ewram;
+   case RETRO_MEMORY_SAVE_RAM:
+      if (use_libretro_save_method)
+         return gamepak_backup;
+      break;
+   default:
+      break;
+   }
 
    return 0;
 }
 
 size_t retro_get_memory_size(unsigned id)
 {
+   switch (id)
+   {
+   case RETRO_MEMORY_SYSTEM_RAM:
+      return 1024 * 256 * 2;
 
-   if ( id == RETRO_MEMORY_SYSTEM_RAM )
-      return 1024 * 256 * 2 ;
-  //   switch (id)
-   //   {
-   //   case RETRO_MEMORY_SAVE_RAM:
-   //      switch(backup_type)
-   //      {
-   //      case BACKUP_SRAM:
-   //         return sram_size;
+   case RETRO_MEMORY_SAVE_RAM:
+      if (use_libretro_save_method)
+      {
+         switch(backup_type)
+         {
+         case BACKUP_SRAM:
+            if(sram_size == SRAM_SIZE_32KB)
+               return 0x8000;
+            else
+               return 0x10000;
+            break;
 
-   //      case BACKUP_FLASH:
-   //         return flash_size;
+         case BACKUP_FLASH:
+            if(flash_size == FLASH_SIZE_64KB)
+               return 0x10000;
+            else
+               return 0x20000;
+            break;
 
-   //      case BACKUP_EEPROM:
-   //         return eeprom_size;
-
-   //      case BACKUP_NONE:
-   //         return 0x0;
-
-   //      default:
-   //         return 0x8000;
-   //      }
-   //   }
+         case BACKUP_EEPROM:
+            if(eeprom_size == EEPROM_512_BYTE)
+               return 0x200;
+            else
+               return 0x2000;
+            break;
+         // assume 128KB save, regardless if rom supports battery saves
+         // this is needed because gba cannot provide initially the backup save size 
+         // until a few cycles has passed (unless provided by a database)
+         case BACKUP_NONE:
+         default:
+            return (1024 * 128);
+            break;
+         }
+      }
+      break;
+   default:
+      break;
+   }
 
    return 0;
 }
