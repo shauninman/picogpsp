@@ -669,8 +669,6 @@ void* retro_get_memory_data(unsigned id)
 {
    switch (id)
    {
-   case RETRO_MEMORY_SYSTEM_RAM:
-      return ewram;
    case RETRO_MEMORY_SAVE_RAM:
       if (use_libretro_save_method)
          return gamepak_backup;
@@ -686,9 +684,6 @@ size_t retro_get_memory_size(unsigned id)
 {
    switch (id)
    {
-   case RETRO_MEMORY_SYSTEM_RAM:
-      return 1024 * 256 * 2;
-
    case RETRO_MEMORY_SAVE_RAM:
       if (use_libretro_save_method)
       {
