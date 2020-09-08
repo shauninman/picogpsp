@@ -21,6 +21,7 @@
 #define MEMORY_H
 
 #include "libretro.h"
+extern int use_libretro_save_method;
 
 typedef enum
 {
@@ -214,6 +215,62 @@ extern flash_device_id_type flash_device_id;
 
 extern const u8 *state_mem_read_ptr;
 extern u8 *state_mem_write_ptr;
+
+typedef enum
+{
+  BACKUP_SRAM,
+  BACKUP_FLASH,
+  BACKUP_EEPROM,
+  BACKUP_NONE
+} backup_type_type;
+
+typedef enum
+{
+  SRAM_SIZE_32KB,
+  SRAM_SIZE_64KB
+} sram_size_type;
+
+typedef enum
+{
+  FLASH_BASE_MODE,
+  FLASH_ERASE_MODE,
+  FLASH_ID_MODE,
+  FLASH_WRITE_MODE,
+  FLASH_BANKSWITCH_MODE
+} flash_mode_type;
+
+typedef enum
+{
+  FLASH_SIZE_64KB,
+  FLASH_SIZE_128KB
+} flash_size_type;
+
+
+extern backup_type_type backup_type;
+extern sram_size_type sram_size;
+extern flash_size_type flash_size;
+
+typedef enum
+{
+  EEPROM_512_BYTE,
+  EEPROM_8_KBYTE
+} eeprom_size_type;
+
+typedef enum
+{
+  EEPROM_BASE_MODE,
+  EEPROM_READ_MODE,
+  EEPROM_READ_HEADER_MODE,
+  EEPROM_ADDRESS_MODE,
+  EEPROM_WRITE_MODE,
+  EEPROM_WRITE_ADDRESS_MODE,
+  EEPROM_ADDRESS_FOOTER_MODE,
+  EEPROM_WRITE_FOOTER_MODE
+} eeprom_mode_type;
+
+extern eeprom_size_type eeprom_size;
+
+extern u8 gamepak_backup[1024 * 128];
 
 static inline void state_mem_write(const void* src, size_t size)
 {
