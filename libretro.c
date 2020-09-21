@@ -6,9 +6,11 @@
 #include "common.h"
 #include "libco.h"
 #include "libretro.h"
+#include "libretro_core_options.h"
 #include "memmap.h"
 
 #include "gba_memory.h"
+#include "gba_cc_lut.h"
 
 #if defined(VITA) && defined(HAVE_DYNAREC)
 #include <psp2/kernel/sysmem.h>
@@ -81,6 +83,13 @@ u32 iwram_stack_optimize = 1;
 u32 translation_gate_target_pc[MAX_TRANSLATION_GATES];
 u32 translation_gate_targets = 0;
 
+static u16 *gba_screen_pixels_prev = NULL;
+static u16 *gba_processed_pixels   = NULL;
+
+static void (*video_post_process)(void) = NULL;
+static bool post_process_cc  = false;
+static bool post_process_mix = false;
+
 void switch_to_main_thread(void)
 {
    co_switch(main_thread);
@@ -123,7 +132,178 @@ static uint32_t next_pow2(uint32_t v)
    return v;
 }
 
+/* Video post processing START */
+
+/* Note: This code is intentionally W.E.T.
+ * (Write Everything Twice). These functions
+ * are performance critical, and we cannot
+ * afford to do unnecessary comparisons/switches
+ * inside the inner for loops */
+
+static void video_post_process_cc(void)
+{
+   uint16_t *src = gba_screen_pixels;
+   uint16_t *dst = gba_processed_pixels;
+   size_t x, y;
+
+   for (y = 0; y < GBA_SCREEN_HEIGHT; y++)
+   {
+      for (x = 0; x < GBA_SCREEN_PITCH; x++)
+      {
+         u16 src_color = *(src + x);
+
+         /* Convert colour to RGB555 and perform lookup */
+         *(dst + x) = *(gba_cc_lut + (((src_color & 0xFFC0) >> 1) | (src_color & 0x1F)));
+      }
+
+      src += GBA_SCREEN_PITCH;
+      dst += GBA_SCREEN_PITCH;
+   }
+}
+
+static void video_post_process_mix(void)
+{
+   uint16_t *src_curr = gba_screen_pixels;
+   uint16_t *src_prev = gba_screen_pixels_prev;
+   uint16_t *dst      = gba_processed_pixels;
+   size_t x, y;
+
+   for (y = 0; y < GBA_SCREEN_HEIGHT; y++)
+   {
+      for (x = 0; x < GBA_SCREEN_PITCH; x++)
+      {
+         /* Get colours from current + previous frames (RGB565) */
+         uint16_t rgb_curr = *(src_curr + x);
+         uint16_t rgb_prev = *(src_prev + x);
+
+         uint16_t r_curr   = rgb_curr >> 11 & 0x1F;
+         uint16_t g_curr   = rgb_curr >>  6 & 0x1F;
+         uint16_t b_curr   = rgb_curr       & 0x1F;
+
+         uint16_t r_prev   = rgb_prev >> 11 & 0x1F;
+         uint16_t g_prev   = rgb_prev >>  6 & 0x1F;
+         uint16_t b_prev   = rgb_prev       & 0x1F;
+
+         /* Store colours for next frame */
+         *(src_prev + x)   = rgb_curr;
+
+         /* Mix colours */
+         uint16_t r_mix    = (r_curr >> 1) + (r_prev >> 1) + (((r_curr & 0x1) + (r_prev & 0x1)) >> 1);
+         uint16_t g_mix    = (g_curr >> 1) + (g_prev >> 1) + (((g_curr & 0x1) + (g_prev & 0x1)) >> 1);
+         uint16_t b_mix    = (b_curr >> 1) + (b_prev >> 1) + (((b_curr & 0x1) + (b_prev & 0x1)) >> 1);
+
+         /* Convert back to RGB565 and assign
+          * to current frame */
+         *(dst + x)        = r_mix << 11 | g_mix << 6 | b_mix;
+      }
+
+      src_curr += GBA_SCREEN_PITCH;
+      src_prev += GBA_SCREEN_PITCH;
+      dst      += GBA_SCREEN_PITCH;
+   }
+}
+
+static void video_post_process_cc_mix(void)
+{
+   uint16_t *src_curr = gba_screen_pixels;
+   uint16_t *src_prev = gba_screen_pixels_prev;
+   uint16_t *dst      = gba_processed_pixels;
+   size_t x, y;
+
+   for (y = 0; y < GBA_SCREEN_HEIGHT; y++)
+   {
+      for (x = 0; x < GBA_SCREEN_PITCH; x++)
+      {
+         /* Get colours from current + previous frames (RGB565) */
+         uint16_t rgb_curr = *(src_curr + x);
+         uint16_t rgb_prev = *(src_prev + x);
+
+         uint16_t r_curr   = rgb_curr >> 11 & 0x1F;
+         uint16_t g_curr   = rgb_curr >>  6 & 0x1F;
+         uint16_t b_curr   = rgb_curr       & 0x1F;
+
+         uint16_t r_prev   = rgb_prev >> 11 & 0x1F;
+         uint16_t g_prev   = rgb_prev >>  6 & 0x1F;
+         uint16_t b_prev   = rgb_prev       & 0x1F;
+
+         /* Store colours for next frame */
+         *(src_prev + x)   = rgb_curr;
+
+         /* Mix colours */
+         uint16_t r_mix    = (r_curr >> 1) + (r_prev >> 1) + (((r_curr & 0x1) + (r_prev & 0x1)) >> 1);
+         uint16_t g_mix    = (g_curr >> 1) + (g_prev >> 1) + (((g_curr & 0x1) + (g_prev & 0x1)) >> 1);
+         uint16_t b_mix    = (b_curr >> 1) + (b_prev >> 1) + (((b_curr & 0x1) + (b_prev & 0x1)) >> 1);
+
+         /* Convert colour to RGB555, perform lookup
+          * and assign to current frame */
+         *(dst + x) = *(gba_cc_lut + (r_mix << 10 | g_mix << 5 | b_mix));
+      }
+
+      src_curr += GBA_SCREEN_PITCH;
+      src_prev += GBA_SCREEN_PITCH;
+      dst      += GBA_SCREEN_PITCH;
+   }
+}
+
+static void init_post_processing(void)
+{
+   size_t buf_size = GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(u16);
+
+   video_post_process = NULL;
+
+   /* If post processing is disabled, return
+    * immediately */
+   if (!post_process_cc && !post_process_mix)
+      return;
+
+   /* Initialise output buffer, if required */
+   if (!gba_processed_pixels &&
+       (post_process_cc || post_process_mix))
+   {
+#ifdef _3DS
+      gba_processed_pixels = (u16*)linearMemAlign(buf_size, 128);
+#else
+      gba_processed_pixels = (u16*)malloc(buf_size);
+#endif
+
+      if (!gba_processed_pixels)
+         return;
+
+      memset(gba_processed_pixels, 0xFFFF, buf_size);
+   }
+
+   /* Initialise 'history' buffer, if required */
+   if (!gba_screen_pixels_prev &&
+       post_process_mix)
+   {
+      gba_screen_pixels_prev = (u16*)malloc(buf_size);
+
+      if (!gba_screen_pixels_prev)
+         return;
+
+      memset(gba_screen_pixels_prev, 0xFFFF, buf_size);
+   }
+
+   /* Assign post processing function */
+   if (post_process_cc && post_process_mix)
+      video_post_process = video_post_process_cc_mix;
+   else if (post_process_cc)
+      video_post_process = video_post_process_cc;
+   else if (post_process_mix)
+      video_post_process = video_post_process_mix;
+}
+
+/* Video post processing END */
+
 static void video_run(void) {
+
+   u16 *gba_screen_pixels_buf = gba_screen_pixels;
+   if (video_post_process)
+   {
+      video_post_process();
+      gba_screen_pixels_buf = gba_processed_pixels;
+   }
+
 #if defined(PSP)
    static unsigned int __attribute__((aligned(16))) d_list[32];
    void* texture_vram_p = NULL;
@@ -131,12 +311,12 @@ static void video_run(void) {
    
    texture_vram_p = (void*) (0x44200000 - texture_size); /* max VRAM address - frame size */
 
-   sceKernelDcacheWritebackRange(gba_screen_pixels, texture_size);
+   sceKernelDcacheWritebackRange(gba_screen_pixels_buf, texture_size);
 
    sceGuStart(GU_DIRECT, d_list);
    sceGuTexMode(GU_PSM_5650, 0, 0, GU_FALSE);
    sceGuCopyImage(GU_PSM_5650, 0, 0, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT, GBA_SCREEN_WIDTH,
-               gba_screen_pixels, 0, 0, GBA_SCREEN_WIDTH, texture_vram_p);
+               gba_screen_pixels_buf, 0, 0, GBA_SCREEN_WIDTH, texture_vram_p);
 	sceGuTexImage(0, next_pow2(GBA_SCREEN_WIDTH), next_pow2(GBA_SCREEN_HEIGHT), GBA_SCREEN_WIDTH, texture_vram_p);
 	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGB);
    sceGuDisable(GU_BLEND);
@@ -146,7 +326,7 @@ static void video_run(void) {
    video_cb(texture_vram_p, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT,
             GBA_SCREEN_PITCH * 2);
 #else 
-   video_cb(gba_screen_pixels, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT,
+   video_cb(gba_screen_pixels_buf, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT,
             GBA_SCREEN_PITCH * 2);
 #endif
 }
@@ -197,7 +377,6 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
 
 void retro_init(void)
 {
-  
 #if defined(_3DS) && defined(HAVE_DYNAREC)
    if (__ctr_svchax && !translation_caches_inited)
    {
@@ -311,10 +490,20 @@ void retro_deinit(void)
 
 #ifdef _3DS
    linearFree(gba_screen_pixels);
+   if (gba_processed_pixels)
+      linearFree(gba_processed_pixels);
 #else
    free(gba_screen_pixels);
+   if (gba_processed_pixels)
+      free(gba_processed_pixels);
 #endif
-   gba_screen_pixels = NULL;
+   if (gba_screen_pixels_prev)
+      free(gba_screen_pixels_prev);
+
+   gba_screen_pixels      = NULL;
+   gba_processed_pixels   = NULL;
+   gba_screen_pixels_prev = NULL;
+   video_post_process     = NULL;
 }
 
 static retro_time_t retro_perf_dummy_get_time_usec() { return 0; }
@@ -326,25 +515,6 @@ static void retro_perf_dummy_counter(struct retro_perf_counter *counter) {};
 void retro_set_environment(retro_environment_t cb)
 {
    struct retro_log_callback log;
-
-   static struct retro_variable vars[] = {
-#ifdef HAVE_DYNAREC
-      { "gpsp_drc", "Dynamic recompiler (restart); enabled|disabled" },
-#endif
-      { "gpsp_frameskip_type", "Frameskip type; off|manual|automatic" },
-      { "gpsp_frameskip_value", "Frameskip value; 1|2|3|4|5|6|7|8|9" },
-      { "gpsp_frameskip_variation", "Frameskip variation; uniform|random" },
-      { "gpsp_save_method", "Backup Save Method (Restart); gpSP|libretro" },
-      { NULL, NULL },
-   };
-
-#if defined(_3DS) && (HAVE_DYNAREC)
-   if(!__ctr_svchax)
-   {
-      vars[0].key   = 0;
-      vars[0].value = NULL;
-   }
-#endif
 
    environ_cb = cb;
 
@@ -363,7 +533,8 @@ void retro_set_environment(retro_environment_t cb)
       retro_perf_dummy_log,
    };
    environ_cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf_cb);
-   environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)vars);
+
+   libretro_set_core_options(environ_cb);
 }
 
 void retro_set_video_refresh(retro_video_refresh_t cb)
@@ -446,6 +617,8 @@ static void extract_directory(char* buf, const char* path, size_t size)
 static void check_variables(int started_from_load)
 {
    struct retro_variable var;
+   bool post_process_cc_prev;
+   bool post_process_mix_prev;
 
 #ifdef HAVE_DYNAREC
    var.key = "gpsp_drc";
@@ -466,7 +639,7 @@ static void check_variables(int started_from_load)
 #endif
 
    var.key = "gpsp_frameskip_value";
-   var.value = 0;
+   var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       frameskip_value = strtol(var.value, NULL, 10);
 
@@ -491,6 +664,34 @@ static void check_variables(int started_from_load)
       else if (!strcmp(var.value, "random"))
          random_skip = 1;
    }
+
+   var.key              = "gpsp_color_correction";
+   var.value            = NULL;
+   post_process_cc_prev = post_process_cc;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "disabled") == 0)
+         post_process_cc = false;
+      else if (strcmp(var.value, "enabled") == 0)
+         post_process_cc = true;
+   }
+
+   var.key               = "gpsp_frame_mixing";
+   var.value             = NULL;
+   post_process_mix_prev = post_process_mix;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "disabled") == 0)
+         post_process_mix = false;
+      else if (strcmp(var.value, "enabled") == 0)
+         post_process_mix = true;
+   }
+
+   /* Check whether post processing options
+    * have changed */
+   if ((post_process_cc != post_process_cc_prev) ||
+       (post_process_mix != post_process_mix_prev))
+      init_post_processing();
 
    if (started_from_load)
    {
