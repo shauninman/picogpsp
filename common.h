@@ -35,7 +35,6 @@
 
 #define _BSD_SOURCE // sync
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <math.h>
 #include <fcntl.h>
@@ -87,7 +86,6 @@
   #define file_tag_type s32
 
   #include <time.h>
-  #include <stdio.h>
 #else
 
   typedef unsigned char u8;
@@ -190,7 +188,6 @@ typedef u32 fixed8_24;
 
 #include <unistd.h>
 #include <time.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
