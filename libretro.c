@@ -120,6 +120,7 @@ static inline void deinit_context_switch(void)
    co_delete(cpu_thread);
 }
 
+#if defined(PSP)
 static uint32_t next_pow2(uint32_t v)
 {
    v--;
@@ -131,6 +132,7 @@ static uint32_t next_pow2(uint32_t v)
    v++;
    return v;
 }
+#endif
 
 /* Video post processing START */
 
