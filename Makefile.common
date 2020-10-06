@@ -13,7 +13,8 @@ SOURCES_C := $(CORE_DIR)/main.c \
 				 $(CORE_DIR)/sound.c \
 				 $(CORE_DIR)/cheats.c \
 				 $(CORE_DIR)/libretro.c \
-				 $(CORE_DIR)/libco/libco.c
+				 $(CORE_DIR)/libco/libco.c \
+				 $(CORE_DIR)/gba_cc_lut.c
 
 
 ifeq ($(HAVE_DYNAREC), 1)

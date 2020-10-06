@@ -7,3 +7,4 @@ gpsp.gpe
 tags
 cscope.out
 pandora/linux
+tools/generate_cc_lut
