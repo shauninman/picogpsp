@@ -25,6 +25,12 @@
 void generate_indirect_branch_arm(void);
 u32 prepare_load_reg_pc(u32 scratch_reg, u32 reg_index, u32 pc_offset);
 void generate_store_reg(u32 ireg, u32 reg_index);
+void complete_store_reg_pc_flags(u32 scratch_reg, u32 reg_index);
+u32 prepare_load_reg(u32 scratch_reg, u32 reg_index);
+u32 prepare_store_reg(u32 scratch_reg, u32 reg_index);
+void generate_load_reg(u32 ireg, u32 reg_index);
+void complete_store_reg(u32 scratch_reg, u32 reg_index);
+void complete_store_reg_pc_no_flags(u32 scratch_reg, u32 reg_index);
 
 u32 arm_update_gba_arm(u32 pc);
 u32 arm_update_gba_thumb(u32 pc);
