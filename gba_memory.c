@@ -1682,7 +1682,14 @@ s32 rtc_bit_count;
 
 static u32 encode_bcd(u8 value)
 {
-  return ((value / 10) << 4) | (value % 10);
+  int l = 0;
+  int h = 0;
+
+  value = value % 100;
+  l = value % 10;
+  h = value / 10;
+
+  return h * 16 + l;
 }
 
 #define write_rtc_register(index, _value)                                     \
@@ -1773,23 +1780,16 @@ void write_rtc(u32 address, u32 value)
                   {
                     struct tm *current_time;
                     time_t current_time_flat;
-                    u32 day_of_week;
 
                     time(&current_time_flat);
                     current_time = localtime(&current_time_flat);
 
-                    day_of_week = current_time->tm_wday;
-                    if(day_of_week == 0)
-                      day_of_week = 6;
-                    else
-                      day_of_week--;
-
                     rtc_state = RTC_OUTPUT_DATA;
                     rtc_data_bytes = 7;
-                    rtc_data[0] = encode_bcd(current_time->tm_year % 100);
+                    rtc_data[0] = encode_bcd(current_time->tm_year);
                     rtc_data[1] = encode_bcd(current_time->tm_mon + 1);
                     rtc_data[2] = encode_bcd(current_time->tm_mday);
-                    rtc_data[3] = encode_bcd(day_of_week);
+                    rtc_data[3] = encode_bcd(current_time->tm_wday);
                     rtc_data[4] = encode_bcd(current_time->tm_hour);
                     rtc_data[5] = encode_bcd(current_time->tm_min);
                     rtc_data[6] = encode_bcd(current_time->tm_sec);
