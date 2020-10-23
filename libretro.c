@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include "common.h"
 #include "libco.h"
+#include "retro_emu_thread.h"
 #include "libretro.h"
 #include "libretro_core_options.h"
 #include "memmap.h"
@@ -73,8 +74,10 @@ static retro_environment_t environ_cb;
 
 struct retro_perf_callback perf_cb;
 
+#if defined(USE_LIBCO)
 static cothread_t main_thread;
 static cothread_t cpu_thread;
+#endif
 int dynarec_enable;
 int use_libretro_save_method = 0;
 
@@ -92,14 +95,23 @@ static bool post_process_mix = false;
 
 void switch_to_main_thread(void)
 {
+#if defined(USE_LIBCO)
    co_switch(main_thread);
+#else
+   retro_switch_thread();
+#endif
 }
 
 static inline void switch_to_cpu_thread(void)
 {
+#if defined(USE_LIBCO)
    co_switch(cpu_thread);
+#else
+   retro_switch_thread();
+#endif
 }
 
+#if defined(USE_LIBCO)
 static void cpu_thread_entry(void)
 {
 #ifdef HAVE_DYNAREC
@@ -108,16 +120,29 @@ static void cpu_thread_entry(void)
 #endif
    execute_arm(execute_cycles);
 }
+#endif
 
 static inline void init_context_switch(void)
 {
+#if defined(USE_LIBCO)
    main_thread = co_active();
    cpu_thread = co_create(0x20000, cpu_thread_entry);
+#else
+   if (!retro_init_emu_thread(dynarec_enable, execute_cycles))
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "[gpSP]: Failed to initialize emulation thread!\n");
+#endif
 }
 
 static inline void deinit_context_switch(void)
 {
+#if defined(USE_LIBCO)
    co_delete(cpu_thread);
+#else
+   retro_cancel_emu_thread();
+   retro_join_emu_thread();
+   retro_deinit_emu_thread();
+#endif
 }
 
 #if defined(PSP)
@@ -932,6 +957,20 @@ size_t retro_get_memory_size(unsigned id)
 void retro_run(void)
 {
    bool updated = false;
+
+#if !defined(USE_LIBCO)
+   if (!retro_is_emu_thread_initialized())
+   {
+      environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
+      return;
+   }
+   if (retro_emu_thread_exited())
+   {
+      environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
+      retro_join_emu_thread();
+      return;
+   }
+#endif
 
    update_input();
 
