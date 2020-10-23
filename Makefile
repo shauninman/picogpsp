@@ -4,6 +4,7 @@ FRONTEND_SUPPORTS_RGB565=1
 FORCE_32BIT_ARCH=0
 HAVE_MMAP=0
 HAVE_MMAP_WIN32=0
+USE_LIBCO=1
 
 UNAME=$(shell uname -a)
 
@@ -400,13 +401,13 @@ else ifeq ($(platform), emscripten)
 # GCW0
 else ifeq ($(platform), gcw0)
 	TARGET := $(TARGET_NAME)_libretro.so
-	CC ?= /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
-	CXX ?= /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
-	AR ?= /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
+	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
+	CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
+	AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC
-	CFLAGS += $(PTHREAD_FLAGS) -DHAVE_MKDIR
-	CFLAGS += -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	USE_LIBCO = 0
 
 # Windows
 else
@@ -444,6 +445,12 @@ include Makefile.common
 OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
 
 DEFINES := -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline -Wall
+
+ifeq ($(USE_LIBCO), 1)
+DEFINES += -DUSE_LIBCO
+else
+LDFLAGS += -lpthread
+endif
 
 ifeq ($(HAVE_DYNAREC), 1)
 DEFINES += -DHAVE_DYNAREC
