@@ -401,9 +401,9 @@ else ifeq ($(platform), emscripten)
 # GCW0
 else ifeq ($(platform), gcw0)
 	TARGET := $(TARGET_NAME)_libretro.so
-	CC ?= /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
-	CXX ?= /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
-	AR ?= /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
+	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
+	CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
+	AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
