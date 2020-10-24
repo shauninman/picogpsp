@@ -53,19 +53,21 @@ static int translation_caches_inited = 0;
 
 // 59.72750057 hz
 #define GBA_FPS ((float) GBC_BASE_RATE) / (308 * 228 * 4)
-#define MAX_FRAME_TIME 1.0f / ((float) GBA_FPS)
 
-frameskip_type current_frameskip_type = no_frameskip;
-u32 frameskip_value = 4;
-u32 random_skip = 0;
+/* Maximum number of consecutive frames that
+ * can be skipped */
+#define FRAMESKIP_MAX 30
 
-u32 skip_next_frame = 0;
-
-u32 frameskip_counter = 0;
-
-u32 num_skipped_frames = 0;
-
-static float frame_time;
+u32 skip_next_frame                          = 0;
+static frameskip_type current_frameskip_type = no_frameskip;
+static u32 frameskip_threshold               = 0;
+static u32 frameskip_interval                = 0;
+static u32 frameskip_counter                 = 0;
+static bool audio_buff_active                = false;
+static unsigned audio_buff_occupancy         = 0;
+static bool audio_buff_underrun              = false;
+static unsigned audio_latency                = 0;
+static bool update_audio_latency             = false;
 
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
@@ -158,6 +160,80 @@ static uint32_t next_pow2(uint32_t v)
    return v;
 }
 #endif
+
+static void error_msg(const char* text)
+{
+   if (log_cb)
+      log_cb(RETRO_LOG_ERROR, "[gpSP]: %s\n", text);
+}
+
+static void info_msg(const char* text)
+{
+   if (log_cb)
+      log_cb(RETRO_LOG_INFO, "[gpSP]: %s\n", text);
+}
+
+/* Frameskip START */
+
+static void audio_buff_status_cb(
+      bool active, unsigned occupancy, bool underrun_likely)
+{
+   audio_buff_active    = active;
+   audio_buff_occupancy = occupancy;
+   audio_buff_underrun  = underrun_likely;
+}
+
+static void init_frameskip(void)
+{
+   if (current_frameskip_type == no_frameskip)
+   {
+      environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK, NULL);
+      audio_latency = 0;
+   }
+   else
+   {
+      bool calculate_audio_latency = true;
+
+      if (current_frameskip_type == fixed_interval_frameskip)
+         environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK, NULL);
+      else
+      {
+         struct retro_audio_buffer_status_callback buff_status_cb;
+         buff_status_cb.callback = audio_buff_status_cb;
+
+         if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_BUFFER_STATUS_CALLBACK, &buff_status_cb))
+         {
+            error_msg("Frameskip disabled - frontend does not support audio buffer status monitoring");
+
+            audio_buff_active       = false;
+            audio_buff_occupancy    = 0;
+            audio_buff_underrun     = false;
+            audio_latency           = 0;
+            calculate_audio_latency = false;
+         }
+      }
+
+      if (calculate_audio_latency)
+      {
+         /* Frameskip is enabled - increase frontend
+          * audio latency to minimise potential
+          * buffer underruns */
+         float frame_time_msec = 1000.0f / ((float) GBA_FPS);
+
+         /* Set latency to 6x current frame time... */
+         audio_latency = (unsigned)((6.0f * frame_time_msec) + 0.5f);
+
+         /* ...then round up to nearest multiple of 32 */
+         audio_latency = (audio_latency + 0x1F) & ~0x1F;
+      }
+
+   }
+
+   update_audio_latency = true;
+   frameskip_counter    = 0;
+}
+
+/* Frameskip END */
 
 /* Video post processing START */
 
@@ -322,9 +398,17 @@ static void init_post_processing(void)
 
 /* Video post processing END */
 
-static void video_run(void) {
-
+static void video_run(void)
+{
    u16 *gba_screen_pixels_buf = gba_screen_pixels;
+
+   if (skip_next_frame)
+   {
+      video_cb(NULL, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT,
+            GBA_SCREEN_PITCH * 2);
+      return;
+   }
+
    if (video_post_process)
    {
       video_post_process();
@@ -474,6 +558,15 @@ void retro_init(void)
       gba_screen_pixels = (uint16_t*)malloc(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t));
 #endif
 
+   current_frameskip_type = no_frameskip;
+   frameskip_threshold    = 0;
+   frameskip_interval     = 0;
+   frameskip_counter      = 0;
+   audio_buff_active      = false;
+   audio_buff_occupancy   = 0;
+   audio_buff_underrun    = false;
+   audio_latency          = 0;
+   update_audio_latency   = false;
 }
 
 void retro_deinit(void)
@@ -616,18 +709,6 @@ void retro_cheat_reset(void)
 }
 void retro_cheat_set(unsigned index, bool enabled, const char* code) {}
 
-void error_msg(const char* text)
-{
-   if (log_cb)
-      log_cb(RETRO_LOG_ERROR, "[gpSP]: %s\n", text);
-}
-
-void info_msg(const char* text)
-{
-   if (log_cb)
-      log_cb(RETRO_LOG_INFO, "[gpSP]: %s\n", text);
-}
-
 static void extract_directory(char* buf, const char* path, size_t size)
 {
    strncpy(buf, path, size - 1);
@@ -644,6 +725,7 @@ static void extract_directory(char* buf, const char* path, size_t size)
 static void check_variables(int started_from_load)
 {
    struct retro_variable var;
+   bool frameskip_type_prev;
    bool post_process_cc_prev;
    bool post_process_mix_prev;
 
@@ -665,32 +747,40 @@ static void check_variables(int started_from_load)
       dynarec_enable = 1;
 #endif
 
-   var.key = "gpsp_frameskip_value";
-   var.value = NULL;
-   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-      frameskip_value = strtol(var.value, NULL, 10);
+   var.key                = "gpsp_frameskip";
+   var.value              = 0;
+   frameskip_type_prev    = current_frameskip_type;
+   current_frameskip_type = no_frameskip;
 
-   var.key = "gpsp_frameskip_type";
-   var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (!strcmp(var.value, "off"))
-         current_frameskip_type = no_frameskip;
-      else if (!strcmp(var.value, "automatic"))
+      if (!strcmp(var.value, "auto"))
          current_frameskip_type = auto_frameskip;
-      else if (!strcmp(var.value, "manual"))
-         current_frameskip_type = manual_frameskip;
+      else if (!strcmp(var.value, "auto_threshold"))
+         current_frameskip_type = auto_threshold_frameskip;
+      else if (!strcmp(var.value, "fixed_interval"))
+         current_frameskip_type = fixed_interval_frameskip;
    }
 
-   var.key = "gpsp_frameskip_variation";
-   var.value = NULL;
+   var.key             = "gpsp_frameskip_threshold";
+   var.value           = 0;
+   frameskip_threshold = 33;
+
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-   {
-      if (!strcmp(var.value, "uniform"))
-         random_skip = 0;
-      else if (!strcmp(var.value, "random"))
-         random_skip = 1;
-   }
+      frameskip_threshold = strtol(var.value, NULL, 10);
+
+   var.key   = "gpsp_frameskip_interval";
+   var.value = 0;
+
+   frameskip_interval = 0;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      frameskip_interval = strtol(var.value, NULL, 10);
+
+   /* (Re)Initialise frame skipping, if required */
+   if (started_from_load ||
+       (current_frameskip_type != frameskip_type_prev))
+      init_frameskip();
 
    var.key              = "gpsp_color_correction";
    var.value            = NULL;
@@ -751,11 +841,6 @@ static void set_input_descriptors()
    };
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, descriptors);
-}
-
-static void frame_time_cb(retro_usec_t usec)
-{
-   frame_time = usec / 1000000.0;
 }
 
 static void set_memory_descriptors(void)
@@ -820,9 +905,6 @@ bool retro_load_game(const struct retro_game_info* info)
 #else
    dynarec_enable = 0;
 #endif
-
-   struct retro_frame_time_callback frame_cb = { frame_time_cb, 1000000 / ((float) GBA_FPS) };
-   environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &frame_cb);
 
    char filename_bios[MAX_PATH];
    const char* dir = NULL;
@@ -976,52 +1058,83 @@ void retro_run(void)
 
    input_poll_cb();
 
-   s32 used_frameskip = frameskip_value;
-
+	/* Check whether current frame should
+	 * be skipped */
    skip_next_frame = 0;
 
-   if(current_frameskip_type == auto_frameskip)
+   if (current_frameskip_type != no_frameskip)
    {
-      if(frame_time > MAX_FRAME_TIME)
+      switch (current_frameskip_type)
       {
-         if(num_skipped_frames < frameskip_value)
-         {
-            skip_next_frame = 1;
-            num_skipped_frames++;
-         }
-         else
-         {
-            num_skipped_frames = 0;
-         }
+         case auto_frameskip:
+
+            skip_next_frame =
+                  (audio_buff_active && audio_buff_underrun) ?
+                        1 : 0;
+
+            if (!skip_next_frame ||
+                (frameskip_counter >= FRAMESKIP_MAX))
+            {
+               skip_next_frame   = 0;
+               frameskip_counter = 0;
+            }
+            else
+               frameskip_counter++;
+
+            break;
+         case auto_threshold_frameskip:
+
+            skip_next_frame =
+                  (audio_buff_active &&
+                        (audio_buff_occupancy < frameskip_threshold)) ?
+                              1 : 0;
+
+            if (!skip_next_frame ||
+                (frameskip_counter >= FRAMESKIP_MAX))
+            {
+               skip_next_frame   = 0;
+               frameskip_counter = 0;
+            }
+            else
+               frameskip_counter++;
+
+            break;
+         case fixed_interval_frameskip:
+
+            if (frameskip_counter < frameskip_interval)
+            {
+               skip_next_frame   = 1;
+               frameskip_counter++;
+            }
+            else
+            {
+               skip_next_frame   = 0;
+               frameskip_counter = 0;
+            }
+
+            break;
+         default:
+            skip_next_frame = 0;
+            break;
       }
    }
-   else if(current_frameskip_type == manual_frameskip)
+
+   /* If frameskip settings have changed, update
+    * frontend audio latency */
+   if (update_audio_latency)
    {
-      frameskip_counter = (frameskip_counter + 1) %
-      (used_frameskip + 1);
-      if(random_skip)
-      {
-         if(frameskip_counter != (rand() % (used_frameskip + 1)))
-         skip_next_frame = 1;
-      }
-      else
-      {
-         if(frameskip_counter)
-         skip_next_frame = 1;
-      }
+      environ_cb(RETRO_ENVIRONMENT_SET_MINIMUM_AUDIO_LATENCY,
+            &audio_latency);
+      update_audio_latency = false;
    }
 
    switch_to_cpu_thread();
 
    render_audio();
-
-   /* Skip the video callback when skipping frames so the frontend can properly report FPS */
-   if (!skip_next_frame)
-      video_run();
+   video_run();
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       check_variables(0);
-
 }
 
 unsigned retro_api_version(void)
