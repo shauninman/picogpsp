@@ -58,16 +58,14 @@ typedef struct
 
 typedef enum
 {
+  no_frameskip = 0,
   auto_frameskip,
-  manual_frameskip,
-  no_frameskip
+  auto_threshold_frameskip,
+  fixed_interval_frameskip
 } frameskip_type;
 
 extern u32 cpu_ticks;
 extern u32 execute_cycles;
-extern frameskip_type current_frameskip_type;
-extern u32 frameskip_value;
-extern u32 random_skip;
 extern u32 global_cycles_per_instruction;
 extern u32 skip_next_frame;
 
