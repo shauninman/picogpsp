@@ -279,25 +279,13 @@ static void video_post_process_mix(void)
          uint16_t rgb_curr = *(src_curr + x);
          uint16_t rgb_prev = *(src_prev + x);
 
-         uint16_t r_curr   = rgb_curr >> 11 & 0x1F;
-         uint16_t g_curr   = rgb_curr >>  6 & 0x1F;
-         uint16_t b_curr   = rgb_curr       & 0x1F;
-
-         uint16_t r_prev   = rgb_prev >> 11 & 0x1F;
-         uint16_t g_prev   = rgb_prev >>  6 & 0x1F;
-         uint16_t b_prev   = rgb_prev       & 0x1F;
-
          /* Store colours for next frame */
          *(src_prev + x)   = rgb_curr;
 
-         /* Mix colours */
-         uint16_t r_mix    = (r_curr >> 1) + (r_prev >> 1) + (((r_curr & 0x1) + (r_prev & 0x1)) >> 1);
-         uint16_t g_mix    = (g_curr >> 1) + (g_prev >> 1) + (((g_curr & 0x1) + (g_prev & 0x1)) >> 1);
-         uint16_t b_mix    = (b_curr >> 1) + (b_prev >> 1) + (((b_curr & 0x1) + (b_prev & 0x1)) >> 1);
-
-         /* Convert back to RGB565 and assign
-          * to current frame */
-         *(dst + x)        = r_mix << 11 | g_mix << 6 | b_mix;
+         /* Mix colours
+          * > "Mixing Packed RGB Pixels Efficiently"
+          *   http://blargg.8bitalley.com/info/rgb_mixing.html */
+         *(dst + x)        = (rgb_curr + rgb_prev + ((rgb_curr ^ rgb_prev) & 0x821)) >> 1;
       }
 
       src_curr += GBA_SCREEN_PITCH;
@@ -321,25 +309,16 @@ static void video_post_process_cc_mix(void)
          uint16_t rgb_curr = *(src_curr + x);
          uint16_t rgb_prev = *(src_prev + x);
 
-         uint16_t r_curr   = rgb_curr >> 11 & 0x1F;
-         uint16_t g_curr   = rgb_curr >>  6 & 0x1F;
-         uint16_t b_curr   = rgb_curr       & 0x1F;
-
-         uint16_t r_prev   = rgb_prev >> 11 & 0x1F;
-         uint16_t g_prev   = rgb_prev >>  6 & 0x1F;
-         uint16_t b_prev   = rgb_prev       & 0x1F;
-
          /* Store colours for next frame */
          *(src_prev + x)   = rgb_curr;
 
-         /* Mix colours */
-         uint16_t r_mix    = (r_curr >> 1) + (r_prev >> 1) + (((r_curr & 0x1) + (r_prev & 0x1)) >> 1);
-         uint16_t g_mix    = (g_curr >> 1) + (g_prev >> 1) + (((g_curr & 0x1) + (g_prev & 0x1)) >> 1);
-         uint16_t b_mix    = (b_curr >> 1) + (b_prev >> 1) + (((b_curr & 0x1) + (b_prev & 0x1)) >> 1);
+         /* Mix colours
+          * > "Mixing Packed RGB Pixels Efficiently"
+          *   http://blargg.8bitalley.com/info/rgb_mixing.html */
+         uint16_t rgb_mix  = (rgb_curr + rgb_prev + ((rgb_curr ^ rgb_prev) & 0x821)) >> 1;
 
-         /* Convert colour to RGB555, perform lookup
-          * and assign to current frame */
-         *(dst + x) = *(gba_cc_lut + (r_mix << 10 | g_mix << 5 | b_mix));
+         /* Convert colour to RGB555 and perform lookup */
+         *(dst + x) = *(gba_cc_lut + (((rgb_mix & 0xFFC0) >> 1) | (rgb_mix & 0x1F)));
       }
 
       src_curr += GBA_SCREEN_PITCH;
