@@ -1,3 +1,5 @@
+# TODO/FIXME - doesn't build for now for Android armeabi v7a and x86 32bit,
+# will perhaps need an older toolchain for this
 .core-defs:
   variables:
     JNI_PATH: .
@@ -34,11 +36,6 @@ libretro-build-windows-x64:
     - .libretro-windows-x64-mingw-make-default
     
 # Android
-android-armeabi-v7a:
-  extends:
-    - .core-defs
-    - .libretro-android-jni-armeabi-v7a
-
 android-arm64-v8a:
   extends:
     - .core-defs
@@ -49,11 +46,6 @@ android-x86_64:
     - .core-defs
     - .libretro-android-jni-x86_64
     
-android-x86:
-  extends:
-    - .core-defs
-    - .libretro-android-jni-x86
-
 # Static
 libretro-build-vita:
   extends:
