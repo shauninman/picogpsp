@@ -81,12 +81,6 @@ libretro-build-osx-x64:
     - .core-defs
 
 ################################### CELLULAR #################################
-# Android ARMv7a
-android-armeabi-v7a:
-  extends:
-    - .libretro-android-jni-armeabi-v7a
-    - .core-defs
-
 # Android ARMv8a
 android-arm64-v8a:
   extends:
@@ -99,12 +93,6 @@ android-x86_64:
     - .libretro-android-jni-x86_64
     - .core-defs
     
-# Android 32-bit x86
-android-x86:
-  extends:
-    - .libretro-android-jni-x86
-    - .core-defs
-
 ################################### CONSOLES #################################
 # PlayStation Portable
 libretro-build-psp:
@@ -122,12 +110,6 @@ libretro-build-vita:
 libretro-build-ctr:
   extends:
     - .libretro-ctr-static-retroarch-master
-    - .core-defs
-
-# Nintendo Switch
-libretro-build-libnx-aarch64:
-  extends:
-    - .libretro-libnx-static-retroarch-master
     - .core-defs
 
 # OpenDingux
