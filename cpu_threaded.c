@@ -272,17 +272,11 @@ extern u8 bit_count[256];
 #define invalidate_icache_region(addr, size) (void)0
 
 #elif defined(ARM_ARCH)
-static int sys_cacheflush(void *addr, unsigned long size)
+static void sys_cacheflush(void *addr, unsigned long size)
 {
    void *start = (void*)addr;
    void *end   = (void*)(char *)addr + size;
-
-	register const unsigned char *r0 asm("r0") = start;
-	register const unsigned char *r1 asm("r1") = end;
-	register const int r2 asm("r2") = 0;
-	register const int r7 asm("r7") = 0xf0002;
-	asm volatile ("svc 0x0" :: "r" (r0), "r" (r1), "r" (r2), "r" (r7));
-   return -1;
+   __clear_cache(start, end);
 }
 
 #define translate_invalidate_dcache_one(which)                                \
