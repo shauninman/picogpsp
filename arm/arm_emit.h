@@ -174,7 +174,7 @@ s32 arm_register_allocation[] =
   reg_x4,       /* GBA r12 */
   mem_reg,      /* GBA r13 */
   reg_x5,       /* GBA r14 */
-  reg_a0        /* GBA r15 */
+  reg_a0,       /* GBA r15 */
 
   mem_reg,
   mem_reg,
@@ -211,7 +211,7 @@ s32 thumb_register_allocation[] =
   mem_reg,      /* GBA r12 */
   mem_reg,      /* GBA r13 */
   mem_reg,      /* GBA r14 */
-  reg_a0        /* GBA r15 */
+  reg_a0,       /* GBA r15 */
 
   mem_reg,
   mem_reg,
