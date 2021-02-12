@@ -1974,64 +1974,6 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
     generate_indirect_branch_arm();                                           \
   }                                                                           \
 
-#define old_arm_block_memory(access_type, pre_op, post_op, wb, s_bit)         \
-{                                                                             \
-  arm_decode_block_trans();                                                   \
-  u32 i;                                                                      \
-  u32 offset = 0;                                                             \
-  u32 base_reg = arm_to_mips_reg[rn];                                         \
-                                                                              \
-  arm_block_address_preadjust_##pre_op(wb);                                   \
-  arm_block_address_postadjust_##post_op();                                   \
-                                                                              \
-  sprint_##s_bit(access_type, pre_op, post_op, wb);                           \
-                                                                              \
-  if((rn == REG_SP) && iwram_stack_optimize)                                  \
-  {                                                                           \
-    mips_emit_andi(reg_a1, reg_a2, 0x7FFC);                                   \
-    generate_load_imm(reg_a0, ((u32)(iwram + 0x8000)));                       \
-    mips_emit_addu(reg_a1, reg_a1, reg_a0);                                   \
-                                                                              \
-    for(i = 0; i < 16; i++)                                                   \
-    {                                                                         \
-      if((reg_list >> i) & 0x01)                                              \
-      {                                                                       \
-        cycle_count++;                                                        \
-        arm_block_memory_sp_##access_type();                                  \
-        offset += 4;                                                          \
-      }                                                                       \
-    }                                                                         \
-                                                                              \
-    arm_block_memory_sp_adjust_pc_##access_type();                            \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    mips_emit_ins(reg_a2, reg_zero, 0, 2);                                    \
-                                                                              \
-    for(i = 0; i < 16; i++)                                                   \
-    {                                                                         \
-      if((reg_list >> i) & 0x01)                                              \
-      {                                                                       \
-        cycle_count++;                                                        \
-        mips_emit_addiu(reg_a0, reg_a2, offset);                              \
-        if(reg_list & ~((2 << i) - 1))                                        \
-        {                                                                     \
-          arm_block_memory_##access_type();                                   \
-          offset += 4;                                                        \
-        }                                                                     \
-        else                                                                  \
-        {                                                                     \
-          arm_block_memory_final_##access_type();                             \
-          break;                                                              \
-        }                                                                     \
-      }                                                                       \
-    }                                                                         \
-                                                                              \
-    arm_block_memory_adjust_pc_##access_type();                               \
-  }                                                                           \
-}
-
-
 
 // This isn't really a correct implementation, may have to fix later.
 

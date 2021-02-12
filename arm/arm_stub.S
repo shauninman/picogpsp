@@ -939,31 +939,6 @@ _execute_patch_bios_protect:
   str r0, [r1, #-REG_BASE_OFFSET]
   bx lr
 
-
-#define save_reg_scratch(reg)                                                 ;\
-  ldr r2, [reg_base, #(REG_BASE_OFFSET + (reg * 4))]                          ;\
-  str r2, [reg_base, #(REG_BASE_OFFSET + (reg * 4) + 128)]                    ;\
-
-#define restore_reg_scratch(reg)                                              ;\
-  ldr r2, [reg_base, #(REG_BASE_OFFSET + (reg * 4) + 128)]                    ;\
-  str r2, [reg_base, #(REG_BASE_OFFSET + (reg * 4))]                          ;\
-
-#define scratch_regs_thumb(type)                                              ;\
-  type##_reg_scratch(0)                                                       ;\
-  type##_reg_scratch(1)                                                       ;\
-  type##_reg_scratch(2)                                                       ;\
-  type##_reg_scratch(3)                                                       ;\
-  type##_reg_scratch(4)                                                       ;\
-  type##_reg_scratch(5)                                                       ;\
-
-#define scratch_regs_arm(type)                                                ;\
-  type##_reg_scratch(0)                                                       ;\
-  type##_reg_scratch(1)                                                       ;\
-  type##_reg_scratch(6)                                                       ;\
-  type##_reg_scratch(9)                                                       ;\
-  type##_reg_scratch(12)                                                      ;\
-  type##_reg_scratch(14)                                                      ;\
-
 .pool
 
 .comm memory_map_read 0x8000
