@@ -1319,7 +1319,6 @@ execute_load_open_u16u:
   ror $2, $2, 8                   # rotate value by 8bits
 
 load_u16_ftable:
-#  .long execute_load_full_u16
   .long execute_load_bios_u16     # 0x00 BIOS
   .long execute_load_open_u16     # 0x01 open address
   .long execute_load_ewram_u16    # 0x02 EWRAM
@@ -1333,7 +1332,6 @@ load_u16_ftable:
   .long execute_load_gamepakA_u16 # 0x0A gamepak
   .long execute_load_gamepakB_u16 # 0x0B gamepak
   .long execute_load_gamepakC_u16 # 0x0C gamepak
-
   .long execute_load_eeprom_u16   # 0x0D gamepak/eeprom
   .long execute_load_backup_u16   # 0x0E Flash ROM/SRAM
   .long execute_load_open_u16     # 0x0F open
@@ -1354,42 +1352,6 @@ load_u16_ftable:
   .long execute_load_eeprom_u16u  # 0x0D gamepak/eeprom unaligned
   .long execute_load_backup_u16u  # 0x0E Flash ROM/SRAM unaligned
   .long execute_load_open_u16u    # 0x0F open unaligned
-
-
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-  .long execute_load_full_u16
-
-
 
 patch_load_u16:
   patch_handler_align load_u16_ftable, 1
@@ -1921,7 +1883,6 @@ load_u32_ftable:
   .long execute_load_gamepakA_u32 # 0x0A gamepak
   .long execute_load_gamepakB_u32 # 0x0B gamepak
   .long execute_load_gamepakC_u32 # 0x0C gamepak
-
   .long execute_load_eeprom_u32   # 0x0D gamepak/eeprom
   .long execute_load_backup_u32   # 0x0E Flash ROM/SRAM
   .long execute_load_open_u32     # 0x0F open
@@ -2001,7 +1962,7 @@ execute_load_bios_u32a:
   load_u32 bios_read_protect
 
 2:
-  open_load32_a
+  open_load32_core
   nop
 
 execute_load_ewram_u32a:
@@ -2510,163 +2471,6 @@ patch_store_u32a:
   patch_handler store_u32a_ftable, 0x0F
 
 
-
-#execute_load_u8:
-execute_load_full_u8:
-  srl $1, $4, 28                  # check if the address is out of range
-  bne $1, $0, ext_load_u8         # if it is, perform an extended read
-  srl $2, $4, 15                  # $1 = page number of address
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16                # $1 = memory_map_read[address >> 15]
-  lw $1, -32768($2)
-  beq $1, $0, ext_load_u8         # if it's NULL perform an extended read
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  jr $ra                          # return
-  lbu $2, ($1)                    # read the value
-
-ext_load_u8:
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)                   # store return address
-  save_registers
-  jal read_memory8                # read the value
-  nop
-  restore_registers
-  lw $ra, ($sp)                   # restore return address
-  jr $ra                          # return
-  addiu $sp, $sp, 4               # fix stack (delay slot)
-
-#execute_load_s8:
-execute_load_full_s8:
-  srl $1, $4, 28                  # check if the address is out of range
-  bne $1, $0, ext_load_s8         # if it is, perform an extended read
-  srl $2, $4, 15                  # $1 = page number of address
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16                # $1 = memory_map_read[address >> 15]
-  lw $1, -32768($2)
-  beq $1, $0, ext_load_s8         # if it's NULL perform an extended read
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  jr $ra                          # return
-  lb $2, ($1)                     # read the value
-
-ext_load_s8:
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)                   # store return address
-  save_registers
-  jal read_memory8                # read the value
-  nop
-  restore_registers
-  seb $2, $2                      # sign extend the read value
-  lw $ra, ($sp)                   # restore return address
-  jr $ra                          # return
-  addiu $sp, $sp, 4               # fix stack (delay slot)
-
-#execute_load_u16:
-execute_load_full_u16:
-  srl $1, $4, 28                  # check if the address is out of range
-  ins $1, $4, 4, 1                # or unaligned (bottom bit)
-  bne $1, $0, ext_load_u16        # if it is, perform an extended read
-  srl $2, $4, 15                  # $1 = page number of address
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16                # $1 = memory_map_read[address >> 15]
-  lw $1, -32768($2)
-  beq $1, $0, ext_load_u16        # if it's NULL perform an extended read
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  jr $ra                          # return
-  lhu $2, ($1)                    # read the value
-
-ext_load_u16:
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)                   # store return address
-  save_registers
-  jal read_memory16               # read the value
-  nop
-  restore_registers
-  lw $ra, ($sp)                   # restore return address
-  jr $ra                          # return
-  addiu $sp, $sp, 4               # fix stack (delay slot)
-
-#execute_load_s16:
-execute_load_full_s16:
-  srl $1, $4, 28                  # check if the address is out of range
-  ins $1, $4, 4, 1                # or unaligned (bottom bit)
-  bne $1, $0, ext_load_s16        # if it is, perform an extended read
-  srl $2, $4, 15                  # $1 = page number of address
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16                # $1 = memory_map_read[address >> 15]
-  lw $1, -32768($2)
-  beq $1, $0, ext_load_s16        # if it's NULL perform an extended read
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  jr $ra                          # return
-  lh $2, ($1)                     # read the value
-
-ext_load_s16:
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)                   # store return address
-  save_registers
-  jal read_memory16_signed        # read the value
-  nop
-  restore_registers
-  seh $2, $2                      # sign extend the return value
-  lw $ra, ($sp)                   # restore return address
-  jr $ra                          # return
-  addiu $sp, $sp, 4               # fix stack (delay slot)
-
-#execute_load_u32:
-execute_load_full_u32:
-  srl $1, $4, 28                  # check if the address is out of range
-  ins $1, $4, 4, 2                # or unaligned (bottom two bits)
-  bne $1, $0, ext_load_u32        # if it is, perform an extended read
-  srl $2, $4, 15                  # $1 = page number of address
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16                # $1 = memory_map_read[address >> 15]
-  lw $1, -32768($2)
-  beq $1, $0, ext_load_u32        # if it's NULL perform an extended read
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  jr $ra                          # return
-  lw $2, ($1)                     # read the value
-
-ext_load_u32:
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)                   # store return address
-  save_registers
-  jal read_memory32               # read the value
-  nop
-  restore_registers
-  lw $ra, ($sp)                   # restore return address
-  jr $ra                          # return
-  addiu $sp, $sp, 4               # fix stack (delay slot)
-
-#execute_aligned_load32:
-  srl $2, $4, 28                  # check if the address is out of range
-  bne $2, $0, ext_aligned_load32  # if it is, perform an extended load
-  srl $1, $4, 15                  # $1 = page number of address
-  sll $1, $1, 2                   # adjust to word index
-  addu $1, $1, $16                # $1 = memory_map_read[address >> 15]
-  lw $1, -32768($1)
-  beq $1, $0, ext_aligned_load32  # if it's NULL perform an extended read
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  jr $ra                          # return
-  lw $2, ($1)                     # read the value
-
-ext_aligned_load32:
-  addiu $sp, $sp, -8              # make room on the stack for $ra
-  sw $6, 4($sp)
-  sw $ra, ($sp)                   # store return address
-  save_registers
-  jal read_memory32               # read the value
-  nop
-  restore_registers
-  lw $6, 4($sp)
-  lw $ra, ($sp)                   # restore return address
-  jr $ra                          # return
-  addiu $sp, $sp, 8               # fix stack (delay slot)
-
 # General ext memory routines
 
 ext_store_ignore:
@@ -2804,39 +2608,6 @@ ext_store_u8_jtable:
   .long ext_store_ignore  # 0x0F invalid
 
 
-
-ext_store_u8:
-  srl $1, $4, 24                  # $1 = address >> 24
-  sltu $2, $1, 16                 # check if the value is out of range
-  beq $2, $0, ext_store_ignore
-  sll $1, $1, 2                   # make address word indexed (delay)
-  lui $2, %hi(ext_store_u8_jtable)
-  addu $2, $2, $1
-  # $2 = ext_store_u8_jtable[address >> 24]
-  lw $2, %lo(ext_store_u8_jtable)($2)
-  jr $2                           # jump to table location
-  nop
-
-# $4: address to write to
-# $5: value to write
-# $6: current PC
-
-#execute_store_u8:
-  srl $1, $4, 28                  # check if the address is out of range
-  bne $1, $0, ext_store_u8        # if it is, perform an extended write
-  srl $2, $4, 15                  # $1 = page number of address (delay slot)
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16
-  lw $1, 256($2)                  # $1 = memory_map_write[address >> 15]
-  beq $1, $0, ext_store_u8        # if it's NULL perform an extended write
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  lb $2, -32768($1)               # load the SMC status
-  bne $2, $0, smc_write           # is there code there?
-  sb $5, ($1)                     # store the value (delay slot)
-  jr $ra                          # return
-  nop
-
 # 16bit ext memory routines
 
 ext_store_io16:
@@ -2919,39 +2690,6 @@ ext_store_u16_jtable:
   .long ext_store_eeprom          # 0x0D EEPROM (possibly)
   .long ext_store_ignore          # 0x0E Flash ROM/SRAM
 
-ext_store_u16:
-  srl $1, $4, 24                  # $1 = address >> 24
-  sltu $2, $1, 16                 # check if the value is out of range
-  beq $2, $0, ext_store_ignore
-  sll $1, $1, 2                   # make address word indexed (delay)
-  lui $2, %hi(ext_store_u16_jtable)
-  addu $2, $2, $1
-  # $2 = ext_store_u16_jtable[address >> 24]
-  lw $2, %lo(ext_store_u16_jtable)($2)
-  jr $2                           # jump to table location
-  nop
-
-
-#execute_store_u16:
-  srl $1, $4, 28                  # check if the address is out of range
-  bne $1, $0, ext_store_u16       # if it is, perform an extended write
-  srl $2, $4, 15                  # $1 = page number of address (delay slot)
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16
-  lw $1, 256($2)                  # $1 = memory_map_write[address >> 15]
-  beq $1, $0, ext_store_u16       # if it's NULL perform an extended write
-  andi $2, $4, 0x7FFE             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  lh $2, -32768($1)               # load the SMC status
-  bne $2, $0, smc_write           # is there code there?
-  sh $5, ($1)                     # store the value (delay slot)
-  jr $ra                          # return
-  nop
-
-
-
-
-
 
 
 
@@ -3029,24 +2767,6 @@ ext_store_u32:
   lw $2, %lo(ext_store_u32_jtable)($2)
   jr $2                           # jump to table location
   nop
-
-#execute_store_u32:
-execute_store_full_u32:
-  srl $1, $4, 28                  # check if the address is out of range
-  bne $1, $0, ext_store_u32       # if it is, perform an extended write
-  srl $2, $4, 15                  # $1 = page number of address (delay slot)
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16
-  lw $1, 256($2)                  # $1 = memory_map_write[address >> 15]
-  beq $1, $0, ext_store_u32       # if it's NULL perform an extended write
-  andi $2, $4, 0x7FFC             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  lw $2, -32768($1)               # load the SMC status
-  bne $2, $0, smc_write           # is there code there?
-  sw $5, ($1)                     # store the value (delay slot)
-  jr $ra                          # return
-  nop
-
 
 # 32bit ext aligned, non a2 destroying routines
 
