@@ -311,9 +311,9 @@ u16 palette_ram_converted[512];
 u16 io_registers[1024 * 16];
 u8 ewram[1024 * 256 * 2];
 u8 iwram[1024 * 32 * 2];
-u8 vram[1024 * 96 * 2];
+u8 vram[1024 * 96];
 
-u8 bios_rom[1024 * 32];
+u8 bios_rom[1024 * 16 * 2];
 u32 bios_read_protect;
 
 // Up to 128kb, store SRAM, flash ROM, or EEPROM here.
@@ -3144,16 +3144,6 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
     memory_map_##type[map_offset + 3] = vram + (0x8000 * 2);                  \
   }                                                                           \
 
-#define map_vram_firstpage(type)                                              \
-  for(map_offset = 0x6000000 / 0x8000; map_offset < (0x7000000 / 0x8000);     \
-   map_offset += 4)                                                           \
-  {                                                                           \
-    memory_map_##type[map_offset] = vram;                                     \
-    memory_map_##type[map_offset + 1] = NULL;                                 \
-    memory_map_##type[map_offset + 2] = NULL;                                 \
-    memory_map_##type[map_offset + 3] = NULL;                                 \
-  }                                                                           \
-
 
 // Picks a page to evict
 u32 page_time = 0;
@@ -3331,6 +3321,7 @@ void init_memory(void)
   // This is because VRAM cannot be efficiently made incontiguous, and still allow
   // the renderer to work as efficiently. It would, at the very least, require a
   // lot of hacking of the renderer which I'm not prepared to do.
+  // TODO(davidgfnet): add SMC VRAM detection
 
   // However, it IS possible to directly map the first page no matter what because
   // there's 32kb of blank stuff sitting beneath it.

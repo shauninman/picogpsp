@@ -196,16 +196,16 @@ extern u32 gbc_sound_update;
 extern u32 gbc_sound_wave_update;
 extern dma_transfer_type dma[4];
 
+extern u32 bios_read_protect;
 extern u16 palette_ram[512];
 extern u16 oam_ram[512];
 extern u16 palette_ram_converted[512];
 extern u16 io_registers[1024 * 16];
+extern u8 vram[1024 * 96];
+// Double buffer used for SMC detection
+extern u8 bios_rom[1024 * 16 * 2];
 extern u8 ewram[1024 * 256 * 2];
 extern u8 iwram[1024 * 32 * 2];
-extern u8 vram[1024 * 96 * 2];
-
-extern u8 bios_rom[1024 * 32];
-extern u32 bios_read_protect;
 
 extern u8 *memory_map_read[8 * 1024];
 extern u32 *reg;
