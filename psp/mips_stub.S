@@ -2807,31 +2807,6 @@ ext_store_u32a_jtable:
   .long ext_store_ignore          # 0x0D EEPROM (nothing will write this)
   .long ext_store_ignore          # 0x0E Flash ROM/SRAM
 
-ext_aligned_store32:
-  srl $1, $4, 24                  # $1 = address >> 24
-  sltu $2, $1, 16                 # check if the value is out of range
-  beq $2, $0, ext_store_ignore
-  sll $1, $1, 2                   # make address word indexed (delay)
-  lui $2, %hi(ext_store_u32a_jtable)
-  addu $2, $2, $1
-  # $2 = ext_store_u32a_jtable[address >> 24]
-  lw $2, %lo(ext_store_u32a_jtable)($2)
-  jr $2                           # jump to table location
-  nop
-
-#execute_aligned_store32:
-  srl $2, $4, 28                  # check if the address is out of range
-  bne $2, $0, ext_aligned_store32 # if it is, perform an extended load
-  srl $1, $4, 15                  # $1 = page number of address
-  sll $1, $1, 2                   # adjust to word index
-  addu $1, $1, $16                # $1 = memory_map_write[address >> 15]
-  lw $1, 256($1)
-  beq $1, $0, ext_aligned_store32 # if it's NULL perform an extended write
-  andi $2, $4, 0x7FFF             # $2 = low 15bits of address (delay slot)
-  addu $1, $1, $2                 # add the memory map offset
-  jr $ra                          # return
-  sw $5, ($1)                     # write the value
-
 smc_write:
   save_registers
   jal flush_translation_cache_ram # flush translation cache
