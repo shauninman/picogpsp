@@ -199,7 +199,7 @@ static void sound_control_x(u32 value)
 
 #define sound_update_frequency_step(timer_number)                             \
   timer[timer_number].frequency_step =                                        \
-   float_to_fp8_24(GBC_BASE_RATE / (timer_reload * sound_frequency))          \
+   float_to_fp8_24((GBC_BASE_RATE / sound_frequency) / (timer_reload))        \
 
 /* Main */
 extern timer_type timer[4];
