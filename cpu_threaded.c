@@ -62,6 +62,8 @@ __asm__(".section .jit,\"awx\",%progbits");
 __asm__(".section .jit,\"awx\",%nobits");
 #endif
 
+u32 stub_arena[STUB_ARENA_SIZE]
+        __attribute__ ((aligned(4),section(".jit")));
 u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE]
 		__attribute__ ((aligned(4),section(".jit")));
 u8 *rom_translation_ptr = rom_translation_cache;
@@ -3773,3 +3775,5 @@ void dump_translation_cache(void)
    bios_translation_ptr - bios_translation_cache, fd);
   fclose(fd);
 }
+
+

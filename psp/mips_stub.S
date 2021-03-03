@@ -23,16 +23,16 @@
 .global mips_indirect_branch_arm
 .global mips_indirect_branch_thumb
 .global mips_indirect_branch_dual
-.global execute_load_u8
-.global execute_load_u16
-.global execute_load_u32
-.global execute_load_s8
-.global execute_load_s16
-.global execute_store_u8
-.global execute_store_u16
-.global execute_store_u32
-.global execute_aligned_load32
-.global execute_aligned_store32
+#.global execute_load_u8
+#.global execute_load_u16
+#.global execute_load_u32
+#.global execute_load_s8
+#.global execute_load_s16
+#.global execute_store_u8
+#.global execute_store_u16
+#.global execute_store_u32
+#.global execute_aligned_load32
+#.global execute_aligned_store32
 .global execute_read_cpsr
 .global execute_read_spsr
 .global execute_swi
@@ -48,9 +48,15 @@
 .global reg_check
 .global palette_ram
 .global palette_ram_converted
+.global init_emitter
+.global mips_lookup_pc
 
+.global write_io_epilogue
 .global memory_map_read
 .global memory_map_write
+.global tmemld
+.global tmemst
+.global tmemst
 .global reg
 .global spsr
 .global reg_mode
@@ -105,7 +111,6 @@
 .equ REG_R12,             (12 * 4)
 .equ REG_R13,             (13 * 4)
 .equ REG_R14,             (14 * 4)
-.equ REG_LR,              (14 * 4)
 .equ REG_PC,              (15 * 4)
 .equ REG_N_FLAG,          (16 * 4)
 .equ REG_Z_FLAG,          (17 * 4)
@@ -1004,7 +1009,7 @@ execute_load_ewram_u8:
 # Put the generic address over the handler you want to be default
 # IWRAM is typically the most frequently read and written to.
 
-execute_load_u8:
+# execute_load_u8:
 execute_load_iwram_u8:
   translate_region 3, patch_load_u8, (iwram + 0x8000), 0x7FFF
   load_u8 (iwram + 0x8000)
@@ -1107,7 +1112,7 @@ execute_load_ewram_s8:
   translate_region_ewram patch_load_s8
   load_s8 (ewram + 0x8000)
 
-execute_load_s8:
+#execute_load_s8:
 execute_load_iwram_s8:
   translate_region 3, patch_load_s8, (iwram + 0x8000), 0x7FFF
   load_s8 (iwram + 0x8000)
@@ -1209,7 +1214,7 @@ execute_load_ewram_u16:
   translate_region_ewram_load_align 1, 0, patch_load_u16
   load_u16 (ewram + 0x8000)
 
-execute_load_u16:
+#execute_load_u16:
 execute_load_iwram_u16:
   translate_region_align 3, 1, 0, patch_load_u16, (iwram + 0x8000), 0x7FFF
   load_u16 (iwram + 0x8000)
@@ -1408,7 +1413,7 @@ execute_load_ewram_s16:
   translate_region_ewram_load_align 1, 0, patch_load_s16
   load_s16 (ewram + 0x8000)
 
-execute_load_s16:
+#execute_load_s16:
 execute_load_iwram_s16:
   translate_region_align 3, 1, 0, patch_load_s16, (iwram + 0x8000), 0x7FFF
   load_s16 (iwram + 0x8000)
@@ -1607,7 +1612,7 @@ execute_load_ewram_u32:
   translate_region_ewram_load_align 2, 0, patch_load_u32
   load_u32 (ewram + 0x8000)
 
-execute_load_u32:
+#execute_load_u32:
 execute_load_iwram_u32:
   translate_region_align 3, 2, 0, patch_load_u32, (iwram + 0x8000), 0x7FFF
   load_u32 (iwram + 0x8000)
@@ -1993,7 +1998,7 @@ execute_load_ewram_u32a:
   translate_region_ewram patch_load_u32a
   load_u32 (ewram + 0x8000)
 
-execute_aligned_load32:
+#execute_aligned_load32:
 execute_load_iwram_u32a:
   translate_region 3, patch_load_u32a, (iwram + 0x8000), 0x7FFF
   load_u32 (iwram + 0x8000)
@@ -2078,7 +2083,7 @@ execute_store_ewram_u8:
   translate_region_ewram patch_store_u8
   store_u8_smc (ewram + 0x8000)
 
-execute_store_u8:
+#execute_store_u8:
 execute_store_iwram_u8:
   translate_region 3, patch_store_u8, (iwram + 0x8000), 0x7FFF
   store_u8_smc (iwram + 0x8000)
@@ -2175,7 +2180,7 @@ execute_store_ewram_u16:
   translate_region_ewram_store_align16 patch_store_u16
   store_u16_smc (ewram + 0x8000)
 
-execute_store_u16:
+#execute_store_u16:
 execute_store_iwram_u16:
   translate_region 3, patch_store_u16, (iwram + 0x8000), 0x7FFE
   store_u16_smc (iwram + 0x8000)
@@ -2274,7 +2279,7 @@ execute_store_ewram_u32:
   translate_region_ewram_store_align32 patch_store_u32
   store_u32_smc (ewram + 0x8000)
 
-execute_store_u32:
+#execute_store_u32:
 execute_store_iwram_u32:
   translate_region 3, patch_store_u32, (iwram + 0x8000), 0x7FFC
   store_u32_smc (iwram + 0x8000)
@@ -2380,7 +2385,7 @@ execute_store_ewram_u32a:
   translate_region_ewram_store_align32 patch_store_u32a
   store_u32 (ewram + 0x8000)
 
-execute_aligned_store32:
+#execute_aligned_store32:
 execute_store_iwram_u32a:
   translate_region 3, patch_store_u32a, (iwram + 0x8000), 0x7FFC
   store_u32 (iwram + 0x8000)
@@ -2529,6 +2534,7 @@ smc_write:
   jal flush_translation_cache_ram # flush translation cache
   sw $6, REG_PC($16)              # save PC (delay slot)
 
+mips_lookup_pc:
 lookup_pc:
   lw $2, REG_CPSR($16)            # $2 = cpsr
   andi $2, $2, 0x20               # isolate mode bit
@@ -2624,8 +2630,7 @@ execute_store_cpsr:
   and $2, $2, $4                  # $2 = (cpsr & (~store_mask))
   or $1, $1, $2                   # $1 = new cpsr combined with old
   extract_flags_body              # extract flags from $1
-  addiu $sp, $sp, -4
-  sw $ra, ($sp)
+  sw $ra, REG_SAVE3($16)
   save_registers
   jal execute_store_cpsr_body     # do the dirty work in this C function
   addu $4, $1, $0                 # load the new CPSR (delay slot)
@@ -2635,16 +2640,16 @@ execute_store_cpsr:
 
   restore_registers
 
-  lw $ra, ($sp)
+  lw $ra, REG_SAVE3($16)
   jr $ra
-  addiu $sp, $sp, 4
+  nop
 
 changed_pc_cpsr:
   jal block_lookup_address_arm    # GBA address is in $4
   addu $4, $2, $0                 # load new address in $4 (delay slot)
   restore_registers               # restore registers
   jr $2                           # jump to the new address
-  addiu $sp, $sp, 4               # get rid of the old ra (delay slot)
+  nop
 
 
 # $4: new spsr
@@ -2797,11 +2802,14 @@ execute_arm_translate:
 .data
 .align 6
 
+memory_map_write:
+  .space 0x8000
+
 memory_map_read:
   .space 0x8000
 
-# This must be between memory_map_read and memory_map_write because it's used
-# to calculate their addresses elsewhere in this file.
+# memory_map_read is immediately before arm_reg on purpose (offset used
+# to access it, via lw op). We do not use write though.
 reg:
   .space 0x100
 
@@ -2815,5 +2823,14 @@ spsr:
 reg_mode:
   .space 196    # u32[7][7];
 
-memory_map_write:
-  .space 0x8000
+# Here we store:
+#  void *tmemld[11][16];  # 10 types of loads
+#  void *tmemst[ 4][16];  #  3 types of stores
+# Essentially a list of pointers to the different mem load handlers
+# Keep them close for a fast patcher.
+tmemld:
+  .space 704
+tmemst:
+  .space 256
+
+

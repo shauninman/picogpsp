@@ -427,7 +427,7 @@ u32 eeprom_address = 0;
 s32 eeprom_counter = 0;
 u8 eeprom_buffer[8];
 
-void function_cc write_eeprom(u32 address, u32 value)
+void function_cc write_eeprom(u32 unused_address, u32 value)
 {
   switch(eeprom_mode)
   {
@@ -749,6 +749,7 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
 
 cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
 {
+  value &= 0xff;
   switch(address)
   {
     case 0x00:
@@ -1165,6 +1166,7 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
 
 cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
 {
+  value &= 0xffff;
   switch(address)
   {
     case 0x00:

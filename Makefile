@@ -403,8 +403,8 @@ ifeq ($(DEBUG), 1)
 	OPTIMIZE_SAFE := -O0 -g
 	OPTIMIZE      := -O0 -g
 else
-	OPTIMIZE_SAFE := -O2 -DNDEBUG
-	OPTIMIZE      := -O3 -DNDEBUG
+	OPTIMIZE_SAFE := -O2 -DNDEBUG -g
+	OPTIMIZE      := -O3 -DNDEBUG -g
 endif
 
 
