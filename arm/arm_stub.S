@@ -140,12 +140,8 @@
 #define restore_flags()                                                      ;\
   msr cpsr_f, reg_flags                                                      ;\
 
-#ifdef __ARM_EABI__
-  @ must align stack
-  #define call_c_saved_regs r2, r3, r12, lr
-#else
-  #define call_c_saved_regs r3, r12, lr
-#endif
+@ Align the stack to 64 bits (ABIs that don't require it, still recommend so)
+#define call_c_saved_regs r2, r3, r12, lr
 
 @ Calls a C function - all caller save registers which are important to the
 @ dynarec and to returning from this function are saved.
@@ -518,7 +514,7 @@ _execute_arm_translate:
 
 #define execute_store_body(store_type, store_op)                             ;\
   save_flags()                                                               ;\
-  stmdb sp!, { lr }                       /* save lr                       */;\
+  str lr, [reg_base, #REG_SAVE3]          /* save lr                       */;\
   tst r0, #0xF0000000                     /* make sure address is in range */;\
   bne ext_store_u##store_type             /* if not do ext store           */;\
                                                                              ;\
@@ -558,18 +554,18 @@ _execute_store_u##store_type:                                                ;\
                                                                              ;\
   cmp r0, #0                              /* see if it's not 0             */;\
   bne 2f                                  /* if so perform smc write       */;\
-  ldmia sp!, { lr }                       /* restore lr                    */;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* restore lr                    */;\
   restore_flags()                                                            ;\
   add pc, lr, #4                          /* return                        */;\
                                                                              ;\
 2:                                                                           ;\
-  ldmia sp!, { lr }                       /* restore lr                    */;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* restore lr                    */;\
   ldr r0, [lr]                            /* load PC                       */;\
   str r0, [reg_base, #REG_PC]             /* write out PC                  */;\
   b smc_write                             /* perform smc write             */;\
                                                                              ;\
 ext_store_u##store_type:                                                     ;\
-  ldmia sp!, { lr }                       /* pop lr off of stack           */;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
   ldr r2, [lr]                            /* load PC                       */;\
   str r2, [reg_base, #REG_PC]             /* write out PC                  */;\
   store_align_##store_type()                                                 ;\
@@ -587,10 +583,10 @@ execute_store_u32_safe:
 _execute_store_u32_safe:
   execute_store_body(32_safe, str)
   restore_flags()
-  ldmia sp!, { pc }                       @ return
+  ldr pc, [reg_base, #REG_SAVE3]          @ return
 
 ext_store_u32_safe:
-  ldmia sp!, { lr }                       @ Restore lr
+  ldr lr, [reg_base, #REG_SAVE3]          @ Restore lr
   call_c_function(write_memory32)         @ Perform 32bit store
   restore_flags()
   bx lr                                   @ Return
@@ -779,13 +775,13 @@ execute_gamepak_ptr:
   cmp r1, #0                              @ see if map entry is NULL
   bne 2f                                  @ if not resume
 
-  stmdb sp!, { r0 }                       @ save r0 on stack
+  str r0, [reg_base, #REG_SAVE2]          @ save r0 on the temp memory
   mov r2, r2, lsl #20                     @ isolate page index
   mov r0, r2, lsr #20
   call_c_function(load_gamepak_page)      @ read new page into r0
 
   mov r1, r0                              @ new map = return
-  ldmia sp!, { r0 }                       @ restore r0
+  ldr r0, [reg_base, #REG_SAVE2]          @ restore r0
 
 2:
   mov r0, r0, lsl #17                     @ isolate bottom 15 bits
@@ -828,7 +824,7 @@ execute_open_ptr:
   ldr r1, [reg_base, #REG_CPSR]           @ r1 = cpsr
   save_flags()
 
-  stmdb sp!, { r0 }                       @ save r0
+  str r0, [reg_base, #REG_SAVE2]          @ save r0
 
   ldr r0, [lr, #-4]                       @ r0 = current PC
 
@@ -842,7 +838,7 @@ execute_open_ptr:
   add r1, r1, reg_base
   str r0, [r1]                            @ write out
 
-  ldmia sp!, { r0 }                       @ restore r0
+  ldr r0, [reg_base, #REG_SAVE2]          @ restore r0
   and r0, r0, #0x03                       @ isolate bottom 2 bits
 
   restore_flags()
@@ -858,7 +854,7 @@ execute_open_ptr:
   add r1, r1, reg_base
   str r0, [r1]                            @ write out
 
-  ldmia sp!, { r0 }                       @ restore r0
+  ldr r0, [reg_base, #REG_SAVE2]          @ restore r0
   and r0, r0, #0x03                       @ isolate bottom 2 bits
 
   restore_flags();
