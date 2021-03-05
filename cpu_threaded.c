@@ -54,7 +54,7 @@ u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
 u8 *bios_translation_ptr = bios_translation_cache;
 #elif defined(ARM_MEMORY_DYNAREC)
-__asm__(".section .jit,\"awx\",%progbits");
+__asm__(".section .jit,\"awx\",%nobits");
 
 u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE]
 		__attribute__ ((aligned(4),section(".jit")));
@@ -67,6 +67,8 @@ u8 *ram_translation_ptr = ram_translation_cache;
 u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE]
 		__attribute__ ((aligned(4),section(".jit")));
 u8 *bios_translation_ptr = bios_translation_cache;
+
+__asm__(".section .text");
 #else
 u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
 u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
