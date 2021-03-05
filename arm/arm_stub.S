@@ -40,6 +40,8 @@
 #define CPU_HALT_STATE    (30 * 4)
 #define CHANGED_PC_STATUS (31 * 4)
 
+#define REG_HOST_SP       (32 * 4)
+
 
 #define reg_a0            r0
 #define reg_a1            r1
@@ -141,13 +143,15 @@
 @ Align the stack to 64 bits (ABIs that don't require it, still recommend so)
 #define call_c_saved_regs r2, r3, r12, lr
 
-@ Calls a C function - all caller save registers which are important to the
-@ dynarec and to returning from this function are saved.
+@ Calls a C function - reloads the stack pointer and saves all caller save
+@ registers which are important to the dynarec.
 
 #define call_c_function(function)                                            ;\
+  ldr sp, [reg_base, #REG_HOST_SP]                                           ;\
   stmdb sp!, { call_c_saved_regs }                                           ;\
   bl function                                                                ;\
   ldmia sp!, { call_c_saved_regs }                                           ;\
+  ldr sp, =base_reg_area                                                     ;\
 
 
 @ Update the GBA hardware (video, sound, input, etc)
@@ -475,7 +479,9 @@ execute_swi_function_builder(div, thumb)
 .globl _execute_arm_translate
 execute_arm_translate:
 _execute_arm_translate:
-  sub sp, sp, #0x100                      @ allocate room for register data
+  ldr r1, =base_reg_area                  @ base_reg_area to r1
+  str sp, [r1, #REG_HOST_SP]              @ store the current sp
+  ldr sp, =base_reg_area                  @ reg_base = sp (loading addr)
 
   mvn reg_cycles, r0                      @ load cycle counter
 
@@ -603,7 +609,7 @@ write_epilogue:
   store_registers_arm()                   @ save ARM registers
 
 3:
-  bl update_gba                           @ update GBA until CPU isn't halted
+  call_c_function(update_gba)             @ update GBA until CPU isn't halted
 
   mvn reg_cycles, r0                      @ load new cycle count
   ldr r0, [reg_base, #REG_PC]             @ load new PC
@@ -726,4 +732,9 @@ execute_load_builder(u32, 32, ldrne, #0xF0000000)
 
 .comm memory_map_read 0x8000
 .comm memory_map_write 0x8000
+
+.data
+
+base_reg_area:
+  .space 0x100, 0
 
