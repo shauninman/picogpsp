@@ -63,12 +63,6 @@ void execute_store_u32_safe(u32 address, u32 source);
   (((((u32)offset - (u32)source) - 8) >> 2) & 0xFFFFFF)                       \
 
 
-/* reg_base_offset is the amount of bytes after reg_base where the registers
- * actually begin. */
-
-#define reg_base_offset 1024
-
-
 #define reg_a0          ARMREG_R0
 #define reg_a1          ARMREG_R1
 #define reg_a2          ARMREG_R2
@@ -486,8 +480,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     u32 reg_use = arm_register_allocation[reg_index];                         \
     if(reg_use == mem_reg)                                                    \
     {                                                                         \
-      ARM_LDR_IMM(0, scratch_reg, reg_base,                                   \
-       (reg_base_offset + (reg_index * 4)));                                  \
+      ARM_LDR_IMM(0, scratch_reg, reg_base, (reg_index * 4));                 \
       return scratch_reg;                                                     \
     }                                                                         \
                                                                               \
@@ -517,8 +510,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
   {                                                                           \
     if(arm_register_allocation[reg_index] == mem_reg)                         \
     {                                                                         \
-      ARM_STR_IMM(0, scratch_reg, reg_base,                                   \
-       (reg_base_offset + (reg_index * 4)));                                  \
+      ARM_STR_IMM(0, scratch_reg, reg_base, (reg_index * 4));                 \
     }                                                                         \
   }                                                                           \
                                                                               \
@@ -559,7 +551,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     }                                                                         \
     else                                                                      \
     {                                                                         \
-      ARM_LDR_IMM(0, ireg, reg_base, (reg_base_offset + (reg_index * 4)));    \
+      ARM_LDR_IMM(0, ireg, reg_base, (reg_index * 4));                        \
     }                                                                         \
   }                                                                           \
                                                                               \
@@ -572,7 +564,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     }                                                                         \
     else                                                                      \
     {                                                                         \
-      ARM_STR_IMM(0, ireg, reg_base, (reg_base_offset + (reg_index * 4)));    \
+      ARM_STR_IMM(0, ireg, reg_base, (reg_index * 4));                        \
     }                                                                         \
   }                                                                           \
 
@@ -583,8 +575,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     u32 reg_use = thumb_register_allocation[reg_index];                       \
     if(reg_use == mem_reg)                                                    \
     {                                                                         \
-      ARM_LDR_IMM(0, scratch_reg, reg_base,                                   \
-       (reg_base_offset + (reg_index * 4)));                                  \
+      ARM_LDR_IMM(0, scratch_reg, reg_base, (reg_index * 4));                 \
       return scratch_reg;                                                     \
     }                                                                         \
                                                                               \
@@ -614,8 +605,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
   {                                                                           \
     if(thumb_register_allocation[reg_index] == mem_reg)                       \
     {                                                                         \
-      ARM_STR_IMM(0, scratch_reg, reg_base,                                   \
-       (reg_base_offset + (reg_index * 4)));                                  \
+      ARM_STR_IMM(0, scratch_reg, reg_base, (reg_index * 4));                 \
     }                                                                         \
   }                                                                           \
                                                                               \
@@ -628,7 +618,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     }                                                                         \
     else                                                                      \
     {                                                                         \
-      ARM_LDR_IMM(0, ireg, reg_base, (reg_base_offset + (reg_index * 4)));    \
+      ARM_LDR_IMM(0, ireg, reg_base, (reg_index * 4));                        \
     }                                                                         \
   }                                                                           \
                                                                               \
@@ -641,7 +631,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
     }                                                                         \
     else                                                                      \
     {                                                                         \
-      ARM_STR_IMM(0, ireg, reg_base, (reg_base_offset + (reg_index * 4)));    \
+      ARM_STR_IMM(0, ireg, reg_base, (reg_index * 4));                        \
     }                                                                         \
   }                                                                           \
 
