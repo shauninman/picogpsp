@@ -2839,7 +2839,7 @@ u32 translation_flush_count = 0;
 
 
 #define block_lookup_address_builder(type)                                    \
-u8 *block_lookup_address_##type(u32 pc)                           	      \
+u8 function_cc *block_lookup_address_##type(u32 pc)                           \
 {                                                                             \
   u16 *location;                                                              \
   u32 block_tag;                                                              \
@@ -2848,8 +2848,7 @@ u8 *block_lookup_address_##type(u32 pc)                           	      \
   /* Starting at the beginning, we allow for one translation cache flush. */  \
   if(translation_recursion_level == 0){                                       \
     translation_flush_count = 0;                                              \
-		                                                              \
-	}																																						\
+  }	                                                                          \
   block_lookup_address_pc_##type();                                           \
                                                                               \
   switch(pc >> 24)                                                            \

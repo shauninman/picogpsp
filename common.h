@@ -31,6 +31,12 @@
   #define PATH_SEPARATOR_CHAR '/'
 #endif
 
+#ifdef X86_ARCH
+  #define function_cc __attribute__((regparm(2)))
+#else
+  #define function_cc
+#endif
+
 #ifdef ARM_ARCH
 
 #define _BSD_SOURCE // sync
