@@ -442,6 +442,8 @@ endif
 
 ifeq ($(CPU_ARCH), arm)
 DEFINES += -DARM_ARCH
+else ifeq ($(CPU_ARCH), x86_32)
+DEFINES += -DX86_ARCH
 endif
 
 

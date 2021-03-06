@@ -437,7 +437,7 @@ u32 eeprom_address = 0;
 s32 eeprom_counter = 0;
 u8 eeprom_buffer[8];
 
-void write_eeprom(u32 address, u32 value)
+void function_cc write_eeprom(u32 address, u32 value)
 {
   switch(eeprom_mode)
   {
@@ -554,7 +554,7 @@ void write_eeprom(u32 address, u32 value)
     value = current_instruction | (current_instruction << 16);                \
   }                                                                           \
 
-u32 read_eeprom(void)
+u32 function_cc read_eeprom(void)
 {
   u32 value;
 
@@ -757,7 +757,7 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
 #define access_register16_low(address)                                        \
   value = ((address16(io_registers, address + 2)) << 16) | value              \
 
-cpu_alert_type write_io_register8(u32 address, u32 value)
+cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
 {
   switch(address)
   {
@@ -1173,7 +1173,7 @@ cpu_alert_type write_io_register8(u32 address, u32 value)
   return CPU_ALERT_NONE;
 }
 
-cpu_alert_type write_io_register16(u32 address, u32 value)
+cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
 {
   switch(address)
   {
@@ -1426,7 +1426,7 @@ cpu_alert_type write_io_register16(u32 address, u32 value)
 }
 
 
-cpu_alert_type write_io_register32(u32 address, u32 value)
+cpu_alert_type function_cc write_io_register32(u32 address, u32 value)
 {
   switch(address)
   {
@@ -1505,7 +1505,7 @@ cpu_alert_type write_io_register32(u32 address, u32 value)
 }                                                                             \
 
 
-void write_backup(u32 address, u32 value)
+void function_cc write_backup(u32 address, u32 value)
 {
   value &= 0xFF;
 
@@ -1703,7 +1703,7 @@ static u32 encode_bcd(u8 value)
                                                                               \
   address16(map, update_address & 0x7FFF) = _value                            \
 
-void write_rtc(u32 address, u32 value)
+void function_cc write_rtc(u32 address, u32 value)
 {
   u32 rtc_page_index;
   u32 update_address;
@@ -1970,14 +1970,14 @@ void write_rtc(u32 address, u32 value)
       break;                                                                  \
   }                                                                           \
 
-u8 read_memory8(u32 address)
+u8 function_cc read_memory8(u32 address)
 {
   u8 value;
   read_memory(8);
   return value;
 }
 
-u16 read_memory16_signed(u32 address)
+u16 function_cc read_memory16_signed(u32 address)
 {
   u16 value;
 
@@ -1991,7 +1991,7 @@ u16 read_memory16_signed(u32 address)
 
 // unaligned reads are actually 32bit
 
-u32 read_memory16(u32 address)
+u32 function_cc read_memory16(u32 address)
 {
   u32 value;
 
@@ -2010,7 +2010,7 @@ u32 read_memory16(u32 address)
 }
 
 
-u32 read_memory32(u32 address)
+u32 function_cc read_memory32(u32 address)
 {
   u32 value;
   if(address & 0x03)
@@ -2028,19 +2028,19 @@ u32 read_memory32(u32 address)
   return value;
 }
 
-cpu_alert_type write_memory8(u32 address, u8 value)
+cpu_alert_type function_cc write_memory8(u32 address, u8 value)
 {
   write_memory(8);
   return CPU_ALERT_NONE;
 }
 
-cpu_alert_type write_memory16(u32 address, u16 value)
+cpu_alert_type function_cc write_memory16(u32 address, u16 value)
 {
   write_memory(16);
   return CPU_ALERT_NONE;
 }
 
-cpu_alert_type write_memory32(u32 address, u32 value)
+cpu_alert_type function_cc write_memory32(u32 address, u32 value)
 {
   write_memory(32);
   return CPU_ALERT_NONE;
