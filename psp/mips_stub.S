@@ -277,19 +277,17 @@ mips_indirect_branch_dual:
   lui $2, %hi(\ftable)
   addu $2, $2, $1
   lw $2, %lo(\ftable)($2)         # new function handler is in $2
-  srl $2, $2, 2                   # remove lower two bits
+  sll $1, $2, 4                   # shift left by 4 (6 LSB are zero)
+  ori $1, $1, 3                   # Insert the opcode in the LSB
+  ror $1, $1, 6                   # Rotate to the opcode is now in the MSB
 
-  lui $1, %hi(3 << 26)            # $1 = 3 (JAL opcode)
-  ins $1, $2, 0, 26               # insert offset into jal
+  sw $1, -8($ra)                  # Overwrite jal instruction w/ new handler
 
-  addiu $ra, $ra, -8              # rewind return address to function call
-  sw $1, ($ra)                    # modify to call new handler
+  cache 0x1a, -8($ra)             # hit writeback dcache line
+  cache 0x08, -8($ra)             # hit invalidate icache line
+  jr $2                           # Jump to new handler directly
+  nop
 
-  cache 0x1a, ($ra)               # hit writeback dcache line
-  cache 0x08, ($ra)               # hit invalidate icache line
-
-  jr $ra                          # return
-  nop                             # wary of putting cache here
 .endm
 
 
@@ -311,19 +309,17 @@ mips_indirect_branch_dual:
   addu $2, $2, $1
   lw $2, %lo(\ftable)($2)         # new function handler is in $2
 
-  srl $2, $2, 2                   # remove lower two bits
+  sll $1, $2, 4                   # Build the new JAL instruction
+  ori $1, $1, 3                   # same as above.
+  ror $1, $1, 6
 
-  lui $1, %hi(3 << 26)            # $1 = 3 (JAL opcode)
-  ins $1, $2, 0, 26               # insert offset into jal
+  sw $1, -8($ra)                  # modify to call new handler
 
-  addiu $ra, $ra, -8              # rewind return address to function call
-  sw $1, ($ra)                    # modify to call new handler
+  cache 0x1a, -8($ra)             # hit writeback dcache line
+  cache 0x08, -8($ra)             # hit invalidate icache line
+  jr $2                           # Jump to new handler
+  nop
 
-  cache 0x1a, ($ra)               # hit writeback dcache line
-  cache 0x08, ($ra)               # hit invalidate icache line
-
-  jr $ra                          # return
-  nop                             # wary of putting cache here
 .endm
 
 
