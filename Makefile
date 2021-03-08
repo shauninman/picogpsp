@@ -4,7 +4,6 @@ FRONTEND_SUPPORTS_RGB565=1
 FORCE_32BIT_ARCH=0
 HAVE_MMAP=0
 HAVE_MMAP_WIN32=0
-USE_LIBCO=1
 
 UNAME=$(shell uname -a)
 
@@ -391,7 +390,6 @@ else ifeq ($(platform), gcw0)
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
-	USE_LIBCO = 0
 
 # Windows
 else
@@ -429,12 +427,6 @@ include Makefile.common
 OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
 
 DEFINES := -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline -Wall
-
-ifeq ($(USE_LIBCO), 1)
-DEFINES += -DUSE_LIBCO
-else
-LDFLAGS += -lpthread
-endif
 
 ifeq ($(HAVE_DYNAREC), 1)
 DEFINES += -DHAVE_DYNAREC
@@ -490,9 +482,6 @@ endif
 
 cpu_threaded.o: cpu_threaded.c
 	$(CC) $(CFLAGS) -Wno-unused-variable -Wno-unused-label $(OPTIMIZE_SAFE) $(INCDIRS) -c -o $@ $<
-
-libco/libco.o: libco/libco.c
-	$(CC) $(INCFLAGS) $(CFLAGS) $(OPTIMIZE) -c  -o $@ $<
 
 %.o: %.S
 	$(CC) $(ASFLAGS) $(CFLAGS) $(OPTIMIZE) -c -o $@ $<

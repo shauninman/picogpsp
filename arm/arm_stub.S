@@ -39,9 +39,9 @@
 #define CPU_MODE          (29 * 4)
 #define CPU_HALT_STATE    (30 * 4)
 #define CHANGED_PC_STATUS (31 * 4)
+#define COMPLETED_FRAME   (32 * 4)
 
-#define REG_HOST_SP       (32 * 4)
-
+#define MAIN_THREAD_SP    (33 * 4)
 
 #define reg_a0            r0
 #define reg_a1            r1
@@ -147,11 +147,11 @@
 @ registers which are important to the dynarec.
 
 #define call_c_function(function)                                            ;\
-  ldr sp, [reg_base, #REG_HOST_SP]                                           ;\
+  ldr sp, [reg_base, #MAIN_THREAD_SP]                                        ;\
   stmdb sp!, { call_c_saved_regs }                                           ;\
   bl function                                                                ;\
   ldmia sp!, { call_c_saved_regs }                                           ;\
-  ldr sp, =base_reg_area                                                     ;\
+  ldr sp, =reg                                                               ;\
 
 
 @ Update the GBA hardware (video, sound, input, etc)
@@ -186,7 +186,16 @@ _arm_update_gba_##name:                                                      ;\
   collapse_flags(r0)                      /* update the flags              */;\
                                                                              ;\
   store_registers_##mode()                /* save out registers            */;\
+wait_halt_##name:                                                            ;\
   call_c_function(update_gba)             /* update GBA state              */;\
+                                                                             ;\
+  ldr r1, [reg_base, #COMPLETED_FRAME]    /* return if new frame           */;\
+  cmp r1, #0                                                                 ;\
+  bne return_to_main                                                         ;\
+                                                                             ;\
+  ldr r1, [reg_base, #CPU_HALT_STATE]     /* keep iterating if halted      */;\
+  cmp r1, #0                                                                 ;\
+  bne wait_halt_##name                                                       ;\
                                                                              ;\
   mvn reg_cycles, r0                      /* load new cycle count          */;\
                                                                              ;\
@@ -479,14 +488,20 @@ execute_swi_function_builder(div, thumb)
 .globl _execute_arm_translate
 execute_arm_translate:
 _execute_arm_translate:
-  ldr r1, =base_reg_area                  @ base_reg_area to r1
-  str sp, [r1, #REG_HOST_SP]              @ store the current sp
-  ldr sp, =base_reg_area                  @ reg_base = sp (loading addr)
+
+  @ save the registers to be able to return later
+  stmdb sp!, { r4, r5, r6, r7, r8, r9, r10, r11, r12, lr }
+
+  ldr r1, =reg                            @ reg to r1
+  str sp, [r1, #MAIN_THREAD_SP]           @ store the current sp
+  ldr sp, =reg                            @ reg_base = sp (loading addr)
 
   mvn reg_cycles, r0                      @ load cycle counter
 
-  mov r0, reg_base                        @ load reg_base into first param
-  call_c_function(move_reg)               @ make reg_base the new reg ptr
+  @ Check whether the CPU is sleeping already, we should just wait for IRQs
+  ldr r1, [reg_base, #CPU_HALT_STATE]
+  cmp r1, #0
+  bne alert_loop
 
   ldr r0, [reg_base, #REG_PC]             @ r0 = current pc
   ldr r1, [reg_base, #REG_CPSR]           @ r1 = flags
@@ -504,6 +519,16 @@ _execute_arm_translate:
   call_c_function(block_lookup_address_thumb)
   extract_flags()                         @ load flags
   bx r0                                   @ jump to first Thumb block
+
+
+@ Epilogue to return to the main thread (whatever called execute_arm_translate)
+
+return_to_main:
+  @ restore the stack pointer
+  ldr sp, [reg_base, #MAIN_THREAD_SP]
+  @ restore the saved regs and return
+  ldmia sp!, { r4, r5, r6, r7, r8, r9, r10, r11, r12, lr }
+  bx lr
 
 
 @ Write out to memory.
@@ -607,9 +632,21 @@ write_epilogue:
   bne 1f                                  @ if so do Thumb update
 
   store_registers_arm()                   @ save ARM registers
+  b alert_loop
 
-3:
+1:
+  store_registers_thumb()                 @ save Thumb registers
+
+alert_loop:
   call_c_function(update_gba)             @ update GBA until CPU isn't halted
+
+  ldr r1, [reg_base, #COMPLETED_FRAME]    @ Check whether a frame was completed
+  cmp r1, #0
+  bne return_to_main
+
+  ldr r1, [reg_base, #CPU_HALT_STATE]     @ Check whether the CPU is halted
+  cmp r1, #0
+  bne alert_loop                          @ Keep looping until it is
 
   mvn reg_cycles, r0                      @ load new cycle count
   ldr r0, [reg_base, #REG_PC]             @ load new PC
@@ -621,10 +658,6 @@ write_epilogue:
   call_c_function(block_lookup_address_arm)
   restore_flags()
   bx r0                                   @ jump to new ARM block
-
-1:
-  store_registers_thumb()                 @ save Thumb registers
-  b 3b
 
 2:
   load_registers_thumb()
@@ -735,6 +768,8 @@ execute_load_builder(u32, 32, ldrne, #0xF0000000)
 
 .data
 
-base_reg_area:
+.globl reg
+.globl _reg
+reg:
   .space 0x100, 0
 

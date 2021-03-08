@@ -95,6 +95,7 @@
 .equ CPU_MODE,          (29 * 4)
 .equ CPU_HALT_STATE,    (30 * 4)
 .equ CHANGED_PC_STATUS, (31 * 4)
+.equ COMPLETED_FRAME,   (32 * 4)
 
 # destroys ecx and edx
 
@@ -150,6 +151,11 @@ _x86_update_gba:
   call _update_gba            # process the next event
 
   mov %eax, %edi              # edi = new cycle count
+
+  # did we just complete a frame? go back to main then
+  cmpl $0, COMPLETED_FRAME(%ebx)
+  jne return_to_main
+
   # did the PC change?
   cmpl $1, CHANGED_PC_STATUS(%ebx)
   je lookup_pc
@@ -197,6 +203,10 @@ write_epilogue:
 
 alert_loop:
   call _update_gba            # process the next event
+  
+  # did we just complete a frame? go back to main then
+  cmpl $0, COMPLETED_FRAME(%ebx)
+  jne return_to_main
 
   # see if the halt status has changed
   mov CPU_HALT_STATE(%ebx), %edx
@@ -509,24 +519,50 @@ lookup_pc_arm:
 # eax: cycle counter
 
 _execute_arm_translate:
-  movl (_reg), %ebx           # load base register
+  # Save main context, since we need to return gracefully
+  pushl %ebx
+  pushl %esi
+  pushl %edi
+  pushl %ebp
+
+  movl $_reg, %ebx            # load base register
   extract_flags               # load flag variables
   movl %eax, %edi             # load edi cycle counter
 
   movl REG_PC(%ebx), %eax     # load PC
 
+  # (if the CPU is halted, do not start executing but
+  #  loop in the alert loop until it wakes up)
+  cmp $0, CPU_HALT_STATE(%ebx)
+  je 1f
+  call alert_loop     # Need to push something to the stack
+  
+1:
   testl $0x20, REG_CPSR(%ebx)
-  jnz 1f
+  jnz 2f
 
   call _block_lookup_address_arm
   jmp *%eax                   # jump to it
 
-1:
+2:
   call _block_lookup_address_thumb
   jmp *%eax
 
+return_to_main:
+  add $4, %esp             # remove current return addr
+  popl %ebp
+  popl %edi
+  popl %esi
+  popl %ebx
+  ret
+
+.data
+.align 64
+
+_reg:
+  .space 0x100, 0
+
 .comm _memory_map_read 0x8000
 .comm _memory_map_write 0x8000
-.comm _reg 4
 
 

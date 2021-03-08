@@ -135,8 +135,6 @@
 #define GBA_SCREEN_HEIGHT (160)
 #define GBA_SCREEN_PITCH  (240)
 
-void switch_to_main_thread(void);
-
 // These must be variables, not constants.
 
 #define file_read_variable(filename_tag, variable)                            \

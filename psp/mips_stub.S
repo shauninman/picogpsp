@@ -51,7 +51,6 @@
 .global memory_map_write
 .global reg
 
-.extern reg
 .extern spsr
 
 # MIPS register layout:
@@ -117,7 +116,8 @@
 .equ CPU_MODE,            (29 * 4)
 .equ CPU_HALT_STATE,      (30 * 4)
 .equ CHANGED_PC_STATUS,   (31 * 4)
-.equ GP_SAVE,             (32 * 4)
+.equ COMPLETED_FRAME,     (32 * 4)
+.equ GP_SAVE,             (33 * 4)
 
 .equ SUPERVISOR_LR,       (reg_mode + (3 * (7 * 4)) + (6 * 4))
 .equ SUPERVISOR_SPSR,     (spsr + (3 * 4))
@@ -206,27 +206,51 @@
 
 .balign 64
 
+# This gets called every time the cycle counter runs out
+# (checked at every branch/jump)
 mips_update_gba:
   sw $4, REG_PC($16)              # current PC = $4
 
-  addiu $sp, $sp, -4              # make room on the stack
-  sw $ra,($sp)                    # save return address
+  sw $ra, REG_SAVE2($16)          # save return addr
   collapse_flags                  # update cpsr
   save_registers                  # save registers
   jal update_gba                  # process the next event
   sw $0, CHANGED_PC_STATUS($16)
 
-  lw $ra, ($sp)                   # restore return address
-  addiu $sp, $sp, 4               # fix stack
+  lw $1, COMPLETED_FRAME($16)     # Check whether we completed a frame
+  bne $1, $0, return_to_main      # Return to main thread now
+
+  addu $17, $2, $0                # $17 = new cycle count (ret value)
+
+  lw $ra, REG_SAVE2($16)          # restore return address
 
   lw $1, CHANGED_PC_STATUS($16)
   bne $1, $0, lookup_pc
-  addu $17, $2, $0                # $17 = new cycle count (delay slot)
+  nop
 
   restore_registers
 
   jr $ra                          # if not, go back to caller
   nop
+
+
+# Loads the main context and returns to it.
+# ARM regs must be saved before branching here
+return_to_main:
+  lw $28, GP_SAVE($16)            # Restore previous state
+  lw $s0,  0($sp)
+  lw $s1,  4($sp)
+  lw $s2,  8($sp)
+  lw $s3, 12($sp)
+  lw $s4, 16($sp)
+  lw $s5, 20($sp)
+  lw $s6, 24($sp)
+  lw $s7, 28($sp)
+  lw $fp, 32($sp)
+  lw $ra, 36($sp)
+  jr $ra                          # Return to main
+  add $sp, $sp, 48                # Restore stack pointer (delay slot)
+
 
 # Perform an indirect branch.
 
@@ -2059,8 +2083,7 @@ execute_store_io_u8:
   region_check 4, patch_store_u8
   andi $5, $5, 0xFF               # make value 8bit
   andi $4, $4, 0x3FF              # wrap around address
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)
+  sw $ra, REG_SAVE3($16)          # preserve $ra
 
   save_registers
   jal write_io_register8          # write the value out
@@ -2160,8 +2183,7 @@ execute_store_io_u16:
   region_check 4, patch_store_u16
   andi $5, $5, 0xFFFF             # make value 16bit
   andi $4, $4, 0x3FE              # wrap around/align address
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)
+  sw $ra, REG_SAVE3($16)          # preserve $ra
 
   save_registers
   jal write_io_register16         # write the value out
@@ -2263,8 +2285,7 @@ execute_store_io_u32:
   region_check 4, patch_store_u32
   nop
   andi $4, $4, 0x3FC              # wrap around/align address
-  addiu $sp, $sp, -4              # make room on the stack for $ra
-  sw $ra, ($sp)
+  sw $ra, REG_SAVE3($16)          # preserve $ra
 
   save_registers
   jal write_io_register32         # write the value out
@@ -2482,6 +2503,10 @@ write_io_epilogue:
 alert_loop:
   jal update_gba                  # process the next event
   nop
+
+  lw $1, COMPLETED_FRAME($16)     # Check whether we completed a frame
+  bne $1, $0, return_to_main      # Return to main thread now
+
   lw $1, CPU_HALT_STATE($16)      # check if CPU is sleeping
   bne $1, $0, alert_loop          # see if it hasn't changed
   nop
@@ -2490,21 +2515,20 @@ alert_loop:
   lw $4, REG_PC($16)              # $4 = new PC
 
   j lookup_pc
-  addiu $sp, $sp, 4               # fix the stack (delay slot)
+  nop
 
 irq_alert:
   restore_registers
   j lookup_pc                     # PC has changed, get a new one
-  addiu $sp, $sp, 4               # fix the stack
+  nop
 
 no_alert:
   restore_registers
-  lw $ra, ($sp)                   # restore return address
+  lw $ra, REG_SAVE3($16)          # restore return
   jr $ra                          # we can return
-  addiu $sp, $sp, 4               # fix the stack
+  nop
 
 smc_dma:
-  addiu $sp, $sp, 4               # fix the stack
   jal flush_translation_cache_ram # flush translation cache
   nop
   j lookup_pc
@@ -2740,16 +2764,32 @@ ror_zero_shift:
 # $4: cycle counter argument
 
 execute_arm_translate:
+  add $sp, $sp, -48               # Store the main thread context
+  sw $s0,  0($sp)
+  sw $s1,  4($sp)
+  sw $s2,  8($sp)
+  sw $s3, 12($sp)
+  sw $s4, 16($sp)
+  sw $s5, 20($sp)
+  sw $s6, 24($sp)
+  sw $s7, 28($sp)
+  sw $fp, 32($sp)
+  sw $ra, 36($sp)
+
+  lui $16, %hi(reg)               # load reg address into base reg
+  addiu $16, %lo(reg)
+
+  sw $28, GP_SAVE($16)
+
   addu $17, $4, $0                # load cycle counter register
-
-  lui $4, %hi(arm_reg)            # load arm_reg address into $4
-  addiu $4, %lo(arm_reg)
-
-  jal move_reg                    # update reg to point to arm_reg
-  addu $16, $4, $0                # copy address of arm_reg into $16
 
   extract_flags                   # load flag variables
 
+  # CPU might be sleeping, do not wake ip up!
+  lw $1, CPU_HALT_STATE($16)      # check if CPU is sleeping
+  bne $1, $0, alert_loop          # see if it hasn't changed
+
+  lw $1, REG_CPSR($16)
   and $1, $1, 0x20                # see if Thumb bit is set in flags
 
   bne $1, $0, 1f
@@ -2810,7 +2850,7 @@ memory_map_read:
 
 # This must be between memory_map_read and memory_map_write because it's used
 # to calculate their addresses elsewhere in this file.
-arm_reg:
+reg:
   .space 0x100
 
 memory_map_write:
