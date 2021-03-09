@@ -54,7 +54,13 @@ u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
 u8 *bios_translation_ptr = bios_translation_cache;
 #elif defined(ARM_MEMORY_DYNAREC)
+
+#ifdef __ANDROID__
+// Workaround for 'attempt to map x bytes at offset y'
+__asm__(".section .jit,\"awx\",%progbits");
+#else
 __asm__(".section .jit,\"awx\",%nobits");
+#endif
 
 u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE]
 		__attribute__ ((aligned(4),section(".jit")));
