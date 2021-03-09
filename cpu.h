@@ -82,7 +82,8 @@ typedef enum
   REG_SAVE3         = 23,
   CPU_MODE          = 29,
   CPU_HALT_STATE    = 30,
-  CHANGED_PC_STATUS = 31
+  CHANGED_PC_STATUS = 31,
+  COMPLETED_FRAME   = 32
 } ext_reg_numbers;
 
 typedef enum

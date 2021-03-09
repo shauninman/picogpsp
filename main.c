@@ -132,6 +132,7 @@ u32 update_gba(void)
     cpu_ticks += execute_cycles;
 
     reg[CHANGED_PC_STATUS] = 0;
+    reg[COMPLETED_FRAME] = 0;
 
     if(gbc_sound_update)
     {
@@ -227,14 +228,14 @@ u32 update_gba(void)
           oam_update_count = 0;
           flush_ram_count = 0;
 
-          switch_to_main_thread();
-
           update_gbc_sound(cpu_ticks);
           gbc_sound_update = 0;
 
           process_cheats();
 
           vcount = 0;
+          // We completed a frame, tell the dynarec to exit to the main thread
+          reg[COMPLETED_FRAME] = 1;
         }
 
         if(vcount == (dispstat >> 8))
@@ -267,7 +268,7 @@ u32 update_gba(void)
        if(timer[i].count < execute_cycles)
           execute_cycles = timer[i].count;
     }
-  } while(reg[CPU_HALT_STATE] != CPU_ACTIVE);
+  } while(reg[CPU_HALT_STATE] != CPU_ACTIVE && !reg[COMPLETED_FRAME]);
 
   return execute_cycles;
 }

@@ -1562,8 +1562,10 @@ u32 cpu_modes_cpsr[7] = { 0x10, 0x11, 0x12, 0x13, 0x17, 0x1B, 0x1F };
 // When switching modes set spsr[new_mode] to cpsr. Modifying PC as the
 // target of a data proc instruction will set cpsr to spsr[cpu_mode].
 
-u32 initial_reg[64];
-u32 *reg = initial_reg;
+#ifndef HAVE_DYNAREC
+u32 reg[64];
+#endif
+
 u32 spsr[6];
 
 // ARM/Thumb mode is stored in the flags directly, this is simpler than
@@ -1672,9 +1674,17 @@ void execute_arm(u32 cycles)
   if(!pc_address_block)
     pc_address_block = load_gamepak_page(pc_region & 0x3FF);
 
+  cycles_remaining = cycles;
   while(1)
   {
-    cycles_remaining = cycles;
+    /* Do not execute until CPU is active */
+    while(reg[CPU_HALT_STATE] != CPU_ACTIVE) {
+       cycles_remaining = update_gba();
+
+       if (reg[COMPLETED_FRAME])
+          return;
+    }
+
     pc = reg[REG_PC];
     extract_flags();
 
@@ -3292,7 +3302,9 @@ skip_instruction:
     } while(cycles_remaining > 0);
 
     collapse_flags();
-    cycles = update_gba();
+    cycles_remaining = update_gba();
+    if (reg[COMPLETED_FRAME])
+       return;
     continue;
 
     do
@@ -4261,19 +4273,21 @@ thumb_loop:
     } while(cycles_remaining > 0);
 
     collapse_flags();
-    cycles = update_gba();
+    cycles_remaining = update_gba();
+    if (reg[COMPLETED_FRAME])
+      return;
     continue;
 
     alert:
 
-    if(cpu_alert == CPU_ALERT_IRQ)
-      cycles = cycles_remaining;
-    else
-    {
+    if(cpu_alert != CPU_ALERT_IRQ) {
       collapse_flags();
 
-      while(reg[CPU_HALT_STATE] != CPU_ACTIVE)
-        cycles = update_gba();
+      while(reg[CPU_HALT_STATE] != CPU_ACTIVE) {
+        cycles_remaining = update_gba();
+        if (reg[COMPLETED_FRAME])
+          return;
+      }
     }
   }
 }
@@ -4297,17 +4311,6 @@ void init_cpu(void)
   reg_mode[MODE_FIQ][5] = 0x03007FA0;
   reg_mode[MODE_SUPERVISOR][5] = 0x03007FE0;
 }
-
-void move_reg(u32 *new_reg)
-{
-  u32 i;
-
-  for(i = 0; i < 32; i++)
-    new_reg[i] = reg[i];
-
-  reg = new_reg;
-}
-
 
 #define cpu_savestate_builder(type)   \
 void cpu_##type##_savestate(void)     \

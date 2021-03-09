@@ -15,12 +15,6 @@ SOURCES_C := $(CORE_DIR)/main.c \
 				 $(CORE_DIR)/libretro.c \
 				 $(CORE_DIR)/gba_cc_lut.c
 
-ifeq ($(USE_LIBCO), 1)
-SOURCES_C += $(CORE_DIR)/libco/libco.c
-else
-SOURCES_C += $(CORE_DIR)/retro_emu_thread.c
-endif
-
 ifeq ($(HAVE_DYNAREC), 1)
 SOURCES_C += $(CORE_DIR)/cpu_threaded.c
 endif
