@@ -7,26 +7,18 @@ HAVE_MMAP_WIN32=0
 
 UNAME=$(shell uname -a)
 
-ifneq ($(EMSCRIPTEN),)
-	platform = emscripten
-endif
-
+# platform
 ifeq ($(platform),)
-	platform = unix
-	ifeq ($(UNAME),)
-		platform = win
-	else ifneq ($(findstring MINGW,$(UNAME)),)
-		platform = win
-	else ifneq ($(findstring Darwin,$(UNAME)),)
-		platform = osx
-		arch = intel
-	ifeq ($(shell uname -p),powerpc)
-		arch = ppc
-		FORCE_32BIT_ARCH = 1
-	endif
-	else ifneq ($(findstring win,$(UNAME)),)
-		platform = win
-	endif
+platform = unix
+ifeq ($(shell uname -s),)
+   platform = win
+else ifneq ($(findstring MINGW,$(shell uname -s)),)
+   platform = win
+else ifneq ($(findstring Darwin,$(shell uname -s)),)
+   platform = osx
+else ifneq ($(findstring win,$(shell uname -s)),)
+   platform = win
+endif
 endif
 
 
@@ -48,16 +40,19 @@ endif
 
 # system platform
 system_platform = unix
-ifeq ($(UNAME),)
+ifeq ($(shell uname -a),)
 	EXE_EXT = .exe
 	system_platform = win
-else ifneq ($(findstring Darwin,$(UNAME)),)
+else ifneq ($(findstring Darwin,$(shell uname -a)),)
 	system_platform = osx
 	arch = intel
 	ifeq ($(shell uname -p),powerpc)
 		arch = ppc
 	endif
-	else ifneq ($(findstring MINGW,$(UNAME)),)
+	ifeq ($(shell uname -p),arm)
+		arch = arm
+	endif
+else ifneq ($(findstring MINGW,$(shell uname -a)),)
 	system_platform = win
 endif
 
