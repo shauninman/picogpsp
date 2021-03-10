@@ -65,31 +65,8 @@
   #include <pspaudiolib.h>
   #include <psprtc.h>
 
-  #define convert_palette(value)                                              \
-    value = ((value & 0x7FE0) << 1) | (value & 0x1F)                          \
-
-  #define psp_file_open_read  PSP_O_RDONLY
-  #define psp_file_open_write (PSP_O_CREAT | PSP_O_WRONLY | PSP_O_TRUNC)
-
-  #define file_open(filename_tag, filename, mode)                             \
-    s32 filename_tag = sceIoOpen(filename, psp_file_open_##mode, 0777)        \
-
-  #define file_check_valid(filename_tag)                                      \
-    (filename_tag >= 0)                                                       \
-
-  #define file_close(filename_tag)                                            \
-    sceIoClose(filename_tag)                                                  \
-
-  #define file_read(filename_tag, buffer, size)                               \
-    sceIoRead(filename_tag, buffer, size)                                     \
-
-  #define file_write(filename_tag, buffer, size)                              \
-    sceIoWrite(filename_tag, buffer, size)                                    \
-
-  #define file_seek(filename_tag, offset, type)                               \
-    sceIoLseek(filename_tag, offset, PSP_##type)                              \
-
-  #define file_tag_type s32
+  #define convert_palette(value)  \
+    value = ((value & 0x7FE0) << 1) | (value & 0x1F)
 
   #include <time.h>
 #else
@@ -103,55 +80,14 @@
   typedef unsigned long long int u64;
   typedef signed long long int s64;
 
-  #define convert_palette(value)                                              \
-    value = ((value & 0x1F) << 11) | ((value & 0x03E0) << 1) | (value >> 10)  \
-
-  #define stdio_file_open_read  "rb"
-  #define stdio_file_open_write "wb"
-
-  #define file_open(filename_tag, filename, mode)                             \
-    FILE *filename_tag = fopen(filename, stdio_file_open_##mode)              \
-
-  #define file_check_valid(filename_tag)                                      \
-    (filename_tag)                                                            \
-
-  #define file_close(filename_tag)                                            \
-    fclose(filename_tag)                                                      \
-
-  #define file_read(filename_tag, buffer, size)                               \
-    fread(buffer, 1, size, filename_tag)                                      \
-
-  #define file_write(filename_tag, buffer, size)                              \
-    fwrite(buffer, 1, size, filename_tag)                                     \
-
-  #define file_seek(filename_tag, offset, type)                               \
-    fseek(filename_tag, offset, type)                                         \
-
-  #define file_tag_type FILE *
+  #define convert_palette(value) \
+    value = ((value & 0x1F) << 11) | ((value & 0x03E0) << 1) | (value >> 10)
 
 #endif
 
 #define GBA_SCREEN_WIDTH  (240)
 #define GBA_SCREEN_HEIGHT (160)
 #define GBA_SCREEN_PITCH  (240)
-
-// These must be variables, not constants.
-
-#define file_read_variable(filename_tag, variable)                            \
-  file_read(filename_tag, &variable, sizeof(variable))                        \
-
-#define file_write_variable(filename_tag, variable)                           \
-  file_write(filename_tag, &variable, sizeof(variable))                       \
-
-// These must be statically declared arrays (ie, global or on the stack,
-// not dynamically allocated on the heap)
-
-#define file_read_array(filename_tag, array)                                  \
-  file_read(filename_tag, array, sizeof(array))                               \
-
-#define file_write_array(filename_tag, array)                                 \
-  file_write(filename_tag, array, sizeof(array))                              \
-
 
 
 typedef u32 fixed16_16;

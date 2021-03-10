@@ -281,14 +281,7 @@ void reset_gba(void)
   reset_sound();
 }
 
-#ifdef PSP
-u32 file_length(const char *filename, s32 dummy)
-{
-  SceIoStat stats;
-  sceIoGetstat(filename, &stats);
-  return stats.st_size;
-#else
-u32 file_length(const char *dummy, FILE *fp)
+u32 file_length(FILE *fp)
 {
   u32 length;
 
@@ -297,7 +290,6 @@ u32 file_length(const char *dummy, FILE *fp)
   fseek(fp, 0, SEEK_SET);
 
   return length;
-#endif
 }
 
 void change_ext(const char *src, char *buffer, const char *extension)
