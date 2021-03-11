@@ -2362,7 +2362,7 @@ static s32 load_gamepak_raw(const char *name)
 
     // First, close the last one if it was open, we won't
     // be needing it anymore.
-    if(!gamepak_file_large)
+    if(gamepak_file_large)
       fclose(gamepak_file_large);
 
     // If it's a big file size keep it, don't close it, we'll
