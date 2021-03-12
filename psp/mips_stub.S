@@ -2808,24 +2808,8 @@ execute_arm_translate:
   jr $2                           # jump to return
   nop
 
-# This is only to be used with MIPS32
-# $4: start location
-# $5: length
 
-icache_region_sync:
-  ins $4, $0, 0, 6                # align to 64 bytes
-  addiu $2, $5, 63                # align up to 64 bytes
-  srl $2, $2, 6                   # divide by 64
-
-1:
-  synci ($4)                      # sync caches
-  addiu $2, $2, -1                # next loop iteration
-  bne $2, $0, 1b                  # loop
-  addiu $4, $4, 64                # go to next cache line (delay slot)
-
-  jr $ra                          # return
-  nop
-
+.data:
 
 memory_map_read:
   .space 0x8000
