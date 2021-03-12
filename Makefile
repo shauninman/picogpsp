@@ -166,12 +166,12 @@ else ifeq ($(platform), qnx)
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T
 	HAVE_MMAP = 1
+	CPU_ARCH := arm
 
 	CC = qcc -Vgcc_ntoarmv7le
 	AR = qcc -Vgcc_ntoarmv7le
 	CFLAGS += -D__BLACKBERRY_QNX_
 	HAVE_DYNAREC := 1
-	CFLAGS += -DARM -DARM_ARCH -DARM_MEMORY_DYNAREC
 
 # Lightweight PS3 Homebrew SDK
 else ifeq ($(platform), psl1ght)
@@ -238,10 +238,8 @@ else ifeq ($(platform), rpi3)
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
-	CFLAGS += -DARM -DARM_ARCH
 	CFLAGS += -marm -mcpu=cortex-a53 -mfpu=neon-fp-armv8 -mfloat-abi=hard
 	CFLAGS += -fomit-frame-pointer -ffast-math
-	CFLAGS += -DARM_MEMORY_DYNAREC
 	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 	CPU_ARCH := arm
 	HAVE_DYNAREC = 1
@@ -251,10 +249,8 @@ else ifeq ($(platform), rpi2)
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
-	CFLAGS += -DARM -DARM_ARCH
 	CFLAGS += -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
 	CFLAGS += -fomit-frame-pointer -ffast-math
-	CFLAGS += -DARM_MEMORY_DYNAREC
 	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 	CPU_ARCH := arm
 	HAVE_DYNAREC = 1
@@ -264,10 +260,9 @@ else ifeq ($(platform), rpi1)
 	TARGET := $(TARGET_NAME)_libretro.so
 	fpic := -fPIC
 	SHARED := -shared -Wl,--version-script=link.T -Wl,--no-undefined
-	CFLAGS += -DARM11 -DARM_ARCH
+	CFLAGS += -DARM11
 	CFLAGS += -marm -mfpu=vfp -mfloat-abi=hard -march=armv6j
 	CFLAGS += -fomit-frame-pointer -ffast-math
-	CFLAGS += -DARM_MEMORY_DYNAREC
 	CXXFLAGS = $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 	CPU_ARCH := arm
 	HAVE_DYNAREC = 1
@@ -298,8 +293,6 @@ else ifeq ($(platform), classic_armv7_a7)
 	BUILTIN_GPU = neon
 	CPU_ARCH := arm
 	HAVE_DYNAREC = 1
-	CFLAGS += -DARM -DARM_ARCH
-	CFLAGS += -DARM_MEMORY_DYNAREC
 	ifeq ($(shell echo `$(CC) -dumpversion` "< 4.9" | bc -l), 1)
 	  CFLAGS += -march=armv7-a
 	else
@@ -363,11 +356,9 @@ else ifneq (,$(findstring armv,$(platform)))
 		CFLAGS += -mfloat-abi=hard
 		ASFLAGS += -mfloat-abi=hard
 	endif
-	CFLAGS += -DARM -DARM_ARCH
 	# Dynarec works at least in rpi, take a look at issue #11
 	ifeq (,$(findstring no-dynarec,$(platform)))
 		HAVE_DYNAREC := 1
-		CFLAGS += -DARM_MEMORY_DYNAREC
 	endif
 	LDFLAGS := -Wl,--no-undefined	
 
@@ -429,6 +420,8 @@ endif
 
 ifeq ($(CPU_ARCH), arm)
 DEFINES += -DARM_ARCH
+else ifeq ($(CPU_ARCH), mips)
+DEFINES += -DMIPS_ARCH
 else ifeq ($(CPU_ARCH), x86_32)
 DEFINES += -DX86_ARCH
 endif

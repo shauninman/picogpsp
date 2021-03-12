@@ -53,7 +53,7 @@ u8* bios_translation_cache_ptr;
 u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
 u8 *bios_translation_ptr = bios_translation_cache;
-#elif defined(ARM_MEMORY_DYNAREC)
+#else
 
 #ifdef __ANDROID__
 // Workaround for 'attempt to map x bytes at offset y'
@@ -75,13 +75,6 @@ u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE]
 u8 *bios_translation_ptr = bios_translation_cache;
 
 __asm__(".section .text");
-#else
-u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
-u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
-u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
-u8 *rom_translation_ptr = rom_translation_cache;
-u8 *ram_translation_ptr = ram_translation_cache;
-u8 *bios_translation_ptr = bios_translation_cache;
 #endif
 
 u32 iwram_code_min = 0xFFFFFFFF;
@@ -234,19 +227,13 @@ extern u8 bit_count[256];
 #define thumb_decode_branch()                                                 \
   u32 offset = opcode & 0x07FF                                                \
 
-
-#ifdef PSP
-
-#include "psp/mips_emit.h"
-
+/* Include the right emitter headers */
+#if defined(MIPS_ARCH)
+  #include "psp/mips_emit.h"
 #elif defined(ARM_ARCH)
-
-#include "arm/arm_emit.h"
-
+  #include "arm/arm_emit.h"
 #else
-
-#include "x86/x86_emit.h"
-
+  #include "x86/x86_emit.h"
 #endif
 
 /* Cache invalidation */
@@ -258,7 +245,7 @@ extern u8 bit_count[256];
   }
 #elif defined(VITA)
   void platform_cache_sync(void *baseaddr, void *endptr) {
-    sceKernelSyncVMDomain(baseaddr, ((char*)endptr) - ((char*)baseaddr) + 64);
+    sceKernelSyncVMDomain(sceBlock, baseaddr, ((char*)endptr) - ((char*)baseaddr) + 64);
   }
 #elif defined(_3DS)
   #include "3ds/3ds_utils.h"
@@ -271,7 +258,7 @@ extern u8 bit_count[256];
   }
 #elif defined(MIPS_ARCH)
   void platform_cache_sync(void *baseaddr, void *endptr) {
-    icache_region_sync(baseaddr, ((char*)endptr) - ((char*)baseaddr));
+    __builtin___clear_cache(baseaddr, endptr);
   }
 #else
   /* x86 CPUs have icache consistency checks */
