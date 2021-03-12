@@ -343,15 +343,7 @@ gamepak_swap_entry_type *gamepak_memory_map;
 // This is global so that it can be kept open for large ROMs to swap
 // pages from, so there's no slowdown with opening and closing the file
 // a lot.
-#ifdef PSP
-
-file_tag_type gamepak_file_large = -1;
-
-#else
-
-file_tag_type gamepak_file_large = NULL;
-
-#endif
+FILE *gamepak_file_large = NULL;
 
 u32 direct_map_vram = 0;
 
@@ -2050,15 +2042,14 @@ char backup_filename[512];
 
 u32 load_backup(char *name)
 {
-  file_open(backup_file, name, read);
+  FILE *fd = fopen(name, "rb");
 
-  if(file_check_valid(backup_file))
+  if(fd)
   {
-    u32 backup_size = file_length(name, backup_file);
+    u32 backup_size = file_length(fd);
 
-    file_read(backup_file, gamepak_backup, backup_size);
-
-    file_close(backup_file);
+    fread(gamepak_backup, 1, backup_size, fd);
+    fclose(fd);
 
     // The size might give away what kind of backup it is.
     switch(backup_size)
@@ -2104,9 +2095,9 @@ u32 save_backup(char *name)
 {
   if(backup_type != BACKUP_NONE)
   {
-    file_open(backup_file, name, write);
+    FILE *fd = fopen(name, "wb");
 
-    if(file_check_valid(backup_file))
+    if(fd)
     {
       u32 backup_size = 0;
 
@@ -2137,9 +2128,8 @@ u32 save_backup(char *name)
           break;
       }
 
-      file_write(backup_file, gamepak_backup, backup_size);
-
-      file_close(backup_file);
+      fwrite(gamepak_backup, 1, backup_size, fd);
+      fclose(fd);
       return 1;
     }
   }
@@ -2364,36 +2354,31 @@ static s32 load_game_config(char *gamepak_title, char *gamepak_code, char *gamep
 
 static s32 load_gamepak_raw(const char *name)
 {
-  file_open(gamepak_file, name, read);
+  FILE *fd = fopen(name, "rb");
 
-  if(file_check_valid(gamepak_file))
+  if(fd)
   {
-    u32 file_size = file_length(name, gamepak_file);
+    u32 file_size = file_length(fd);
 
     // First, close the last one if it was open, we won't
     // be needing it anymore.
-    if(file_check_valid(gamepak_file_large))
-      file_close(gamepak_file_large);
+    if(gamepak_file_large)
+      fclose(gamepak_file_large);
 
     // If it's a big file size keep it, don't close it, we'll
     // probably want to load from it more later.
     if(file_size <= gamepak_ram_buffer_size)
     {
-      file_read(gamepak_file, gamepak_rom, file_size);
+      fread(gamepak_rom, 1, file_size, fd);
+      fclose(fd);
 
-      file_close(gamepak_file);
-
-#ifdef PSP
-      gamepak_file_large = -1;
-#else
       gamepak_file_large = NULL;
-#endif
     }
     else
     {
       // Read in just enough for the header
-      file_read(gamepak_file, gamepak_rom, 0x100);
-      gamepak_file_large = gamepak_file;
+      fread(gamepak_rom, 1, 0x100, fd);
+      gamepak_file_large = fd;
     }
 
     return file_size;
@@ -2460,16 +2445,16 @@ u32 load_gamepak(const struct retro_game_info* info, const char *name)
 
 s32 load_bios(char *name)
 {
-  file_open(bios_file, name, read);
+  FILE *fd = fopen(name, "rb");
 
-  if(!(file_check_valid(bios_file)))
+  if(!fd)
     return -1;
 
-  file_read(bios_file, bios_rom, 0x4000);
+  fread(bios_rom, 1, 0x4000, fd);
 
   // This is a hack to get Zelda working, because emulating
   // the proper memory read behavior here is much too expensive.
-  file_close(bios_file);
+  fclose(fd);
   return 0;
 }
 
@@ -3187,8 +3172,8 @@ u8 *load_gamepak_page(u32 physical_index)
   gamepak_memory_map[page_index].physical_index = physical_index;
   page_time++;
 
-  file_seek(gamepak_file_large, physical_index * (32 * 1024), SEEK_SET);
-  file_read(gamepak_file_large, swap_location, (32 * 1024));
+  fseek(gamepak_file_large, physical_index * (32 * 1024), SEEK_SET);
+  fread(swap_location, 1, (32 * 1024), gamepak_file_large);
   memory_map_read[(0x8000000 / (32 * 1024)) + physical_index] = swap_location;
   memory_map_read[(0xA000000 / (32 * 1024)) + physical_index] = swap_location;
   memory_map_read[(0xC000000 / (32 * 1024)) + physical_index] = swap_location;
@@ -3374,9 +3359,10 @@ void init_memory(void)
 
 void memory_term(void)
 {
-  if (file_check_valid(gamepak_file_large))
+  if (gamepak_file_large)
   {
-    file_close(gamepak_file_large);
+    fclose(gamepak_file_large);
+    gamepak_file_large = NULL;
   }
 
   if (gamepak_memory_map)

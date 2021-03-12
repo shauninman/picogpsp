@@ -94,11 +94,7 @@ void main_write_savestate(void);
 void main_read_savestate(void);
 
 
-#ifdef PSP
-u32 file_length(const char *filename, s32 dummy);
-#else
-u32 file_length(const char *dummy, FILE *fp);
-#endif
+u32 file_length(FILE *fp);
 
 extern u32 num_skipped_frames;
 extern int dynarec_enable;

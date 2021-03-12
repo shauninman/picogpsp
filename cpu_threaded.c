@@ -3793,18 +3793,18 @@ void flush_translation_cache_bios(void)
 
 void dump_translation_cache(void)
 {
-  file_open(ram_cache, cache_dump_prefix "ram_cache.bin", write);
-  file_write(ram_cache, ram_translation_cache,
-   ram_translation_ptr - ram_translation_cache);
-  file_close(ram_cache);
+  FILE *fd = fopen(cache_dump_prefix "ram_cache.bin", "wb");
+  fwrite(ram_translation_cache, 1,
+   ram_translation_ptr - ram_translation_cache, fd);
+  fclose(fd);
 
-  file_open(rom_cache, cache_dump_prefix "rom_cache.bin", write);
-  file_write(rom_cache, rom_translation_cache,
-   rom_translation_ptr - rom_translation_cache);
-  file_close(rom_cache);
+  fd = fopen(cache_dump_prefix "rom_cache.bin", "wb");
+  fwrite(rom_translation_cache, 1,
+   rom_translation_ptr - rom_translation_cache, fd);
+  fclose(fd);
 
-  file_open(bios_cache, cache_dump_prefix "bios_cache.bin", write);
-  file_write(bios_cache, bios_translation_cache,
-   bios_translation_ptr - bios_translation_cache);
-  file_close(bios_cache);
+  fd = fopen(cache_dump_prefix "bios_cache.bin", "wb");
+  fwrite(bios_translation_cache, 1,
+   bios_translation_ptr - bios_translation_cache, fd);
+  fclose(fd);
 }
