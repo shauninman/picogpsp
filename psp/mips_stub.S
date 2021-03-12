@@ -2809,7 +2809,7 @@ execute_arm_translate:
   nop
 
 
-.data:
+.data
 
 memory_map_read:
   .space 0x8000
