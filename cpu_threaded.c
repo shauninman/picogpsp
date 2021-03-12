@@ -252,64 +252,47 @@ extern u8 bit_count[256];
 /* Cache invalidation */
 
 #if defined(PSP)
-#define translate_invalidate_dcache() sceKernelDcacheWritebackAll()
-#define invalidate_icache_region(addr, size) (void)0
-
+  void platform_cache_sync(void *baseaddr, void *endptr) {
+    sceKernelDcacheWritebackRange(baseaddr, ((char*)endptr) - ((char*)baseaddr));
+    sceKernelIcacheInvalidateRange(baseaddr, ((char*)endptr) - ((char*)baseaddr));
+  }
 #elif defined(VITA)
-#define translate_invalidate_dcache_one(which)                                \
-  if (which##_translation_ptr > last_##which##_translation_ptr)               \
-  {   	                                             \
-    sceKernelSyncVMDomain(sceBlock,last_##which##_translation_ptr,          \
-      which##_translation_ptr - last_##which##_translation_ptr);              \
-    last_##which##_translation_ptr = which##_translation_ptr;                 \
+  void platform_cache_sync(void *baseaddr, void *endptr) {
+    sceKernelSyncVMDomain(baseaddr, ((char*)endptr) - ((char*)baseaddr) + 64);
   }
-
-#define translate_invalidate_dcache()                                         \
-{                                                                             \
-  translate_invalidate_dcache_one(rom)                                        \
-  translate_invalidate_dcache_one(ram)                                        \
-  translate_invalidate_dcache_one(bios)                                       \
-}
-
-#define invalidate_icache_region(addr, size) (void)0
-
 #elif defined(_3DS)
-#include "3ds/3ds_utils.h"
-
-#define translate_invalidate_dcache() ctr_flush_invalidate_cache()
-#define invalidate_icache_region(addr, size) (void)0
-
-#elif defined(ARM_ARCH)
-static void sys_cacheflush(void *addr, unsigned long size)
-{
-   void *start = (void*)addr;
-   void *end   = (void*)(char *)addr + size;
-   __clear_cache(start, end);
-}
-
-#define translate_invalidate_dcache_one(which)                                \
-  if (which##_translation_ptr > last_##which##_translation_ptr)               \
-  {                                                                           \
-    sys_cacheflush(last_##which##_translation_ptr,          \
-      which##_translation_ptr - last_##which##_translation_ptr);              \
-    sys_cacheflush(last_##which##_translation_ptr, 32);\
-    last_##which##_translation_ptr = which##_translation_ptr;                 \
+  #include "3ds/3ds_utils.h"
+  void platform_cache_sync(void *baseaddr, void *endptr) {
+    ctr_flush_invalidate_cache();
   }
-
-#define translate_invalidate_dcache()                                         \
-{                                                                             \
-  translate_invalidate_dcache_one(rom)                                        \
-  translate_invalidate_dcache_one(ram)                                        \
-  translate_invalidate_dcache_one(bios)                                       \
-}
-#define invalidate_icache_region(addr, size) (void)0
-
+#elif defined(ARM_ARCH)
+  void platform_cache_sync(void *baseaddr, void *endptr) {
+    __clear_cache(baseaddr, endptr);
+  }
+#elif defined(MIPS_ARCH)
+  void platform_cache_sync(void *baseaddr, void *endptr) {
+    icache_region_sync(baseaddr, ((char*)endptr) - ((char*)baseaddr));
+  }
 #else
-
-#define translate_invalidate_dcache() (void)0
-#define invalidate_icache_region(addr, size) (void)0
-
+  /* x86 CPUs have icache consistency checks */
+  void platform_cache_sync(void *baseaddr, void *endptr) {}
 #endif
+
+void translate_icache_sync() {
+    // Cache emitted code can only grow
+    if (last_rom_translation_ptr < rom_translation_ptr) {
+        platform_cache_sync(last_rom_translation_ptr, rom_translation_ptr);
+        last_rom_translation_ptr = rom_translation_ptr;
+    }
+    if (last_ram_translation_ptr < ram_translation_ptr) {
+        platform_cache_sync(last_ram_translation_ptr, ram_translation_ptr);
+        last_ram_translation_ptr = ram_translation_ptr;
+    }
+    if (last_bios_translation_ptr < bios_translation_ptr) {
+        platform_cache_sync(last_bios_translation_ptr, bios_translation_ptr);
+        last_bios_translation_ptr = bios_translation_ptr;
+    }
+}
 
 /* End of Cache invalidation */
 
@@ -2833,7 +2816,7 @@ u32 bios_block_tag_top = 0x0101;
     }                                                                         \
                                                                               \
     if(translation_recursion_level == 0)                                      \
-      translate_invalidate_dcache();                                          \
+      translate_icache_sync();                                                \
   }                                                                           \
   else                                                                        \
   {                                                                           \
@@ -2924,7 +2907,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
         }                                                                     \
                                                                               \
         if(translation_recursion_level == 0)                                  \
-          translate_invalidate_dcache();                                      \
+          translate_icache_sync();                                            \
       }                                                                       \
       if(translation_recursion_level == 0)                                    \
         bios_region_read_protect();                                           \
@@ -2949,7 +2932,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
       block_address = (u8 *)(-1);                                             \
       break;                                                                  \
   }                                                                           \
-                                                               		      \
+                                                                              \
   return block_address;                                                       \
 }                                                                             \
 
@@ -3719,7 +3702,6 @@ void flush_translation_cache_ram(void)
    flush_ram_count, reg[REG_PC], iwram_code_min, iwram_code_max,
    ewram_code_min, ewram_code_max); */
 
-  invalidate_icache_region(ram_translation_cache, (ram_translation_ptr - ram_translation_cache) + 0x100);
   last_ram_translation_ptr = ram_translation_cache;
   ram_translation_ptr = ram_translation_cache;
   ram_block_tag_top = 0x0101;
@@ -3769,8 +3751,6 @@ void flush_translation_cache_ram(void)
 
 void flush_translation_cache_rom(void)
 {
-  invalidate_icache_region(rom_translation_cache, rom_translation_ptr - rom_translation_cache + 0x100);
-
   last_rom_translation_ptr = rom_translation_cache;
   rom_translation_ptr      = rom_translation_cache;
 
@@ -3779,8 +3759,6 @@ void flush_translation_cache_rom(void)
 
 void flush_translation_cache_bios(void)
 {
-  invalidate_icache_region(bios_translation_cache, bios_translation_ptr - bios_translation_cache + 0x100);
-
   bios_block_tag_top = 0x0101;
 
   last_bios_translation_ptr = bios_translation_cache;

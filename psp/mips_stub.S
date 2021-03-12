@@ -16,6 +16,7 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+.set mips32r2
 .align 4
 
 .global mips_update_gba
@@ -43,8 +44,7 @@
 .global execute_asr_flags_reg
 .global execute_ror_flags_reg
 .global execute_arm_translate
-.global invalidate_icache_region
-.global invalidate_all_cache
+.global icache_region_sync
 .global reg_check
 
 .global memory_map_read
@@ -2808,42 +2808,24 @@ execute_arm_translate:
   jr $2                           # jump to return
   nop
 
-# sceKernelInvalidateIcacheRange gives me problems, trying this instead
-# Invalidates an n byte region starting at the start address
+# This is only to be used with MIPS32
 # $4: start location
 # $5: length
 
-invalidate_icache_region:
+icache_region_sync:
   ins $4, $0, 0, 6                # align to 64 bytes
   addiu $2, $5, 63                # align up to 64 bytes
   srl $2, $2, 6                   # divide by 64
-  beq $2, $0, done                # exit early on 0
-  nop
 
-iir_loop:
-  cache 0x08, ($4)                # hit invalidate icache line
+1:
+  synci ($4)                      # sync caches
   addiu $2, $2, -1                # next loop iteration
-  bne $2, $0, iir_loop            # loop
+  bne $2, $0, 1b                  # loop
   addiu $4, $4, 64                # go to next cache line (delay slot)
 
-done:
   jr $ra                          # return
   nop
 
-# Writes back dcache and invalidates icache.
-
-invalidate_all_cache:
-  addu $4, $0, $0                 # $4 = 0
-  addiu $5, $0, 0x4000            # $5 = 0x4000
-
-iac_loop:
-  cache 0x14, 0($4)               # index invalidate/writeback dcache index
-  addiu $4, $4, 0x40              # goto next cache line
-  bne $4, $5, iac_loop            # next iteration
-  cache 0x04, -0x40($4)           # index invalidate icache index.. maybe?
-
-  jr $ra                          # return
-  nop
 
 memory_map_read:
   .space 0x8000
