@@ -69,6 +69,8 @@
 .global _memory_map_read
 .global _memory_map_write
 .global _reg
+.global _palette_ram
+.global _palette_ram_converted
 
 .global _oam_update
 
@@ -561,6 +563,10 @@ return_to_main:
 
 _reg:
   .space 0x100, 0
+_palette_ram:
+  .space 0x400
+_palette_ram_converted:
+  .space 0x400
 
 .comm _memory_map_read 0x8000
 .comm _memory_map_write 0x8000

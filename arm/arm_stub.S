@@ -6,6 +6,8 @@
 .globl memory_map_read
 .globl memory_map_write
 .globl reg
+.globl palette_ram
+.globl palette_ram_converted
 
 #define REG_R0            (0 * 4)
 #define REG_R1            (1 * 4)
@@ -763,10 +765,12 @@ execute_load_builder(u32, 32, ldrne, #0xF0000000)
 
 .pool
 
+.data
+
 .comm memory_map_read 0x8000
 .comm memory_map_write 0x8000
-
-.data
+.comm palette_ram 0x400
+.comm palette_ram_converted 0x400
 
 .globl reg
 .globl _reg

@@ -46,6 +46,8 @@
 .global execute_arm_translate
 .global icache_region_sync
 .global reg_check
+.global palette_ram
+.global palette_ram_converted
 
 .global memory_map_read
 .global memory_map_write
@@ -2093,18 +2095,15 @@ execute_store_io_u8:
 
 execute_store_palette_u8:
   region_check 5, patch_store_u8
-  lui $2, %hi(palette_ram)        # start loading palette_ram address (delay)
+  andi $2, $4, 0x3FE              # align palette address
   ins $5, $5, 8, 8                # double value
-  andi $4, $4, 0x3FE              # align palette address
-  addu $2, $2, $4
-  sh $5, %lo(palette_ram)($2)     # palette_ram[address] = value
+  addu $2, $2, $16
+  sh $5, 0x100($2)                # palette_ram[address] = value
   sll $1, $5, 1                   # make green 6bits
   ins $1, $0, 0, 6                # make bottom bit 0
   ins $1, $5, 0, 5                # insert red channel into $1
-  lui $2, %hi(palette_ram_converted)
-  addu $2, $2, $4
   jr $ra                          # return
-  sh $1, %lo(palette_ram_converted)($2)
+  sh $1, 0x500($2)
 
 execute_store_vram_u8:
   translate_region_vram_store_align16 patch_store_u8
@@ -2193,17 +2192,14 @@ execute_store_io_u16:
 
 execute_store_palette_u16:
   region_check 5, patch_store_u16
-  lui $2, %hi(palette_ram)        # start loading palette_ram address (delay)
-  andi $4, $4, 0x3FE              # wrap/align palette address
-  addu $2, $2, $4
-  sh $5, %lo(palette_ram)($2)     # palette_ram[address] = value
+  andi $2, $4, 0x3FE              # wrap/align palette address
+  addu $2, $2, $16
+  sh $5, 0x100($2)                # palette_ram[address] = value
   sll $1, $5, 1                   # make green 6bits
   ins $1, $0, 0, 6                # make bottom bit 0
   ins $1, $5, 0, 5                # insert red channel into $1
-  lui $2, %hi(palette_ram_converted)
-  addu $2, $2, $4
   jr $ra                          # return
-  sh $1, %lo(palette_ram_converted)($2)
+  sh $1, 0x500($2)
 
 execute_store_vram_u16:
   translate_region_vram_store_align16 patch_store_u16
@@ -2295,18 +2291,14 @@ execute_store_io_u32:
 
 execute_store_palette_u32:
   region_check 5, patch_store_u32
-  lui $2, %hi(palette_ram)        # start loading palette_ram address (delay)
-  andi $4, $4, 0x3FC              # wrap/align palette address
-  addu $2, $2, $4
-  sw $5, %lo(palette_ram)($2)     # palette_ram[address] = value
+  andi $2, $4, 0x3FC              # wrap/align palette address
+  addu $2, $2, $16
+  sw $5, 0x100($2)                # palette_ram[address] = value
 
   sll $1, $5, 1                   # make green 6bits
   ins $1, $0, 0, 6                # make bottom bit 0
   ins $1, $5, 0, 5                # insert red channel into $1
-  lui $2, %hi(palette_ram_converted)
-  addu $2, $2, $4
-  addiu $2, $2, %lo(palette_ram_converted)
-  sh $1, ($2)
+  sh $1, 0x500($2)
 
   srl $5, $5, 16                  # shift down to next palette value
   sll $1, $5, 1                   # make green 6bits
@@ -2314,7 +2306,7 @@ execute_store_palette_u32:
   ins $1, $5, 0, 5                # insert red channel into $1
 
   jr $ra                          # return
-  sh $1, 2($2)
+  sh $1, 0x502($2)
 
 execute_store_vram_u32:
   translate_region_vram_store_align32 patch_store_u32
@@ -2411,18 +2403,14 @@ execute_store_io_u32a:
 
 execute_store_palette_u32a:
   region_check 5, patch_store_u32a
-  lui $2, %hi(palette_ram)        # start loading palette_ram address (delay)
-  andi $4, $4, 0x3FC              # wrap/align palette address
-  addu $2, $2, $4
-  sw $5, %lo(palette_ram)($2)     # palette_ram[address] = value
+  andi $2, $4, 0x3FC              # wrap/align palette address
+  addu $2, $2, $16
+  sw $5, 0x100($2)                # palette_ram[address] = value
 
   sll $1, $5, 1                   # make green 6bits
   ins $1, $0, 0, 6                # make bottom bit 0
   ins $1, $5, 0, 5                # insert red channel into $1
-  lui $2, %hi(palette_ram_converted)
-  addu $2, $2, $4
-  addiu $2, $2, %lo(palette_ram_converted)
-  sh $1, ($2)
+  sh $1, 0x500($2)
 
   srl $5, $5, 16                  # shift down to next palette value
   sll $1, $5, 1                   # make green 6bits
@@ -2430,7 +2418,7 @@ execute_store_palette_u32a:
   ins $1, $5, 0, 5                # insert red channel into $1
 
   jr $ra                          # return
-  sh $1, 2($2)
+  sh $1, 0x502($2)
 
 execute_store_vram_u32a:
   translate_region_vram_store_align32 patch_store_u32a
@@ -2810,6 +2798,7 @@ execute_arm_translate:
 
 
 .data
+.align 6
 
 memory_map_read:
   .space 0x8000
@@ -2818,6 +2807,13 @@ memory_map_read:
 # to calculate their addresses elsewhere in this file.
 reg:
   .space 0x100
+
+# Placed here for easy access
+palette_ram:
+  .space 0x400
+palette_ram_converted:
+  .space 0x400
+
 
 memory_map_write:
   .space 0x8000
