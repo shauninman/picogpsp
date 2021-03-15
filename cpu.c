@@ -1652,6 +1652,8 @@ void raise_interrupt(irq_type irq_raised)
 #ifndef HAVE_DYNAREC
 u8 *memory_map_read [8 * 1024];
 u8 *memory_map_write[8 * 1024];
+u16 palette_ram[512];
+u16 palette_ram_converted[512];
 #endif
 
 void execute_arm(u32 cycles)
