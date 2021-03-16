@@ -2608,6 +2608,7 @@ void write_io_epilogue();
 // This is a pointer table to the open load stubs, used by the BIOS (optimization)
 u32* openld_core_ptrs[11];
 
+const u8 ldopmap[6][2] = { {0, 1}, {1, 2}, {2, 4}, {4, 6}, {6, 10}, {10, 11} };
 const u8 ldhldrtbl[11] = {0, 1, 2, 2, 3, 3, 4, 4, 4, 4, 5};
 #define ld_phndlr_branch(memop) \
   (((u32*)&stub_arena[ldhldrtbl[(memop)] * 16]) - ((u32*)translation_ptr + 1))
@@ -2732,14 +2733,13 @@ static void emit_pmemld_stub(
   if (region == 0) {
     // BIOS is *not* mirrored, check that
     mips_emit_srl(reg_rv, reg_a0, 14);
-    unsigned joff = (openld_core_ptrs[memop_number] - ((u32*)translation_ptr + 1));
-    mips_emit_b(bne, reg_zero, reg_rv, joff);  // Jumps to read open
+    mips_emit_b(bne, reg_zero, reg_rv, branch_offset(openld_core_ptrs[memop_number]));
 
-    // Check whether the read is allowed. Only within BIOS!
-    // TODO: FIX THIS! This should be a protected read, not an open one!
-    mips_emit_srl(reg_temp, reg_a1, 14);
-    unsigned jof2 = (openld_core_ptrs[memop_number] - ((u32*)translation_ptr + 1));
-    mips_emit_b(bne, reg_zero, reg_temp, jof2);
+    // Check whether the read is allowed. Only within BIOS! (Ignore aligned, bad a1)
+    if (!aligned) {
+      mips_emit_srl(reg_temp, reg_a1, 14);
+      mips_emit_b(bne, reg_zero, reg_temp, branch_offset(openld_core_ptrs[memop_number]));
+    }
   }
   
   if (region >= 8 && region <= 12) {
@@ -3029,7 +3029,6 @@ static void emit_ignorestore_stub(unsigned size, u8 **tr_ptr) {
 static void emit_saveaccess_stub(u8 **tr_ptr) {
   unsigned opt, i, strop;
   u8 *translation_ptr = *tr_ptr;
-  const u8 opmap[6][2] = { {0, 1}, {1, 2}, {2, 4}, {4, 6}, {6, 10}, {10, 11} };
 
   // Writes to region 8 are directed to RTC (only 16 bit ones though)
   tmemld[1][8] = (u32)translation_ptr;
@@ -3045,7 +3044,7 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
   // Map loads to the read handler.
   for (opt = 0; opt < 6; opt++) {
     // Unalignment is not relevant here, so map them all to the same handler.
-    for (i = opmap[opt][0]; i < opmap[opt][1]; i++)
+    for (i = ldopmap[opt][0]; i < ldopmap[opt][1]; i++)
       tmemld[i][13] = (u32)translation_ptr;
     // Emit just a check + patch jump
     mips_emit_srl(reg_temp, reg_a0, 24);
@@ -3112,87 +3111,47 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
   *tr_ptr = translation_ptr;
 }
 
-// Emits openload store memory region stub
-static void emit_openload_stub(
-  unsigned memopn, bool signext, unsigned size,
-  unsigned alignment, bool aligned, u8 **tr_ptr
-) {
-  u8 *jmp1, *jmp2;
+// Emits openload stub
+// These are used for reading unmapped regions, we just make them go
+// through the slow handler since should rarely happen.
+static void emit_openload_stub(unsigned opt, bool signext, unsigned size, u8 **tr_ptr) {
+  int i;
+  const u32 hndreadtbl[] = {
+    (u32)&read_memory8,  (u32)&read_memory16,  (u32)&read_memory32,
+    (u32)&read_memory8s, (u32)&read_memory16s, (u32)&read_memory32 };
   u8 *translation_ptr = *tr_ptr;
 
   // This affects regions 1 and 15
-  tmemld[memopn][ 1] = (u32)translation_ptr;
-  tmemld[memopn][15] = (u32)translation_ptr;
+  for (i = ldopmap[opt][0]; i < ldopmap[opt][1]; i++)
+    tmemld[i][ 1] = tmemld[i][15] = (u32)translation_ptr;
 
-  // We need to repatch if: alignment is different or
-  // if we are accessing a non-ignore region (1 and 15)
+  // Alignment is ignored since the handlers do the magic for us
+  // Only check region match: if we are accessing a non-ignore region
   mips_emit_srl(reg_temp, reg_a0, 24);
   mips_emit_sltiu(reg_rv, reg_temp, 0x0F);
   mips_emit_addiu(reg_temp, reg_temp, -1);
   mips_emit_sltu(reg_temp, reg_zero, reg_temp);
   mips_emit_and(reg_temp, reg_temp, reg_rv);
 
-  if (!aligned && size != 0) {
-    // Also check and aggregate alignment
-    mips_emit_ext(reg_rv, reg_a0, 0, size);
-    mips_emit_xori(reg_rv, reg_rv, alignment);
-    mips_emit_or(reg_temp, reg_rv, reg_temp);
-  }
-
   // Jump to patch handler
-  mips_emit_b(bne, reg_zero, reg_temp, ld_phndlr_branch(memopn));
+  mips_emit_b(bne, reg_zero, reg_temp, branch_handlerid(opt));
 
   // BIOS can jump here to do open loads
-  openld_core_ptrs[memopn] = (u32*)translation_ptr;
+  for (i = ldopmap[opt][0]; i < ldopmap[opt][1]; i++)
+    openld_core_ptrs[i] = (u32*)translation_ptr;
 
-  // Proceed with open load by reading data at PC (previous data in the bus)
-  mips_emit_lw(reg_rv, reg_base, ReOff_CPSR);  // Read CPSR
-  mips_emit_andi(reg_rv, reg_rv, 0x20);        // Check T bit
-
-  emit_save_regs(aligned);
-  mips_emit_sw(mips_reg_ra, reg_base, ReOff_SaveR1);
-
-  switch (size) {
-  case 0:
-    mips_emit_andi(reg_a0, reg_a0, 0x3);      // ARM: Isolate two LSB
-    mips_emit_andi(reg_temp, reg_a0, 0x1);    // Thb: Isolate one LSB
-    mips_emit_movn(reg_a0, reg_temp, reg_rv); // Pick thumb or ARM
-    genccall(&read_memory8);
-    mips_emit_addu(reg_a0, reg_a0, reg_a1);   // Add low bits to addr (delay)
-    break;
-  case 1:
-    mips_emit_andi(reg_a0, reg_a0, 0x2);      // ARM: Isolate bit 1
-    mips_emit_movn(reg_a0, reg_zero, reg_rv); // Thumb: ignore all low bits
-    genccall(&read_memory16);
-    mips_emit_addu(reg_a0, reg_a0, reg_a1);   // Add low bits to addr (delay)
-    break;
-  default:
-    mips_emit_b_filler(beq, reg_zero, reg_rv, jmp1);
-    mips_emit_addu(reg_a0, reg_zero, reg_a1); // Move PC to arg0
-
-     genccall(&read_memory16);
-     mips_emit_nop();
-     mips_emit_b_filler(beq, reg_zero, reg_zero, jmp2);
-     mips_emit_ins(reg_rv, reg_rv, 16, 16);    // res = res | (res << 16) [delay]
-
-    generate_branch_patch_conditional(jmp1, translation_ptr);
-    genccall(&read_memory32);
+  emit_save_regs(true);
+  mips_emit_sw(mips_reg_ra, reg_base, ReOff_SaveR1);   // Delay slot
+  genccall(hndreadtbl[size + (signext ? 3 : 0)]);
+  if (opt < 5) {
+    mips_emit_sw(reg_a1, reg_base, ReOff_RegPC);       // Save current PC
+  } else {
+    // Aligned loads do not hold PC in a1 (imprecision)
     mips_emit_nop();
-    generate_branch_patch_conditional(jmp2, translation_ptr);
-    break;
-  };
-  
-  mips_emit_lw(mips_reg_ra, reg_base, ReOff_SaveR1);
-  emit_restore_regs(aligned);
-
-  // Same behaviour as reading from region14 really (8 bit bus)  
-  if (!size && signext) {
-    mips_emit_seb(reg_rv, reg_rv);
-  } else if (size == 1 && alignment) {
-    mips_emit_seb(reg_rv, reg_rv);
-  } else if (size == 2) {
-    mips_emit_rotr(reg_rv, reg_rv, 8 * alignment);
   }
+
+  mips_emit_lw(mips_reg_ra, reg_base, ReOff_SaveR1);
+  emit_restore_regs(true);
   generate_function_return_swap_delay();
 
   *tr_ptr = translation_ptr;
@@ -3295,17 +3254,12 @@ void init_emitter() {
   mips_emit_nop();
   
   // Generate the openload handlers (for accesses to unmapped mem)
-  emit_openload_stub(0, false, 0, 0, false, &translation_ptr);  // ld u8
-  emit_openload_stub(1, true,  0, 0, false, &translation_ptr);  // ld s8
-  emit_openload_stub(2, false, 1, 0, false, &translation_ptr);  // ld u16
-  emit_openload_stub(3, false, 1, 1, false, &translation_ptr);  // ld u16u1
-  emit_openload_stub(4, true,  1, 0, false, &translation_ptr);  // ld s16
-  emit_openload_stub(5, true,  1, 1, false, &translation_ptr);  // ld s16u1
-  emit_openload_stub(6, false, 2, 0, false, &translation_ptr);  // ld u32
-  emit_openload_stub(7, false, 2, 1, false, &translation_ptr);  // ld u32u1
-  emit_openload_stub(8, false, 2, 2, false, &translation_ptr);  // ld u32u2
-  emit_openload_stub(9, false, 2, 3, false, &translation_ptr);  // ld u32u3
-  emit_openload_stub(10,false, 2, 0, true,  &translation_ptr);  // ld aligned 32
+  emit_openload_stub(0, false, 0, &translation_ptr);  // ld u8
+  emit_openload_stub(1, true,  0, &translation_ptr);  // ld s8
+  emit_openload_stub(2, false, 1, &translation_ptr);  // ld u16
+  emit_openload_stub(3, true,  1, &translation_ptr);  // ld s16
+  emit_openload_stub(4, false, 2, &translation_ptr);  // ld u32
+  emit_openload_stub(5, false, 2, &translation_ptr);  // ld a32
 
   // Here we emit the ignore store area, just checks and does nothing
   for (i = 0; i < 4; i++)

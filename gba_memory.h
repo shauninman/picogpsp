@@ -157,8 +157,10 @@ typedef enum
 } flash_manufacturer_id_type;
 
 u8 function_cc read_memory8(u32 address);
+u32 read_memory8s(u32 address);
 u32 function_cc read_memory16(u32 address);
 u16 function_cc read_memory16_signed(u32 address);
+u32 read_memory16s(u32 address);
 u32 function_cc read_memory32(u32 address);
 cpu_alert_type function_cc write_memory8(u32 address, u8 value);
 cpu_alert_type function_cc write_memory16(u32 address, u16 value);

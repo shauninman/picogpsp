@@ -1969,6 +1969,10 @@ u8 function_cc read_memory8(u32 address)
   return value;
 }
 
+u32 read_memory8s(u32 address) {
+  return (u32)((s8)read_memory8(address));
+}
+
 u16 function_cc read_memory16_signed(u32 address)
 {
   u16 value;
@@ -1981,21 +1985,20 @@ u16 function_cc read_memory16_signed(u32 address)
   return value;
 }
 
+u32 read_memory16s(u32 address) {
+  return (u32)((s16)read_memory16_signed(address));
+}
+
 // unaligned reads are actually 32bit
 
 u32 function_cc read_memory16(u32 address)
 {
   u32 value;
-
-  if(address & 0x01)
-  {
-    address &= ~0x01;
-    read_memory(16);
+  bool unaligned = (address & 0x01);
+  address &= ~0x01;
+  read_memory(16);
+  if (unaligned) {
     ror(value, value, 8);
-  }
-  else
-  {
-    read_memory(16);
   }
 
   return value;
@@ -2005,18 +2008,10 @@ u32 function_cc read_memory16(u32 address)
 u32 function_cc read_memory32(u32 address)
 {
   u32 value;
-  if(address & 0x03)
-  {
-    u32 rotate = (address & 0x03) * 8;
-    address &= ~0x03;
-    read_memory(32);
-    ror(value, value, rotate);
-  }
-  else
-  {
-    read_memory(32);
-  }
-
+  u32 rotate = (address & 0x03) * 8;
+  address &= ~0x03;
+  read_memory(32);
+  ror(value, value, rotate);
   return value;
 }
 
