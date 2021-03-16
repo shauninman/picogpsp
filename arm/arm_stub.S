@@ -771,6 +771,8 @@ execute_load_builder(u32, 32, ldrne, #0xF0000000)
 .comm memory_map_write 0x8000
 .comm palette_ram 0x400
 .comm palette_ram_converted 0x400
+.comm spsr 24
+.comm reg_mode 196
 
 .globl reg
 .globl _reg
