@@ -1544,8 +1544,6 @@ const u32 psr_masks[16] =
 // reg_mode[new_mode][6]. When swapping to/from FIQ retire/load reg[8]
 // through reg[14] to/from reg_mode[MODE_FIQ][0] through reg_mode[MODE_FIQ][6].
 
-u32 reg_mode[7][7];
-
 u32 cpu_modes[32] =
 {
   MODE_INVALID, MODE_INVALID, MODE_INVALID, MODE_INVALID, MODE_INVALID,
@@ -1564,9 +1562,9 @@ u32 cpu_modes_cpsr[7] = { 0x10, 0x11, 0x12, 0x13, 0x17, 0x1B, 0x1F };
 
 #ifndef HAVE_DYNAREC
 u32 reg[64];
-#endif
-
 u32 spsr[6];
+u32 reg_mode[7][7];
+#endif
 
 // ARM/Thumb mode is stored in the flags directly, this is simpler than
 // shadowing it since it has a constant 1bit represenation.

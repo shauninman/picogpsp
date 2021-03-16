@@ -52,8 +52,8 @@
 .global memory_map_read
 .global memory_map_write
 .global reg
-
-.extern spsr
+.global spsr
+.global reg_mode
 
 # MIPS register layout:
 
@@ -121,8 +121,10 @@
 .equ COMPLETED_FRAME,     (32 * 4)
 .equ GP_SAVE,             (33 * 4)
 
-.equ SUPERVISOR_LR,       (reg_mode + (3 * (7 * 4)) + (6 * 4))
-.equ SUPERVISOR_SPSR,     (spsr + (3 * 4))
+.equ SPSR_BASE,           (0x900)
+.equ REGMODE_BASE,        (0x900 + 24)
+.equ SUPERVISOR_SPSR,     (3 * 4 + SPSR_BASE)
+.equ SUPERVISOR_LR,       ((3 * (7 * 4)) + (6 * 4) + REGMODE_BASE)
 
 .set noat
 .set noreorder
@@ -2558,11 +2560,10 @@ execute_read_cpsr:
 
 execute_read_spsr:
   lw $1, CPU_MODE($16)            # $1 = cpu_mode
-  lui $2, %hi(spsr)
   sll $1, $1, 2                   # adjust to word offset size
-  addu $2, $2, $1
+  addu $2, $1, $16
   jr $ra                          # return
-  lw $2, %lo(spsr)($2)            # $2 = spsr[cpu_mode] (delay slot)
+  lw $2, SPSR_BASE($2)            # $2 = spsr[cpu_mode] (delay slot)
 
 # Switch into SWI, has to collapse flags
 # $4: Current pc
@@ -2570,11 +2571,9 @@ execute_read_spsr:
 execute_swi:
   add $sp, $sp, -4                # push $ra
   sw $ra, ($sp)
-  lui $1, %hi(SUPERVISOR_LR)
-  sw $4, %lo(SUPERVISOR_LR)($1)   # store next PC in the supervisor's LR
+  sw $4, SUPERVISOR_LR($16)       # store next PC in the supervisor's LR
   collapse_flags                  # get cpsr in $2
-  lui $5, %hi(SUPERVISOR_SPSR)
-  sw $2, %lo(SUPERVISOR_SPSR)($5) # save cpsr in SUPERVISOR_CPSR
+  sw $2, SUPERVISOR_SPSR($16)     # save cpsr in SUPERVISOR_CPSR
   ins $2, $0, 0, 6                # zero out bottom 6 bits of CPSR
   ori $2, 0x13                    # set mode to supervisor
   sw $2, REG_CPSR($16)            # write back CPSR
@@ -2593,11 +2592,10 @@ execute_spsr_restore:
   lw $1, CPU_MODE($16)            # $1 = cpu_mode
 
   beq $1, $0, no_spsr_restore     # only restore if the cpu isn't usermode
-  lui $2, %hi(spsr)               # start loading SPSR (delay)
+  sll $2, $1, 2                   # adjust to word offset size (delay)
 
-  sll $1, $1, 2                   # adjust to word offset size
-  addu $2, $2, $1
-  lw $1, %lo(spsr)($2)            # $1 = spsr[cpu_mode]
+  addu $2, $2, $16
+  lw $1, SPSR_BASE($2)            # $1 = spsr[cpu_mode]
   sw $1, REG_CPSR($16)            # cpsr = spsr[cpu_mode]
   extract_flags_body              # extract flags from $1
   addiu $sp, $sp, -4
@@ -2654,16 +2652,15 @@ changed_pc_cpsr:
 
 execute_store_spsr:
   lw $1, CPU_MODE($16)            # $1 = cpu_mode
-  lui $2, %hi(spsr)
   sll $1, $1, 2                   # adjust to word offset size
-  addu $1, $2, $1
-  lw $2, %lo(spsr)($1)            # $2 = spsr[cpu_mode]
+  addu $1, $1, $16
+  lw $2, SPSR_BASE($1)            # $2 = spsr[cpu_mode]
   and $4, $4, $5                  # $4 = new_spsr & store_mask
   nor $5, $5, $0                  # $5 = ~store_mask
   and $2, $2, $5                  # $2 = (spsr & (~store_mask))
   or $4, $4, $2                   # $4 = new spsr combined with old
   jr $ra                          # return
-  sw $4, %lo(spsr)($1)            # spsr[cpu_mode] = $4 (delay slot)
+  sw $4, SPSR_BASE($1)            # spsr[cpu_mode] = $4 (delay slot)
 
 # $4: value
 # $5: shift
@@ -2813,7 +2810,10 @@ palette_ram:
   .space 0x400
 palette_ram_converted:
   .space 0x400
-
+spsr:
+  .space 24     # u32[6]
+reg_mode:
+  .space 196    # u32[7][7];
 
 memory_map_write:
   .space 0x8000

@@ -31,6 +31,7 @@
 #define _memory_map_read memory_map_read
 #define _memory_map_write memory_map_write
 #define _reg reg
+#define _reg_mode reg_mode
 #define _oam_update oam_update
 #define _iwram iwram
 #define _ewram ewram
@@ -69,6 +70,8 @@
 .global _memory_map_read
 .global _memory_map_write
 .global _reg
+.global _reg_mode
+.global _spsr
 .global _palette_ram
 .global _palette_ram_converted
 
@@ -567,6 +570,10 @@ _palette_ram:
   .space 0x400
 _palette_ram_converted:
   .space 0x400
+_spsr:
+  .space 24
+_reg_mode:
+  .space 196
 
 .comm _memory_map_read 0x8000
 .comm _memory_map_write 0x8000
