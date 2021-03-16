@@ -134,6 +134,12 @@ typedef enum
 
 typedef enum
 {
+  mips_special2_madd     = 0x00,
+  mips_special2_maddu    = 0x01,
+} mips_function_special2;
+
+typedef enum
+{
   mips_special3_ext      = 0x00,
   mips_special3_ins      = 0x04,
   mips_special3_bshfl    = 0x20
@@ -201,6 +207,12 @@ typedef enum
   *((u32 *)translation_ptr) = (mips_opcode_special << 26) |                   \
    (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) |                      \
    mips_special_##function;                                                   \
+  translation_ptr += 4                                                        \
+
+#define mips_emit_special2(function, rs, rt, rd, shift)                       \
+  *((u32 *)translation_ptr) = (mips_opcode_special2 << 26) |                  \
+   (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) |                      \
+   mips_special2_##function;                                                  \
   translation_ptr += 4                                                        \
 
 #define mips_emit_special3(function, rs, rt, imm_a, imm_b)                    \
@@ -314,11 +326,19 @@ typedef enum
 #define mips_emit_divu(rs, rt)                                                \
   mips_emit_special(divu, rs, rt, 0, 0)                                       \
 
-#define mips_emit_madd(rs, rt)                                                \
-  mips_emit_special(madd, rs, rt, 0, 0)                                       \
+#ifdef PSP
+  #define mips_emit_madd(rs, rt)                                              \
+    mips_emit_special(madd, rs, rt, 0, 0)                                     \
 
-#define mips_emit_maddu(rs, rt)                                               \
-  mips_emit_special(maddu, rs, rt, 0, 0)                                      \
+  #define mips_emit_maddu(rs, rt)                                             \
+    mips_emit_special(maddu, rs, rt, 0, 0)
+#else
+  #define mips_emit_madd(rs, rt)                                              \
+    mips_emit_special2(madd, rs, rt, 0, 0)                                    \
+
+  #define mips_emit_maddu(rs, rt)                                             \
+    mips_emit_special2(maddu, rs, rt, 0, 0)
+#endif
 
 #define mips_emit_movn(rd, rs, rt)                                            \
   mips_emit_special(movn, rs, rt, rd, 0)                                      \
@@ -410,6 +430,9 @@ typedef enum
 
 #define mips_emit_jr(rs)                                                      \
   mips_emit_special(jr, rs, 0, 0, 0)                                          \
+
+#define mips_emit_jalr(rs)                                                    \
+  mips_emit_special(jalr, rs, 0, 31, 0)                                       \
 
 #define mips_emit_synci(rs, offset)                                           \
   mips_emit_regimm(synci, rs, offset)                                         \
@@ -2535,8 +2558,9 @@ u8 swi_hle_handle[256] =
 #define ReOff_GP_Save  (32*4) // GP_SAVE
 
 // Saves all regs to their right slot and loads gp
-#define emit_save_regs(save_a2)                                               \
-  for (unsigned i = 0; i < 15; i++) {                                         \
+#define emit_save_regs(save_a2) {                                             \
+  int i;                                                                      \
+  for (i = 0; i < 15; i++) {                                                  \
     mips_emit_sw(arm_to_mips_reg[i], reg_base, 4 * i);                        \
   }                                                                           \
   if (save_a2) {                                                              \
@@ -2544,21 +2568,24 @@ u8 swi_hle_handle[256] =
   }                                                                           \
   /* Load the gp pointer, used by C code */                                   \
   mips_emit_lw(mips_reg_gp, reg_base, ReOff_GP_Save);                         \
+}
 
 // Restores the registers from their slot
-#define emit_restore_regs(restore_a2)                                         \
+#define emit_restore_regs(restore_a2) {                                       \
+  int i;                                                                      \
   if (restore_a2) {                                                           \
     mips_emit_lw(reg_a2, reg_base, ReOff_SaveR2);                             \
   }                                                                           \
-  for (unsigned i = 0; i < 15; i++) {                                         \
+  for (i = 0; i < 15; i++) {                                                  \
     mips_emit_lw(arm_to_mips_reg[i], reg_base, 4 * i);                        \
   }                                                                           \
+}
 
 // Emits a function call for a read or a write (for special stuff like flash)
 #define emit_mem_call_ds(fnptr, mask)                                         \
   mips_emit_sw(mips_reg_ra, reg_base, ReOff_SaveR1);                          \
   emit_save_regs(true);                                                       \
-  mips_emit_jal(((u32)(fnptr)) >> 2);                                         \
+  genccall(fnptr);                                                            \
   mips_emit_andi(reg_a0, reg_a0, (mask));                                     \
   emit_restore_regs(true);                                                    \
   mips_emit_lw(mips_reg_ra, reg_base, ReOff_SaveR1);                          \
@@ -2569,10 +2596,10 @@ u8 swi_hle_handle[256] =
   mips_emit_nop();
 
 // Pointer table to stubs, indexed by type and region
-// Caution! This is not really a ptr table, but contains pre-encoed JALs
 extern u32 tmemld[11][16];
 extern u32 tmemst[ 4][16];
 void mips_lookup_pc();
+void smc_write();
 cpu_alert_type write_io_register8 (u32 address, u32 value);
 cpu_alert_type write_io_register16(u32 address, u32 value);
 cpu_alert_type write_io_register32(u32 address, u32 value);
@@ -2623,6 +2650,15 @@ static void emit_mem_access_loadop(
     break;
   };
 }
+
+#ifdef PIC
+  #define genccall(fn)                                         \
+    mips_emit_lui(mips_reg_t9, ((u32)fn) >> 16);               \
+    mips_emit_ori(mips_reg_t9, mips_reg_t9, ((u32)fn));        \
+    mips_emit_jalr(mips_reg_t9);
+#else
+  #define genccall(fn) mips_emit_jal(((u32)fn) >> 2);
+#endif
 
 // Stub memory map:
 // 0   ..  63  First patch handler [#0]
@@ -2721,7 +2757,7 @@ static void emit_pmemld_stub(
     emit_save_regs(aligned);
     mips_emit_sw(mips_reg_ra, reg_base, ReOff_SaveR3);
     mips_emit_ext(reg_a0, reg_a0, 15, 10);    // a0 = (addr >> 15) & 0x3ff
-    mips_emit_jal(((u32)&load_gamepak_page) >> 2);
+    genccall(&load_gamepak_page);
     mips_emit_sw(reg_temp, reg_base, ReOff_SaveR1);
 
     mips_emit_lw(reg_temp, reg_base, ReOff_SaveR1);
@@ -2891,6 +2927,21 @@ static void emit_pmemst_stub(
   *tr_ptr = translation_ptr;
 }
 
+#ifdef USE_BGR_FORMAT
+  /* 0BGR to BGR565, for PSP */
+  #define palette_convert()                       \
+    mips_emit_sll(reg_temp, reg_a1, 1);           \
+    mips_emit_andi(reg_temp, reg_temp, 0xFFC0);   \
+    mips_emit_ins(reg_temp, reg_a1, 0, 5);
+#else
+  /* 0BGR to RGB565 (clobbers a0!) */
+  #define palette_convert()                       \
+    mips_emit_ext(reg_temp, reg_a1, 10, 5);       \
+    mips_emit_ins(reg_temp, reg_a1, 11, 5);       \
+    mips_emit_ext(reg_a0, reg_a1, 5, 5);          \
+    mips_emit_ins(reg_temp, reg_a0, 6, 5);
+#endif
+
 // Palette is accessed differently and stored in a decoded manner
 static void emit_palette_hdl(
   unsigned memop_number, const t_stub_meminfo *meminfo,
@@ -2923,17 +2974,13 @@ static void emit_palette_hdl(
     mips_emit_sh(reg_a1, reg_base, 0x100);
   }
 
-  mips_emit_sll(reg_temp, reg_a1, 1);
-  mips_emit_andi(reg_temp, reg_temp, 0xFFC0);
-  mips_emit_ins(reg_temp, reg_a1, 0, 5);
+  palette_convert();
   mips_emit_sh(reg_temp, reg_rv, 0x500);
 
   if (size == 2) {
     // Convert the second half-word also
     mips_emit_srl(reg_a1, reg_a1, 16);
-    mips_emit_sll(reg_temp, reg_a1, 1);
-    mips_emit_andi(reg_temp, reg_temp, 0xFFC0);
-    mips_emit_ins(reg_temp, reg_a1, 0, 5);
+    palette_convert();
     mips_emit_sh(reg_temp, reg_rv, 0x502);
   }
   generate_function_return_swap_delay();
@@ -2980,6 +3027,7 @@ static void emit_ignorestore_stub(unsigned size, u8 **tr_ptr) {
 
 // Stubs for regions with EEPROM or flash/SRAM
 static void emit_saveaccess_stub(u8 **tr_ptr) {
+  unsigned opt, i, strop;
   u8 *translation_ptr = *tr_ptr;
   const u8 opmap[6][2] = { {0, 1}, {1, 2}, {2, 4}, {4, 6}, {6, 10}, {10, 11} };
 
@@ -2995,9 +3043,9 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
   emit_mem_call(&write_eeprom, 0x3FF);
 
   // Map loads to the read handler.
-  for (unsigned opt = 0; opt < 6; opt++) {
+  for (opt = 0; opt < 6; opt++) {
     // Unalignment is not relevant here, so map them all to the same handler.
-    for (unsigned i = opmap[opt][0]; i < opmap[opt][1]; i++)
+    for (i = opmap[opt][0]; i < opmap[opt][1]; i++)
       tmemld[i][13] = (u32)translation_ptr;
     // Emit just a check + patch jump
     mips_emit_srl(reg_temp, reg_a0, 24);
@@ -3007,7 +3055,7 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
     mips_emit_b(beq, reg_zero, reg_zero, branch_offset(read_hndlr));
   }
   // This is for stores
-  for (unsigned strop = 0; strop <= 3; strop++) {
+  for (strop = 0; strop <= 3; strop++) {
     tmemst[strop][13] = (u32)translation_ptr;
     mips_emit_srl(reg_temp, reg_a0, 24);
     mips_emit_xori(reg_rv, reg_temp, 0x0D);
@@ -3017,7 +3065,7 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
   }
   
   // Flash/SRAM/Backup writes are only 8 byte supported
-  for (unsigned strop = 0; strop <= 3; strop++) {
+  for (strop = 0; strop <= 3; strop++) {
     tmemst[strop][14] = (u32)translation_ptr;
     mips_emit_srl(reg_temp, reg_a0, 24);
     mips_emit_xori(reg_rv, reg_temp, 0x0E);
@@ -3038,7 +3086,7 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
     (u32)&write_io_register8, (u32)&write_io_register16,
     (u32)&write_io_register32, (u32)&write_io_register32 };
   const u32 amsk[] = {0x3FF, 0x3FE, 0x3FC, 0x3FC};
-  for (unsigned strop = 0; strop <= 3; strop++) {
+  for (strop = 0; strop <= 3; strop++) {
     tmemst[strop][4] = (u32)translation_ptr;
     mips_emit_srl(reg_temp, reg_a0, 24);
     mips_emit_xori(reg_temp, reg_temp, 0x04);
@@ -3047,7 +3095,7 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
     mips_emit_sw(mips_reg_ra, reg_base, ReOff_SaveR3); // Store the return addr
     emit_save_regs(strop == 3);
     mips_emit_andi(reg_a0, reg_a0, amsk[strop]);
-    mips_emit_jal(iowrtbl[strop] >> 2);
+    genccall(iowrtbl[strop]);
 
     if (strop < 3) {
       mips_emit_sw(reg_a2, reg_base, ReOff_RegPC);   // Save PC (delay)
@@ -3069,6 +3117,7 @@ static void emit_openload_stub(
   unsigned memopn, bool signext, unsigned size,
   unsigned alignment, bool aligned, u8 **tr_ptr
 ) {
+  u8 *jmp1, *jmp2;
   u8 *translation_ptr = *tr_ptr;
 
   // This affects regions 1 and 15
@@ -3105,30 +3154,31 @@ static void emit_openload_stub(
 
   switch (size) {
   case 0:
-    mips_emit_b(beq, reg_zero, reg_rv, 2);    // Depends on CPU mode
     mips_emit_andi(reg_a0, reg_a0, 0x3);      // ARM: Isolate two LSB
-    mips_emit_andi(reg_a0, reg_a0, 0x1);      // Thb: Isolate one LSB
-    mips_emit_jal(((u32)&read_memory8) >> 2);
+    mips_emit_andi(reg_temp, reg_a0, 0x1);    // Thb: Isolate one LSB
+    mips_emit_movn(reg_a0, reg_temp, reg_rv); // Pick thumb or ARM
+    genccall(&read_memory8);
     mips_emit_addu(reg_a0, reg_a0, reg_a1);   // Add low bits to addr (delay)
     break;
   case 1:
-    mips_emit_b(beq, reg_zero, reg_rv, 2);
     mips_emit_andi(reg_a0, reg_a0, 0x2);      // ARM: Isolate bit 1
-    mips_emit_andi(reg_a0, reg_a0, 0x0);      // Thb: Ignore low bits at all
-    mips_emit_jal(((u32)&read_memory16) >> 2);
+    mips_emit_movn(reg_a0, reg_zero, reg_rv); // Thumb: ignore all low bits
+    genccall(&read_memory16);
     mips_emit_addu(reg_a0, reg_a0, reg_a1);   // Add low bits to addr (delay)
     break;
   default:
-    mips_emit_b(beq, reg_zero, reg_rv, 5);
+    mips_emit_b_filler(beq, reg_zero, reg_rv, jmp1);
     mips_emit_addu(reg_a0, reg_zero, reg_a1); // Move PC to arg0
 
-     mips_emit_jal(((u32)&read_memory16) >> 2);
+     genccall(&read_memory16);
      mips_emit_nop();
-     mips_emit_b(beq, reg_zero, reg_zero, 3);
+     mips_emit_b_filler(beq, reg_zero, reg_zero, jmp2);
      mips_emit_ins(reg_rv, reg_rv, 16, 16);    // res = res | (res << 16) [delay]
-    
-    mips_emit_jal(((u32)&read_memory32) >> 2);
+
+    generate_branch_patch_conditional(jmp1, translation_ptr);
+    genccall(&read_memory32);
     mips_emit_nop();
+    generate_branch_patch_conditional(jmp2, translation_ptr);
     break;
   };
   
@@ -3194,9 +3244,14 @@ static void emit_phand(
   mips_emit_rotr(reg_temp, reg_temp, 6);      // Swap opcode and immediate
   mips_emit_sw(reg_temp, mips_reg_ra, -8);    // Patch instruction!
 
+  #ifdef PSP
   mips_emit_cache(0x1A, mips_reg_ra, -8);
   mips_emit_jr(reg_rv);                       // Jump directly to target for speed
   mips_emit_cache(0x08, mips_reg_ra, -8);
+  #else
+  mips_emit_jr(reg_rv);
+  mips_emit_synci(mips_reg_ra, -8);
+  #endif
 
   // Round up handlers to 16 instructions for easy addressing :)
   while (translation_ptr - *tr_ptr < 64) {
@@ -3212,6 +3267,7 @@ static void emit_phand(
 // - mem stubs: There's stubs for load & store, and every memory region
 //    and possible operand size and misaligment (+sign extensions)
 void init_emitter() {
+  int i;
   // Initialize memory to a debuggable state
   memset(stub_arena, 0, sizeof(stub_arena));   // nop
 
@@ -3234,25 +3290,8 @@ void init_emitter() {
   emit_phand(&translation_ptr, 2, 13 * 16, false);  // st u32
   emit_phand(&translation_ptr, 2, 14 * 16, false);  // st aligned 32
 
-  // Generate SMC write handler, with the lookup machinery
-  // Call out the flushing routine (save PC)
-  emit_save_regs(false);
-  mips_emit_jal(((u32)&flush_translation_cache_ram) >> 2);
-  mips_emit_sw(reg_a2, reg_base, ReOff_RegPC);   // Delay slot
-
-  mips_emit_lw(reg_rv, reg_base, ReOff_CPSR);    // Read CPSR
-  mips_emit_andi(reg_rv, reg_rv, 0x20);          // Check T bit
-  mips_emit_b(beq, reg_rv, reg_zero, 3);         // Skip to ARM mode
-  mips_emit_lw(reg_a0, reg_base, ReOff_RegPC);   // arg0=pc
-  // Lookup thumb PC and execute
-  mips_emit_jal(((u32)&block_lookup_address_thumb) >> 2);
-  mips_emit_addiu(mips_reg_ra, mips_reg_ra, 8);  // Skip 2 insts on return!
-  // Lookup arm PC and execute
-  mips_emit_jal(((u32)&block_lookup_address_arm) >> 2);
-  mips_emit_nop();
-  // Epiloge (restore and jump)
-  emit_restore_regs(false);
-  mips_emit_jr(reg_rv);                          // Go execute the code
+  // This is just a trampoline (for the SMC branches)
+  mips_emit_j(((u32)&smc_write) >> 2);
   mips_emit_nop();
   
   // Generate the openload handlers (for accesses to unmapped mem)
@@ -3269,7 +3308,7 @@ void init_emitter() {
   emit_openload_stub(10,false, 2, 0, true,  &translation_ptr);  // ld aligned 32
 
   // Here we emit the ignore store area, just checks and does nothing
-  for (unsigned i = 0; i < 4; i++)
+  for (i = 0; i < 4; i++)
     emit_ignorestore_stub(i, &translation_ptr);
 
   // Here go the save game handlers
@@ -3295,7 +3334,7 @@ void init_emitter() {
     // 15 Open load / Ignore store
   };
 
-  for (unsigned i = 0; i < sizeof(ldinfo)/sizeof(ldinfo[0]); i++) {
+  for (i = 0; i < sizeof(ldinfo)/sizeof(ldinfo[0]); i++) {
     ldhldr_t handler = (ldhldr_t)ldinfo[i].emitter;
     /*          region  info      signext sz al  isaligned */
     handler(0, &ldinfo[i], false, 0, 0, false, &translation_ptr);  // ld u8
@@ -3325,13 +3364,18 @@ void init_emitter() {
 
   // Store only for "regular"-ish mem regions
   //
-  for (unsigned i = 0; i < sizeof(stinfo)/sizeof(stinfo[0]); i++) {
+  for (i = 0; i < sizeof(stinfo)/sizeof(stinfo[0]); i++) {
     sthldr_t handler = (sthldr_t)stinfo[i].emitter;
     handler(0, &stinfo[i], 0, false, &translation_ptr);  // st u8
     handler(1, &stinfo[i], 1, false, &translation_ptr);  // st u16
     handler(2, &stinfo[i], 2, false, &translation_ptr);  // st u32
     handler(3, &stinfo[i], 2, true,  &translation_ptr);  // st aligned 32
   }
+}
+
+u32 execute_arm_translate_internal(u32 cycles, void *regptr);
+u32 function_cc execute_arm_translate(u32 cycles) {
+  return execute_arm_translate_internal(cycles, &reg[0]);
 }
 
 #endif

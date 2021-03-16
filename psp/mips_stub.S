@@ -33,13 +33,14 @@
 .global execute_lsr_flags_reg
 .global execute_asr_flags_reg
 .global execute_ror_flags_reg
-.global execute_arm_translate
+.global execute_arm_translate_internal
 .global icache_region_sync
 .global reg_check
 .global palette_ram
 .global palette_ram_converted
 .global init_emitter
 .global mips_lookup_pc
+.global smc_write
 
 .global write_io_epilogue
 .global memory_map_read
@@ -120,6 +121,7 @@
 .equ REGMODE_BASE,        (0x900 + 24)
 .equ SUPERVISOR_SPSR,     (3 * 4 + SPSR_BASE)
 .equ SUPERVISOR_LR,       ((3 * (7 * 4)) + (6 * 4) + REGMODE_BASE)
+.equ FNPTRS_BASE,         (0x900 + 220 + 960)
 
 .set noat
 .set noreorder
@@ -196,6 +198,22 @@
   lw $30, REG_R14($16)
 .endm
 
+# PIC ABI mandates to jump to target via $t9
+
+#ifdef PIC
+.macro cfncall target, targetid
+  lw $t9, (FNPTRS_BASE + \targetid * 4)($16)
+  jalr $t9
+  nop
+.endm
+#else
+.macro cfncall target, targetid
+  jal \target
+  nop
+.endm
+#endif
+
+
 # Process a hardware event. Since an interrupt might be
 # raised we have to check if the PC has changed.
 
@@ -213,8 +231,8 @@ mips_update_gba:
   sw $ra, REG_SAVE2($16)          # save return addr
   collapse_flags                  # update cpsr
   save_registers                  # save registers
-  jal update_gba                  # process the next event
   sw $0, CHANGED_PC_STATUS($16)
+  cfncall update_gba, 0           # process the next event
 
   lw $1, COMPLETED_FRAME($16)     # Check whether we completed a frame
   bne $1, $0, return_to_main      # Return to main thread now
@@ -257,26 +275,24 @@ return_to_main:
 
 mips_indirect_branch_arm:
   save_registers
-  jal block_lookup_address_arm    # $2 = MIPS address to jump to
-  nop
+  cfncall block_lookup_address_arm, 1
   restore_registers
-  jr $2                           # jump to it
+  jr $2                           # $2 = value returned
   nop
 
 mips_indirect_branch_thumb:
   save_registers
-  jal block_lookup_address_thumb  # $2 = MIPS address to jump to
-  nop
+  cfncall block_lookup_address_thumb, 2
   restore_registers
-  jr $2                           # jump to it
+  jr $2                           # $2 = value returned
   nop
 
 mips_indirect_branch_dual:
   save_registers
-  jal block_lookup_address_dual   # $2 = MIPS address to jump to
+  cfncall block_lookup_address_dual, 3
   nop
   restore_registers
-  jr $2                           # jump to it
+  jr $2                           # $2 = value returned
   nop
 
 
@@ -293,8 +309,7 @@ write_io_epilogue:
 
 
 alert_loop:
-  jal update_gba                  # process the next event
-  nop
+  cfncall update_gba, 0           # process the next event
 
   lw $1, COMPLETED_FRAME($16)     # Check whether we completed a frame
   bne $1, $0, return_to_main      # Return to main thread now
@@ -321,15 +336,14 @@ no_alert:
   nop
 
 smc_dma:
-  jal flush_translation_cache_ram # flush translation cache
-  nop
+  cfncall flush_translation_cache_ram, 4
   j lookup_pc
   nop
 
 smc_write:
   save_registers
-  jal flush_translation_cache_ram # flush translation cache
-  sw $6, REG_PC($16)              # save PC (delay slot)
+  sw $6, REG_PC($16)              # save PC
+  cfncall flush_translation_cache_ram, 4
 
 mips_lookup_pc:
 lookup_pc:
@@ -339,17 +353,17 @@ lookup_pc:
   nop
 
 lookup_pc_thumb:
-  jal block_lookup_address_thumb  # get Thumb address
-  lw $4, REG_PC($16)              # load PC as arg 0 (delay slot)
+  lw $4, REG_PC($16)                     # load PC as arg 0
+  cfncall block_lookup_address_thumb, 2  # get Thumb address
   restore_registers
-  jr $2                           # jump to result
+  jr $2                                  # jump to result
   nop
 
 lookup_pc_arm:
-  jal block_lookup_address_arm    # get ARM address
-  lw $4, REG_PC($16)              # load PC as arg 0 (delay slot)
+  lw $4, REG_PC($16)                   # load PC as arg 0
+  cfncall block_lookup_address_arm, 1  # get ARM address
   restore_registers
-  jr $2                           # jump to result
+  jr $2                                # jump to result
   nop
 
 # Return the current cpsr
@@ -381,8 +395,8 @@ execute_swi:
   ori $2, 0x13                    # set mode to supervisor
   sw $2, REG_CPSR($16)            # write back CPSR
   save_registers
-  jal set_cpu_mode                # set the CPU mode to supervisor
-  li $4, 3                        # 3 is supervisor mode (delay slot)
+  li $4, 3                        # 3 is supervisor mode
+  cfncall set_cpu_mode, 5         # set the CPU mode to supervisor
   restore_registers
   lw $ra, ($sp)                   # pop $ra
   jr $ra                          # return
@@ -404,8 +418,7 @@ execute_spsr_restore:
   addiu $sp, $sp, -4
   sw $ra, ($sp)
   save_registers
-  jal execute_spsr_restore_body   # do the dirty work in this C function
-  nop
+  cfncall execute_spsr_restore_body, 6  # do the dirty work in this C function
   restore_registers
   addu $4, $2, $0                 # move return value to $4
   lw $ra, ($sp)
@@ -429,8 +442,8 @@ execute_store_cpsr:
   extract_flags_body              # extract flags from $1
   sw $ra, REG_SAVE3($16)
   save_registers
-  jal execute_store_cpsr_body     # do the dirty work in this C function
-  addu $4, $1, $0                 # load the new CPSR (delay slot)
+  addu $4, $1, $0                 # load the new CPSR
+  cfncall execute_store_cpsr_body, 7   # do the dirty work in this C function
 
   bne $2, $0, changed_pc_cpsr     # this could have changed the pc
   nop
@@ -442,10 +455,10 @@ execute_store_cpsr:
   nop
 
 changed_pc_cpsr:
-  jal block_lookup_address_arm    # GBA address is in $4
-  addu $4, $2, $0                 # load new address in $4 (delay slot)
-  restore_registers               # restore registers
-  jr $2                           # jump to the new address
+  addu $4, $2, $0                      # load new address in $4
+  cfncall block_lookup_address_arm, 1  # GBA address is in $4
+  restore_registers                    # restore registers
+  jr $2                                # jump to the new address
   nop
 
 
@@ -549,8 +562,9 @@ ror_zero_shift:
   rotrv $4, $4, $5                # return (value ror shift) delay
 
 # $4: cycle counter argument
+# $5: pointer to reg
 
-execute_arm_translate:
+execute_arm_translate_internal:
   add $sp, $sp, -48               # Store the main thread context
   sw $s0,  0($sp)
   sw $s1,  4($sp)
@@ -563,9 +577,7 @@ execute_arm_translate:
   sw $fp, 32($sp)
   sw $ra, 36($sp)
 
-  lui $16, %hi(reg)               # load reg address into base reg
-  addiu $16, %lo(reg)
-
+  move $16, $5
   sw $28, GP_SAVE($16)
 
   addu $17, $4, $0                # load cycle counter register
@@ -582,15 +594,13 @@ execute_arm_translate:
   bne $1, $0, 1f
   lw $4, REG_PC($16)              # load PC into $4 (delay)
 
-  jal block_lookup_address_arm    # lookup initial jump address
-  nop
+  cfncall block_lookup_address_arm, 1
   restore_registers               # load initial register values
   jr $2                           # jump to return
   nop
 
 1:
-  jal block_lookup_address_thumb  # lookup initial jump address
-  nop
+  cfncall block_lookup_address_thumb, 2
   restore_registers               # load initial register values
   jr $2                           # jump to return
   nop
@@ -629,5 +639,13 @@ tmemld:
   .space 704
 tmemst:
   .space 256
-
+fnptrs:
+  .long update_gba                     # 0
+  .long block_lookup_address_arm       # 1
+  .long block_lookup_address_thumb     # 2
+  .long block_lookup_address_dual      # 3
+  .long flush_translation_cache_ram    # 4
+  .long set_cpu_mode                   # 5
+  .long execute_spsr_restore_body      # 6
+  .long execute_store_cpsr_body        # 7
 
