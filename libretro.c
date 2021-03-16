@@ -545,6 +545,8 @@ void retro_deinit(void)
    gba_processed_pixels   = NULL;
    gba_screen_pixels_prev = NULL;
    video_post_process     = NULL;
+   post_process_cc        = false;
+   post_process_mix       = false;
 }
 
 static retro_time_t retro_perf_dummy_get_time_usec() { return 0; }
