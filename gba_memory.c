@@ -3394,10 +3394,7 @@ void gba_load_state(const void* src)
 
 #ifdef HAVE_DYNAREC
    if (dynarec_enable)
-   {
-      flush_translation_cache_ram();
-      flush_translation_cache_rom();
-   }
+      wipe_caches();
 #endif
 
    oam_update = 1;

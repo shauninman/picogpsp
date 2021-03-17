@@ -538,7 +538,7 @@ _execute_arm_translate:
 
   # (if the CPU is halted, do not start executing but
   #  loop in the alert loop until it wakes up)
-  cmp $0, CPU_HALT_STATE(%ebx)
+  cmpl $0, CPU_HALT_STATE(%ebx)
   je 1f
   call alert_loop     # Need to push something to the stack
   

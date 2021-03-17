@@ -147,7 +147,7 @@ struct retro_core_option_definition option_defs_us[] = {
 #if defined(HAVE_DYNAREC)
    {
       "gpsp_drc",
-      "Dynamic Recompiler (Restart)",
+      "Dynamic Recompiler",
       "Dynamically recompile CPU instructions to native instructions. Greatly improves performance, but may reduce accuracy.",
       {
          { "enabled",  NULL },

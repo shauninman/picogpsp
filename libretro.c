@@ -408,7 +408,13 @@ void retro_get_system_av_info(struct retro_system_av_info* info)
 
 void retro_init(void)
 {
-#if defined(_3DS) && defined(HAVE_DYNAREC)
+#if defined(HAVE_DYNAREC)
+  #if defined(HAVE_MMAP)
+   rom_translation_cache = mmap(NULL, ROM_TRANSLATION_CACHE_SIZE,
+                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
+   ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
+                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
+  #elif defined(_3DS)
    if (__ctr_svchax && !translation_caches_inited)
    {
       uint32_t currentHandle;
@@ -430,10 +436,8 @@ void retro_init(void)
       ctr_flush_invalidate_cache();
       translation_caches_inited = 1;
    }
-#endif
-
-#if defined(VITA) && defined(HAVE_DYNAREC)
-      if(!translation_caches_inited){
+  #elif defined(VITA)
+   if(!translation_caches_inited){
       void* currentHandle;
 
       sceBlock = getVMBlock();
@@ -456,8 +460,8 @@ void retro_init(void)
       ram_translation_ptr = ram_translation_cache;
       sceKernelOpenVMDomain();
       translation_caches_inited = 1;
-}
-
+    }
+  #endif
 #endif
 
    if (!gamepak_rom)
@@ -641,16 +645,19 @@ static void check_variables(int started_from_load)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (started_from_load)
-      {
-         if (strcmp(var.value, "disabled") == 0)
-            dynarec_enable = 0;
-         else if (strcmp(var.value, "enabled") == 0)
-            dynarec_enable = 1;
-      }
+      int prevvalue = dynarec_enable;
+      if (strcmp(var.value, "disabled") == 0)
+         dynarec_enable = 0;
+      else if (strcmp(var.value, "enabled") == 0)
+         dynarec_enable = 1;
+
+      if (dynarec_enable != prevvalue)
+         wipe_caches();
    }
    else
       dynarec_enable = 1;
+#else
+   dynarec_enable = 0;
 #endif
 
    var.key                = "gpsp_frameskip";
@@ -778,34 +785,6 @@ bool retro_load_game(const struct retro_game_info* info)
    use_libretro_save_method = 0;
    check_variables(1);
    set_input_descriptors();
-
-#if defined(HAVE_DYNAREC)
-   if (dynarec_enable)
-   {
-#if defined(HAVE_MMAP)
-
-   rom_translation_cache = mmap(NULL, ROM_TRANSLATION_CACHE_SIZE,
-                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
-   ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
-                                PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
-
-   rom_translation_ptr = rom_translation_cache;
-   ram_translation_ptr = ram_translation_cache;
-#elif defined(_3DS)
-   dynarec_enable = __ctr_svchax;
-   rom_translation_ptr = rom_translation_cache;
-   ram_translation_ptr = ram_translation_cache;
-#elif defined(PSP) || defined(VITA)
-   dynarec_enable = 1;
-   rom_translation_ptr = rom_translation_cache;
-   ram_translation_ptr = ram_translation_cache;
-#endif
-   }
-   else
-      dynarec_enable = 0;
-#else
-   dynarec_enable = 0;
-#endif
 
    char filename_bios[MAX_PATH];
    const char* dir = NULL;

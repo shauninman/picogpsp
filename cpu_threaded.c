@@ -3686,6 +3686,17 @@ void flush_translation_cache_rom(void)
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
 }
 
+void wipe_caches(void)
+{
+  /* Ensure we wipe everything including the SMC mirrors */
+  flush_translation_cache_rom();
+  ewram_code_min = 0;
+  ewram_code_max = 0x3FFFF;
+  iwram_code_min = 0;
+  iwram_code_max = 0x7FFF;
+  flush_translation_cache_ram();
+}
+
 #define cache_dump_prefix ""
 
 void dump_translation_cache(void)
