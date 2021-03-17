@@ -22,8 +22,7 @@ static inline int align(int x, int n) {
 #define MB_ALIGN(x) align(x, 20)
 
 int _newlib_vm_size_user = ROM_TRANSLATION_CACHE_SIZE +
-                           RAM_TRANSLATION_CACHE_SIZE + 
-                           BIOS_TRANSLATION_CACHE_SIZE;
+                           RAM_TRANSLATION_CACHE_SIZE; 
 
 int getVMBlock();
 
@@ -417,7 +416,6 @@ void retro_init(void)
       
       rom_translation_cache_ptr  = memalign(0x1000, ROM_TRANSLATION_CACHE_SIZE);
       ram_translation_cache_ptr  = memalign(0x1000, RAM_TRANSLATION_CACHE_SIZE);
-      bios_translation_cache_ptr = memalign(0x1000, BIOS_TRANSLATION_CACHE_SIZE);
 
       svcDuplicateHandle(&currentHandle, 0xFFFF8001);
       svcControlProcessMemory(currentHandle,
@@ -426,13 +424,9 @@ void retro_init(void)
       svcControlProcessMemory(currentHandle,
                               ram_translation_cache, ram_translation_cache_ptr,
                               RAM_TRANSLATION_CACHE_SIZE, MEMOP_MAP, 0b111);
-      svcControlProcessMemory(currentHandle,
-                              bios_translation_cache, bios_translation_cache_ptr,
-                              BIOS_TRANSLATION_CACHE_SIZE, MEMOP_MAP, 0b111);
       svcCloseHandle(currentHandle);
       rom_translation_ptr = rom_translation_cache;
       ram_translation_ptr = ram_translation_cache;
-      bios_translation_ptr = bios_translation_cache;
       ctr_flush_invalidate_cache();
       translation_caches_inited = 1;
    }
@@ -458,10 +452,8 @@ void retro_init(void)
 
       rom_translation_cache  = (u8*)currentHandle;
       ram_translation_cache  = rom_translation_cache + ROM_TRANSLATION_CACHE_SIZE;
-      bios_translation_cache = ram_translation_cache + RAM_TRANSLATION_CACHE_SIZE;
       rom_translation_ptr = rom_translation_cache;
       ram_translation_ptr = ram_translation_cache;
-      bios_translation_ptr = bios_translation_cache;
       sceKernelOpenVMDomain();
       translation_caches_inited = 1;
 }
@@ -498,7 +490,6 @@ void retro_deinit(void)
 #if defined(HAVE_MMAP) && defined(HAVE_DYNAREC)
    munmap(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE);
    munmap(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE);
-   munmap(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE);
 #endif
 #if defined(_3DS) && defined(HAVE_DYNAREC)
 
@@ -512,13 +503,9 @@ void retro_deinit(void)
       svcControlProcessMemory(currentHandle,
                               ram_translation_cache, ram_translation_cache_ptr,
                               RAM_TRANSLATION_CACHE_SIZE, MEMOP_UNMAP, 0b111);
-      svcControlProcessMemory(currentHandle,
-                              bios_translation_cache, bios_translation_cache_ptr,
-                              BIOS_TRANSLATION_CACHE_SIZE, MEMOP_UNMAP, 0b111);
       svcCloseHandle(currentHandle);
       free(rom_translation_cache_ptr);
       free(ram_translation_cache_ptr);
-      free(bios_translation_cache_ptr);
       translation_caches_inited = 0;
    }
 #endif
@@ -801,22 +788,17 @@ bool retro_load_game(const struct retro_game_info* info)
                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
    ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
-   bios_translation_cache = mmap(NULL, BIOS_TRANSLATION_CACHE_SIZE,
-                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
 
    rom_translation_ptr = rom_translation_cache;
    ram_translation_ptr = ram_translation_cache;
-   bios_translation_ptr = bios_translation_cache;
 #elif defined(_3DS)
    dynarec_enable = __ctr_svchax;
    rom_translation_ptr = rom_translation_cache;
    ram_translation_ptr = ram_translation_cache;
-   bios_translation_ptr = bios_translation_cache;
 #elif defined(PSP) || defined(VITA)
    dynarec_enable = 1;
    rom_translation_ptr = rom_translation_cache;
    ram_translation_ptr = ram_translation_cache;
-   bios_translation_ptr = bios_translation_cache;
 #endif
    }
    else

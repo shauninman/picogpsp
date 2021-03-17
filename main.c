@@ -116,7 +116,6 @@ void init_main(void)
 #ifdef HAVE_DYNAREC
   flush_translation_cache_rom();
   flush_translation_cache_ram();
-  flush_translation_cache_bios();
   init_emitter();
 #endif
 }
