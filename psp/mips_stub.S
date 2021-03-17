@@ -23,16 +23,6 @@
 .global mips_indirect_branch_arm
 .global mips_indirect_branch_thumb
 .global mips_indirect_branch_dual
-.global execute_load_u8
-.global execute_load_u16
-.global execute_load_u32
-.global execute_load_s8
-.global execute_load_s16
-.global execute_store_u8
-.global execute_store_u16
-.global execute_store_u32
-.global execute_aligned_load32
-.global execute_aligned_store32
 .global execute_read_cpsr
 .global execute_read_spsr
 .global execute_swi
@@ -43,14 +33,21 @@
 .global execute_lsr_flags_reg
 .global execute_asr_flags_reg
 .global execute_ror_flags_reg
-.global execute_arm_translate
+.global execute_arm_translate_internal
 .global icache_region_sync
 .global reg_check
 .global palette_ram
 .global palette_ram_converted
+.global init_emitter
+.global mips_lookup_pc
+.global smc_write
 
+.global write_io_epilogue
 .global memory_map_read
 .global memory_map_write
+.global tmemld
+.global tmemst
+.global tmemst
 .global reg
 .global spsr
 .global reg_mode
@@ -105,7 +102,6 @@
 .equ REG_R12,             (12 * 4)
 .equ REG_R13,             (13 * 4)
 .equ REG_R14,             (14 * 4)
-.equ REG_LR,              (14 * 4)
 .equ REG_PC,              (15 * 4)
 .equ REG_N_FLAG,          (16 * 4)
 .equ REG_Z_FLAG,          (17 * 4)
@@ -125,6 +121,7 @@
 .equ REGMODE_BASE,        (0x900 + 24)
 .equ SUPERVISOR_SPSR,     (3 * 4 + SPSR_BASE)
 .equ SUPERVISOR_LR,       ((3 * (7 * 4)) + (6 * 4) + REGMODE_BASE)
+.equ FNPTRS_BASE,         (0x900 + 220 + 960)
 
 .set noat
 .set noreorder
@@ -201,6 +198,22 @@
   lw $30, REG_R14($16)
 .endm
 
+# PIC ABI mandates to jump to target via $t9
+
+#ifdef PIC
+.macro cfncall target, targetid
+  lw $t9, (FNPTRS_BASE + \targetid * 4)($16)
+  jalr $t9
+  nop
+.endm
+#else
+.macro cfncall target, targetid
+  jal \target
+  nop
+.endm
+#endif
+
+
 # Process a hardware event. Since an interrupt might be
 # raised we have to check if the PC has changed.
 
@@ -218,8 +231,8 @@ mips_update_gba:
   sw $ra, REG_SAVE2($16)          # save return addr
   collapse_flags                  # update cpsr
   save_registers                  # save registers
-  jal update_gba                  # process the next event
   sw $0, CHANGED_PC_STATUS($16)
+  cfncall update_gba, 0           # process the next event
 
   lw $1, COMPLETED_FRAME($16)     # Check whether we completed a frame
   bne $1, $0, return_to_main      # Return to main thread now
@@ -262,2220 +275,25 @@ return_to_main:
 
 mips_indirect_branch_arm:
   save_registers
-  jal block_lookup_address_arm    # $2 = MIPS address to jump to
-  nop
+  cfncall block_lookup_address_arm, 1
   restore_registers
-  jr $2                           # jump to it
+  jr $2                           # $2 = value returned
   nop
 
 mips_indirect_branch_thumb:
   save_registers
-  jal block_lookup_address_thumb  # $2 = MIPS address to jump to
-  nop
+  cfncall block_lookup_address_thumb, 2
   restore_registers
-  jr $2                           # jump to it
+  jr $2                           # $2 = value returned
   nop
 
 mips_indirect_branch_dual:
   save_registers
-  jal block_lookup_address_dual   # $2 = MIPS address to jump to
+  cfncall block_lookup_address_dual, 3
   nop
   restore_registers
-  jr $2                           # jump to it
+  jr $2                           # $2 = value returned
   nop
-
-
-# $4: address to write to
-# $5: current PC
-
-# Will patch the return address with a call to the correct handler as
-# listed in the given table.
-
-# Value will be set to force_open if it's open
-
-.macro patch_handler ftable, force_open
-  srl $1, $4, 24                  # $1 = address region
-  sltu $2, $1, 0x0F               # check if the value is open
-  bne $2, $0, 1f
-  sll $1, $1, 2                   # make address word indexed (delay)
-
-  addiu $1, $0, (\force_open * 4)
-
-1:
-  lui $2, %hi(\ftable)
-  addu $2, $2, $1
-  lw $2, %lo(\ftable)($2)         # new function handler is in $2
-  sll $1, $2, 4                   # shift left by 4 (6 LSB are zero)
-  ori $1, $1, 3                   # Insert the opcode in the LSB
-  ror $1, $1, 6                   # Rotate to the opcode is now in the MSB
-
-  sw $1, -8($ra)                  # Overwrite jal instruction w/ new handler
-
-  cache 0x1a, -8($ra)             # hit writeback dcache line
-  cache 0x08, -8($ra)             # hit invalidate icache line
-  jr $2                           # Jump to new handler directly
-  nop
-
-.endm
-
-
-# Like the above, but will use the table of the proper alignment,
-# The tables should be ordered by alignment
-
-.macro patch_handler_align ftable, alignment
-  srl $1, $4, 24                  # $1 = address region
-  sltu $2, $1, 0x0F               # check if the value is open
-  bne $2, $0, 1f
-  sll $1, $1, 2                   # make address word indexed (delay)
-
-  addiu $1, $0, 4                 # force address to 0x1 (open)
-
-1:
-  ins $1, $4, 6, \alignment       # place alignment bits into offset
-  lui $2, %hi(\ftable)
-
-  addu $2, $2, $1
-  lw $2, %lo(\ftable)($2)         # new function handler is in $2
-
-  sll $1, $2, 4                   # Build the new JAL instruction
-  ori $1, $1, 3                   # same as above.
-  ror $1, $1, 6
-
-  sw $1, -8($ra)                  # modify to call new handler
-
-  cache 0x1a, -8($ra)             # hit writeback dcache line
-  cache 0x08, -8($ra)             # hit invalidate icache line
-  jr $2                           # Jump to new handler
-  nop
-
-.endm
-
-
-.macro region_check region, patch_handler
-  srl $1, $4, 24                  # check upper 8bits of address
-  xor $1, $1, \region             # see if it is the given region
-  bne $1, $0, \patch_handler      # if not repatch/try again
-.endm
-
-.macro region_check_open patch_handler
-  srl $1, $4, 24                  # check upper 8bits of address
-  sltiu $2, $1, 0x0F              # true if it is a low address
-  addiu $1, $1, -1                # non-zero if it is not a low open
-  sltu $1, $0, $1                 # true if lower bits != 1
-  and $1, $1, $2                  # true if low address and not open
-  bne $1, $0, \patch_handler      # if above is true, patch
-.endm
-
-
-.macro region_check_align region, align_bits, alignment, patch_handler
-  srl $1, $4, 24                  # check upper 8bits of address
-  ins $1, $4, 8, \align_bits      # look at lower bits of address too
-  # See if it is the given region and alignment
-  xori $1, $1, (\region | (\alignment << 8))
-  bne $1, $0, \patch_handler      # if not repatch/try again
-.endm
-
-.macro region_check_open_align align_bits, alignment, patch_handler
-  srl $1, $4, 24                  # check upper 8bits of address
-  sltiu $2, $1, 0x0F              # true if it is a low address
-  addiu $1, $1, -1                # non-zero if it is not a low open
-  sltu $1, $0, $1                 # true if $1 != 0
-  and $1, $1, $2                  # true if low address and not open
-  ext $2, $4, 0, \align_bits      # $2 = low bits of 4
-  xori $2, $2, \alignment         # true if alignment doesn't match
-  or $1, $1, $2                   # align failure will trigger too
-  bne $1, $0, \patch_handler      # if above is true, patch
-.endm
-
-
-.macro ignore_region region, patch_handler
-  region_check \region, \patch_handler
-  nop
-  jr $ra
-  nop
-.endm
-
-.macro ignore_high patch_handler
-  srl $1, $4, 24                  # check upper 8bits of address
-  sltiu $1, $1, 0x0F              # see if it is not high
-  bne $1, $0, \patch_handler      # if not repatch/try again
-  nop
-  jr $ra
-  nop
-.endm
-
-
-.macro translate_region_core base, size
-  lui $2, %hi(\base)              # generate upper address
-  andi $4, $4, \size              # generate offset
-  addu $2, $2, $4                 # add ptr upper and offset
-.endm
-
-.macro translate_region region, patch_handler, base, size
-  region_check \region, \patch_handler
-  translate_region_core \base, \size
-.endm
-
-# I refuse to have > 80 char lines, and GAS has a problem with the param
-# list spilling over (grumble)
-
-.macro translate_region_align region, a_b, alignment, p_h, base, size
-  region_check_align \region, \a_b, \alignment, \p_h
-  translate_region_core \base, \size
-.endm
-
-
-.macro translate_region_ewram_core mask
-  lui $2, %hi(ewram + 0x8000)     # generate upper address (delay)
-  andi $1, $4, \mask              # generate 15bit offset
-  ext $4, $4, 15, 3               # isolate top 3 bits of offset
-  ins $1, $4, 16, 3               # reinsert into top 4 bits
-  addu $2, $2, $1
-.endm
-
-.macro translate_region_ewram patch_handler
-  region_check 2, \patch_handler
-  translate_region_ewram_core 0x7FFF
-.endm
-
-.macro translate_region_ewram_load_align align_bits, alignment, patch_handler
-  region_check_align 2, \align_bits, \alignment, \patch_handler
-  translate_region_ewram_core 0x7FFF
-.endm
-
-.macro translate_region_ewram_load_align16 align_bits, alignment, patch_handler
-  region_check_align 2, \align_bits, \alignment, \patch_handler
-  translate_region_ewram_core 0x7FFE
-.endm
-
-.macro translate_region_ewram_load_align32 align_bits, alignment, patch_handler
-  region_check_align 2, \align_bits, \alignment, \patch_handler
-  translate_region_ewram_core 0x7FFC
-.endm
-
-.macro translate_region_ewram_store_align16 patch_handler
-  region_check 2, \patch_handler
-  translate_region_ewram_core 0x7FFE
-.endm
-
-.macro translate_region_ewram_store_align32 patch_handler
-  region_check 2, \patch_handler
-  translate_region_ewram_core 0x7FFC
-.endm
-
-
-.macro translate_region_vram_core
-  addiu $2, $2, -3                # see if it's 3
-  ext $4, $4, 0, 17               # generate 17bit offset
-  bne $2, $0, 1f
-  lui $1, %hi(vram)               # start loading vram address (delay)
-
-  addiu $4, $4, -0x8000           # move address into VRAM region
-
-1:
-  addu $2, $1, $4                 # $2 = (hi)vram + address
-.endm
-
-.macro translate_region_vram patch_handler
-  region_check 6, \patch_handler
-  ext $2, $4, 15, 2               # $2 = bits 15 and 16 of address (delay)
-  translate_region_vram_core
-.endm
-
-.macro translate_region_vram_load_align align_bits, alignment, patch_handler
-  region_check_align 6, \align_bits, \alignment, \patch_handler
-  ext $2, $4, 15, 2               # $2 = bits 15 and 16 of address (delay)
-  translate_region_vram_core
-.endm
-
-.macro translate_region_vram_load_align16 align_bits, alignment, patch_handler
-  region_check_align 6, \align_bits, \alignment, \patch_handler
-  ext $2, $4, 15, 2               # $2 = bits 15 and 16 of address (delay)
-  ins $4, $0, 0, 1                # mask out lower bit of address
-  translate_region_vram_core
-.endm
-
-.macro translate_region_vram_load_align32 align_bits, alignment, patch_handler
-  region_check_align 6, \align_bits, \alignment, \patch_handler
-  ext $2, $4, 15, 2               # $2 = bits 15 and 16 of address (delay)
-  ins $4, $0, 0, 2                # mask out lower two bits of address
-  translate_region_vram_core
-.endm
-
-.macro translate_region_vram_store_align16 patch_handler
-  region_check 6, \patch_handler
-  ext $2, $4, 15, 2               # $2 = bits 15 and 16 of address (delay)
-  ins $4, $0, 0, 1                # mask out lower bit of address
-  translate_region_vram_core
-.endm
-
-.macro translate_region_vram_store_align32 patch_handler
-  region_check 6, \patch_handler
-  ext $2, $4, 15, 2               # $2 = bits 15 and 16 of address (delay)
-  ins $4, $0, 0, 2                # mask out lower two bits of address
-  translate_region_vram_core
-.endm
-
-
-
-.macro translate_region_gamepak_core mask
-  srl $2, $4, 15                  # $2 = page number of address (delay)
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16                # $2 = memory_map_read[address >> 15]
-  lw $2, -32768($2)
-  bne $2, $0, 1f                  # if it's non-NULL continue
-  andi $1, $4, \mask              # $1 = low 15bits of address (delay slot)
-
-  sw $ra, REG_SAVE2($16)          # save return address
-
-  save_registers                  # save the registers
-  ext $4, $4, 15, 10              # $4 = (address >> 15) & 0x3FF
-
-  jal load_gamepak_page           # get page in $2
-  sw $1, REG_SAVE($16)            # save offset (delay)
-  lw $1, REG_SAVE($16)            # restore offset (delay)
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE2($16)          # restore return address
-
-1:
-  addu $2, $2, $1                 # add the memory map offset
-.endm
-
-.macro translate_region_gamepak region, patch_handler
-  region_check \region, \patch_handler
-  translate_region_gamepak_core 0x7FFF
-.endm
-
-.macro translate_region_gamepak_align region, a_b, alignment, patch_handler
-  region_check_align \region, \a_b, \alignment, \patch_handler
-  translate_region_gamepak_core 0x7FFF
-.endm
-
-.macro translate_region_gamepak_align16 region, a_b, alignment, patch_handler
-  region_check_align \region, \a_b, \alignment, \patch_handler
-  translate_region_gamepak_core 0x7FFE
-.endm
-
-.macro translate_region_gamepak_align32 region, a_b, alignment, patch_handler
-  region_check_align \region, \a_b, \alignment, \patch_handler
-  translate_region_gamepak_core 0x7FFC
-.endm
-
-
-.macro translate_region_gamepak_a region, patch_handler
-  region_check \region, \patch_handler
-  srl $2, $4, 15                  # $2 = page number of address (delay)
-  sll $2, $2, 2                   # adjust to word index
-  addu $2, $2, $16                # $2 = memory_map_read[address >> 15]
-  lw $2, -32768($2)
-  bne $2, $0, 1f                  # if it's non-NULL continue
-  andi $1, $4, 0x7FFF             # $1 = low 15bits of address (delay slot)
-
-  sw $ra, REG_SAVE2($16)          # save return address
-  sw $6, REG_SAVE3($16)           # save a2
-
-  save_registers                  # save the registers
-  ext $4, $4, 15, 10              # $4 = (address >> 15) & 0x3FF
-
-  jal load_gamepak_page           # get page in $2
-  sw $1, REG_SAVE($16)            # save offset (delay)
-  lw $1, REG_SAVE($16)            # restore offset (delay)
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE2($16)          # restore return address
-  lw $6, REG_SAVE3($16)           # restore a2
-
-1:
-  addu $2, $2, $1                 # add the memory map offset
-.endm
-
-
-.macro eeprom_load_a patch_handler
-  region_check 0xD, \patch_handler
-
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-  sw $6, REG_SAVE2($16)           # save a2
-
-  save_registers                  # save the registers
-
-  jal read_eeprom                 # get eeprom value in $2
-  nop
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-  lw $6, REG_SAVE2($16)           # restore a2
-.endm
-
-
-.macro eeprom_load_core
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-
-  save_registers                  # save the registers
-
-  jal read_eeprom                 # get eeprom value in $2
-  nop
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-  nop
-.endm
-
-.macro eeprom_load patch_handler
-  region_check 0xD, \patch_handler
-  eeprom_load_core
-.endm
-
-.macro eeprom_load_align align_bits, alignment, patch_handler
-  region_check_align 0xD, \align_bits, \alignment, \patch_handler
-  eeprom_load_core
-.endm
-
-.macro eeprom_load_align16 align_bits, alignment, patch_handler
-  eeprom_load_align \align_bits, \alignment, \patch_handler
-.endm
-
-.macro eeprom_load_align32 align_bits, alignment, patch_handler
-  eeprom_load_align \align_bits, \alignment, \patch_handler
-.endm
-
-
-.macro backup_load_core
-  save_registers                  # save the registers
-
-  jal read_backup                 # get backup value in $2
-  ext $4, $4, 0, 16               # address &= 0xFFFF
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-.endm
-
-.macro backup_load_a patch_handler
-  region_check 0xE, \patch_handler
-  sw $ra, REG_SAVE($16)           # save return address (delay)
-  sw $6, REG_SAVE2($16)           # save a2
-
-  save_registers                  # save the registers
-
-  jal read_backup                 # get backup value in $2
-  ext $4, $4, 0, 16               # address &= 0xFFFF
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-  lw $6, REG_SAVE2($16)           # restore a2
-.endm
-
-
-.macro backup_load patch_handler
-  region_check 0xE, \patch_handler
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-  backup_load_core
-.endm
-
-.macro backup_load_align align_bits, alignment, patch_handler
-  region_check_align 0xE, \align_bits, \alignment, \patch_handler
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-  backup_load_core
-.endm
-
-.macro backup_load_align16 align_bits, alignment, patch_handler
-  region_check_align 0xE, \align_bits, \alignment, \patch_handler
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-  ins $4, $0, 0, 1                # mask out lower bit
-  backup_load_core
-.endm
-
-.macro backup_load_align32 align_bits, alignment, patch_handler
-  region_check_align 0xE, \align_bits, \alignment, \patch_handler
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-  ins $4, $0, 0, 2                # mask out lower two bits
-  backup_load_core
-.endm
-
-
-.macro open_load8_core
-  lw $2, REG_CPSR($16)            # $2 = CPSR (delay)
-  andi $2, $2, 0x20               # test T bit
-  beq $2, $0, 1f                  # branch if ARM mode
-  andi $4, $4, 0x03               # isolate lower 3bits from address (delay)
-
-  andi $4, $4, 0x01               # in Thumb mode, isolate one more bit
-
-1:
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-  save_registers                  # save the registers
-
-  jal read_memory8                # get instruction at PC
-  addu $4, $5, $4                 # a0 = PC + low bits of address
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-.endm
-
-.macro open_load8 patch_handler
-  region_check_open \patch_handler
-  open_load8_core
-.endm
-
-
-
-.macro open_load16_core
-  lw $2, REG_CPSR($16)            # $2 = CPSR (delay)
-  andi $2, $2, 0x20               # test T bit
-  beq $2, $0, 1f                  # branch if ARM mode
-  andi $4, $4, 0x02               # isolate bit 1 from address (delay)
-
-  addu $4, $0, $0                 # zero out address bit
-
-1:
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-  save_registers                  # save the registers
-
-  jal read_memory16               # get instruction at PC
-  addu $4, $5, $4                 # a0 = PC + low bits of address
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-.endm
-
-.macro open_load16_align align_bits, alignment, patch_handler
-  region_check_open_align \align_bits, \alignment, \patch_handler
-  open_load16_core
-.endm
-
-.macro open_load16_align16 align_bits, alignment, patch_handler
-  open_load16_align \align_bits, \alignment, \patch_handler
-.endm
-
-
-
-.macro open_load32_core
-  lw $2, REG_CPSR($16)            # $2 = CPSR (delay)
-  andi $2, $2, 0x20               # test T bit
-
-  save_registers                  # save the registers
-
-  beq $2, $0, 1f                  # branch if ARM mode
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-
-  jal read_memory16               # get instruction at PC
-  addu $4, $5, $0                 # a0 = PC
-
-  j 2f
-  ins $2, $2, 16, 16              # result = (result << 16) | result (delay)
-
-1:
-  jal read_memory32               # get instruction at PC
-  addu $4, $5, $4                 # a0 = PC
-
-2:                                # join point
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-.endm
-
-.macro open_load32_a patch_handler
-  region_check_open \patch_handler
-
-  lw $2, REG_CPSR($16)            # $2 = CPSR (delay)
-  andi $2, $2, 0x20               # test T bit
-
-  save_registers                  # save the registers
-  sw $6, REG_SAVE2($16)           # save a2
-
-  beq $2, $0, 1f                  # branch if ARM mode
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-
-  jal read_memory16               # get instruction at PC
-  addu $4, $5, $0                 # a0 = PC
-
-  j 2f
-  ins $2, $2, 16, 16              # result = (result << 16) | result (delay)
-
-1:
-  jal read_memory32               # get instruction at PC
-  addu $4, $5, $4                 # a0 = PC
-
-2:
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-  lw $6, REG_SAVE2($16)           # restore a2 (delay)
-.endm
-
-.macro open_load32_align align_bits, alignment, patch_handler
-  region_check_open_align \align_bits, \alignment, \patch_handler
-  open_load32_core
-.endm
-
-.macro open_load32_align32 align_bits, alignment, patch_handler
-  open_load32_align \align_bits, \alignment, \patch_handler
-.endm
-
-
-.macro store_function function, region, patch_handler, mask
-  region_check \region, \patch_handler
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-
-  save_registers                  # save the registers
-
-  jal \function                   # store value out
-  andi $4, $4, \mask              # mask address
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-  nop
-.endm
-
-
-.macro store_function_a function, region, patch_handler, mask
-  region_check \region, \patch_handler
-  sw $ra, REG_SAVE($16)           # save the return address (delay)
-
-  save_registers                  # save the registers
-
-  jal \function                   # store value out
-  andi $4, $4, \mask              # mask address
-
-  restore_registers               # restore the other registers
-
-  lw $ra, REG_SAVE($16)           # restore return address
-  jr $ra                          # return
-  nop
-.endm
-
-
-
-.macro load_u8 base
-  jr $ra                          # return
-  lbu $2, %lo(\base)($2)          # return base[offset]
-.endm
-
-.macro load_s8 base
-  jr $ra                          # return
-  lb $2, %lo(\base)($2)           # return base[offset]
-.endm
-
-.macro load_u16 base
-  jr $ra                          # return
-  lhu $2, %lo(\base)($2)          # return base[offset]
-.endm
-
-.macro load_s16 base
-  jr $ra                          # return
-  lh $2, %lo(\base)($2)           # return base[offset]
-.endm
-
-.macro load_u32 base
-  jr $ra                          # return
-  lw $2, %lo(\base)($2)           # return base[offset]
-.endm
-
-
-# 16bit unaligned load will always have a 1 in the LSB;
-# should have already been taken care of in indexing.
-
-.macro load_u16_unaligned base
-  lhu $2, %lo(\base)($2)          # load base[offset]
-  jr $ra                          # return
-  ror $2, $2, 8                   # rotate value by 8bits
-.endm
-
-# This is technically the same as load_s8, but kept to
-# avoid confusion.
-
-.macro load_s16_unaligned base
-  jr $ra                          # return
-  lb $2, %lo(\base)($2)           # return base[offset]
-.endm
-
-# Unalignment must be known statically (use the tables to
-# patch correctly)
-
-.macro load_u32_unaligned base, alignment
-  lw $2, %lo(\base)($2)           # load base[offset]
-  jr $ra                          # return
-  ror $2, $2, (\alignment * 8)    # rotate value by 8bits
-.endm
-
-
-.macro store_u8 base
-  jr $ra                          # return
-  sb $5, %lo(\base)($2)           # store value at base[offset]
-.endm
-
-.macro store_u16 base
-  jr $ra                          # return
-  sh $5, %lo(\base)($2)           # store value at base[offset]
-.endm
-
-.macro store_u32 base
-  jr $ra                          # return
-  sw $5, %lo(\base)($2)           # store value at base[offset]
-.endm
-
-
-# Store the value double mirrored (u16)
-
-.macro store_u8_double base
-  ins $5, $5, 8, 8                # value = (value << 8) | value
-  jr $ra                          # return
-  sh $5, %lo(\base)($2)           # store value at base[offset]
-.endm
-
-
-# Store the values and check if it overwrote code there
-
-.macro store_u8_smc base
-  addiu $2, $2, %lo(\base)        # offset the address
-  lb $1, -32768($2)               # load the SMC status
-  bne $1, $0, smc_write           # is there code there?
-  sb $5, ($2)                     # store value at base[offset] (delay)
-  jr $ra                          # return
-  nop
-.endm
-
-.macro store_u16_smc base
-  addiu $2, $2, %lo(\base)        # offset the address
-  lh $1, -32768($2)               # load the SMC status
-  bne $1, $0, smc_write           # is there code there?
-  sh $5, ($2)                     # store value at base[offset] (delay)
-  jr $ra                          # return
-  nop
-.endm
-
-.macro store_u32_smc base
-  addiu $2, $2, %lo(\base)        # offset the address
-  lw $1, -32768($2)               # load the SMC status
-  bne $1, $0, smc_write           # is there code there?
-  sw $5, ($2)                     # store value at base[offset] (delay)
-  jr $ra                          # return
-  nop
-.endm
-
-
-
-# Unsigned 8bit load handlers
-
-execute_load_bios_u8:
-  region_check 0, patch_load_u8
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFF             # generate offset
-  addu $2, $2, $4
-  load_u8 bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  ins $2, $4, 0, 2                # lower 2 bits address contributes
-  load_u8 bios_read_protect
-
-2:
-  open_load8_core
-  nop
-
-
-execute_load_ewram_u8:
-  translate_region_ewram patch_load_u8
-  load_u8 (ewram + 0x8000)
-
-# Put the generic address over the handler you want to be default
-# IWRAM is typically the most frequently read and written to.
-
-execute_load_u8:
-execute_load_iwram_u8:
-  translate_region 3, patch_load_u8, (iwram + 0x8000), 0x7FFF
-  load_u8 (iwram + 0x8000)
-
-execute_load_io_u8:
-  translate_region 4, patch_load_u8, io_registers, 0x3FF
-  load_u8 io_registers
-
-execute_load_palette_u8:
-  translate_region 5, patch_load_u8, palette_ram, 0x3FF
-  load_u8 palette_ram
-
-execute_load_vram_u8:
-  translate_region_vram patch_load_u8
-  load_u8 vram
-
-execute_load_oam_u8:
-  translate_region 7, patch_load_u8, oam_ram, 0x3FF
-  load_u8 oam_ram
-
-execute_load_gamepak8_u8:
-  translate_region_gamepak 8, patch_load_u8
-  load_u8 0
-
-execute_load_gamepak9_u8:
-  translate_region_gamepak 9, patch_load_u8
-  load_u8 0
-
-execute_load_gamepakA_u8:
-  translate_region_gamepak 10, patch_load_u8
-  load_u8 0
-
-execute_load_gamepakB_u8:
-  translate_region_gamepak 11, patch_load_u8
-  load_u8 0
-
-execute_load_gamepakC_u8:
-  translate_region_gamepak 12, patch_load_u8
-  load_u8 0
-
-execute_load_eeprom_u8:
-  eeprom_load patch_load_u8
-
-execute_load_backup_u8:
-  backup_load patch_load_u8
-  nop
-
-execute_load_open_u8:
-  open_load8 patch_load_u8
-  nop
-
-load_u8_ftable:
-  .long execute_load_bios_u8      # 0x00 BIOS
-  .long execute_load_open_u8      # 0x01 open address
-  .long execute_load_ewram_u8     # 0x02 EWRAM
-  .long execute_load_iwram_u8     # 0x03 IWRAM
-  .long execute_load_io_u8        # 0x04 I/O registers
-  .long execute_load_palette_u8   # 0x05 Palette RAM
-  .long execute_load_vram_u8      # 0x06 VRAM
-  .long execute_load_oam_u8       # 0x07 OAM RAM
-  .long execute_load_gamepak8_u8  # 0x08 gamepak
-  .long execute_load_gamepak9_u8  # 0x09 gamepak
-  .long execute_load_gamepakA_u8  # 0x0A gamepak
-  .long execute_load_gamepakB_u8  # 0x0B gamepak
-  .long execute_load_gamepakC_u8  # 0x0C gamepak
-  .long execute_load_eeprom_u8    # 0x0D gamepak/eeprom
-  .long execute_load_backup_u8    # 0x0E Flash ROM/SRAM
-  .long execute_load_open_u8      # 0x0F open address
-
-patch_load_u8:
-  patch_handler load_u8_ftable, 0x01
-
-
-
-# Signed 8bit load handlers
-
-execute_load_bios_s8:
-  region_check 0, patch_load_s8
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFF             # generate offset
-  addu $2, $2, $4
-  load_s8 bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  ins $2, $4, 0, 2                # lower 2 bits contribute
-  load_s8 bios_read_protect
-
-2:
-  open_load8_core
-  seb $2, $2
-
-
-execute_load_ewram_s8:
-  translate_region_ewram patch_load_s8
-  load_s8 (ewram + 0x8000)
-
-execute_load_s8:
-execute_load_iwram_s8:
-  translate_region 3, patch_load_s8, (iwram + 0x8000), 0x7FFF
-  load_s8 (iwram + 0x8000)
-
-execute_load_io_s8:
-  translate_region 4, patch_load_s8, io_registers, 0x3FF
-  load_s8 io_registers
-
-execute_load_palette_s8:
-  translate_region 5, patch_load_s8, palette_ram, 0x3FF
-  load_s8 palette_ram
-
-execute_load_vram_s8:
-  translate_region_vram patch_load_s8
-  load_s8 vram
-
-execute_load_oam_s8:
-  translate_region 7, patch_load_s8, oam_ram, 0x3FF
-  load_s8 oam_ram
-
-execute_load_gamepak8_s8:
-  translate_region_gamepak 8, patch_load_s8
-  load_s8 0
-
-execute_load_gamepak9_s8:
-  translate_region_gamepak 9, patch_load_s8
-  load_s8 0
-
-execute_load_gamepakA_s8:
-  translate_region_gamepak 10, patch_load_s8
-  load_s8 0
-
-execute_load_gamepakB_s8:
-  translate_region_gamepak 11, patch_load_s8
-  load_s8 0
-
-execute_load_gamepakC_s8:
-  translate_region_gamepak 12, patch_load_s8
-  load_s8 0
-
-execute_load_eeprom_s8:
-  eeprom_load patch_load_s8
-
-execute_load_backup_s8:
-  backup_load patch_load_s8
-  seb $2, $2                      # sign extend result (delay)
-
-execute_load_open_s8:
-  open_load8 patch_load_s8
-  seb $2, $2                      # sign extend result (delay)
-
-load_s8_ftable:
-  .long execute_load_bios_s8      # 0x00 BIOS
-  .long execute_load_open_s8      # 0x01 open address
-  .long execute_load_ewram_s8     # 0x02 EWRAM
-  .long execute_load_iwram_s8     # 0x03 IWRAM
-  .long execute_load_io_s8        # 0x04 I/O registers
-  .long execute_load_palette_s8   # 0x05 Palette RAM
-  .long execute_load_vram_s8      # 0x06 VRAM
-  .long execute_load_oam_s8       # 0x07 OAM RAM
-  .long execute_load_gamepak8_s8  # 0x08 gamepak
-  .long execute_load_gamepak9_s8  # 0x09 gamepak
-  .long execute_load_gamepakA_s8  # 0x0A gamepak
-  .long execute_load_gamepakB_s8  # 0x0B gamepak
-  .long execute_load_gamepakC_s8  # 0x0C gamepak
-  .long execute_load_eeprom_s8    # 0x0D gamepak/eeprom
-  .long execute_load_backup_s8    # 0x0E Flash ROM/SRAM
-  .long execute_load_open_s8      # 0x0F open address
-
-patch_load_s8:
-  patch_handler load_s8_ftable, 1
-
-
-
-# Unsigned aligned 16bit load handlers
-
-execute_load_bios_u16:
-  region_check_align 0, 1, 0, patch_load_u16
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFF             # generate offset
-  addu $2, $2, $4
-  load_u16 bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  ins $2, $4, 0, 2                # bit 1 contributes
-  load_u16 bios_read_protect
-
-2:
-  open_load16_core
-  nop
-
-execute_load_ewram_u16:
-  translate_region_ewram_load_align 1, 0, patch_load_u16
-  load_u16 (ewram + 0x8000)
-
-execute_load_u16:
-execute_load_iwram_u16:
-  translate_region_align 3, 1, 0, patch_load_u16, (iwram + 0x8000), 0x7FFF
-  load_u16 (iwram + 0x8000)
-
-execute_load_io_u16:
-  translate_region_align 4, 1, 0, patch_load_u16, io_registers, 0x3FF
-  load_u16 io_registers
-
-execute_load_palette_u16:
-  translate_region_align 5, 1, 0, patch_load_u16, palette_ram, 0x3FF
-  load_u16 palette_ram
-
-execute_load_vram_u16:
-  translate_region_vram_load_align 1, 0, patch_load_u16
-  load_u16 vram
-
-execute_load_oam_u16:
-  translate_region_align 7, 1, 0, patch_load_u16, oam_ram, 0x3FF
-  load_u16 oam_ram
-
-execute_load_gamepak8_u16:
-  translate_region_gamepak_align 8, 1, 0, patch_load_u16
-  load_u16 0
-
-execute_load_gamepak9_u16:
-  translate_region_gamepak_align 9, 1, 0, patch_load_u16
-  load_u16 0
-
-execute_load_gamepakA_u16:
-  translate_region_gamepak_align 10, 1, 0, patch_load_u16
-  load_u16 0
-
-execute_load_gamepakB_u16:
-  translate_region_gamepak_align 11, 1, 0, patch_load_u16
-  load_u16 0
-
-execute_load_gamepakC_u16:
-  translate_region_gamepak_align 12, 1, 0, patch_load_u16
-  load_u16 0
-
-execute_load_eeprom_u16:
-  eeprom_load_align 1, 0, patch_load_u16
-
-execute_load_backup_u16:
-  backup_load_align 1, 0, patch_load_u16
-  nop
-
-execute_load_open_u16:
-  open_load16_align 1, 0, patch_load_u16
-  nop
-
-
-# Unsigned unaligned 16bit load handlers
-
-execute_load_bios_u16u:
-  region_check_align 0, 1, 1, patch_load_u16
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFE             # generate offset
-  addu $2, $2, $4
-  load_u16_unaligned bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  ext $1, $4, 1, 1
-  ins $2, $1, 1, 1                # bit 1 contributes
-  load_u16_unaligned bios_read_protect
-
-2:
-  open_load16_core
-  ror $2, $2, 8
-
-
-execute_load_ewram_u16u:
-  translate_region_ewram_load_align16 1, 1, patch_load_u16
-  load_u16_unaligned (ewram + 0x8000)
-
-execute_load_iwram_u16u:
-  translate_region_align 3, 1, 1, patch_load_u16, (iwram + 0x8000), 0x7FFE
-  load_u16_unaligned (iwram + 0x8000)
-
-execute_load_io_u16u:
-  translate_region_align 4, 1, 1, patch_load_u16, io_registers, 0x3FE
-  load_u16_unaligned io_registers
-
-execute_load_palette_u16u:
-  translate_region_align 5, 1, 1, patch_load_u16, palette_ram, 0x3FE
-  load_u16_unaligned palette_ram
-
-execute_load_vram_u16u:
-  translate_region_vram_load_align16 1, 1, patch_load_u16
-  load_u16_unaligned vram
-
-execute_load_oam_u16u:
-  translate_region_align 7, 1, 1, patch_load_u16, oam_ram, 0x3FE
-  load_u16_unaligned oam_ram
-
-execute_load_gamepak8_u16u:
-  translate_region_gamepak_align16 8, 1, 1, patch_load_u16
-  load_u16_unaligned 0
-
-execute_load_gamepak9_u16u:
-  translate_region_gamepak_align16 9, 1, 1, patch_load_u16
-  load_u16_unaligned 0
-
-execute_load_gamepakA_u16u:
-  translate_region_gamepak_align16 10, 1, 1, patch_load_u16
-  load_u16_unaligned 0
-
-execute_load_gamepakB_u16u:
-  translate_region_gamepak_align16 11, 1, 1, patch_load_u16
-  load_u16_unaligned 0
-
-execute_load_gamepakC_u16u:
-  translate_region_gamepak_align16 12, 1, 1, patch_load_u16
-  load_u16_unaligned 0
-
-execute_load_eeprom_u16u:
-  eeprom_load_align16 1, 1, patch_load_u16
-
-execute_load_backup_u16u:
-  backup_load_align16 1, 1, patch_load_u16
-  ror $2, $2, 8                   # rotate value by 8bits
-
-execute_load_open_u16u:
-  open_load16_align16 1, 1, patch_load_u16
-  ror $2, $2, 8                   # rotate value by 8bits
-
-load_u16_ftable:
-  .long execute_load_bios_u16     # 0x00 BIOS
-  .long execute_load_open_u16     # 0x01 open address
-  .long execute_load_ewram_u16    # 0x02 EWRAM
-  .long execute_load_iwram_u16    # 0x03 IWRAM
-  .long execute_load_io_u16       # 0x04 I/O registers
-  .long execute_load_palette_u16  # 0x05 Palette RAM
-  .long execute_load_vram_u16     # 0x06 VRAM
-  .long execute_load_oam_u16      # 0x07 OAM RAM
-  .long execute_load_gamepak8_u16 # 0x08 gamepak
-  .long execute_load_gamepak9_u16 # 0x09 gamepak
-  .long execute_load_gamepakA_u16 # 0x0A gamepak
-  .long execute_load_gamepakB_u16 # 0x0B gamepak
-  .long execute_load_gamepakC_u16 # 0x0C gamepak
-  .long execute_load_eeprom_u16   # 0x0D gamepak/eeprom
-  .long execute_load_backup_u16   # 0x0E Flash ROM/SRAM
-  .long execute_load_open_u16     # 0x0F open
-
-  .long execute_load_bios_u16u    # 0x00 BIOS unaligned
-  .long execute_load_open_u16u    # 0x01 open address unaligned
-  .long execute_load_ewram_u16u   # 0x02 EWRAM unaligned
-  .long execute_load_iwram_u16u   # 0x03 IWRAM unaligned
-  .long execute_load_io_u16u      # 0x04 I/O registers unaligned
-  .long execute_load_palette_u16u # 0x05 Palette RAM unaligned
-  .long execute_load_vram_u16u    # 0x06 VRAM unaligned
-  .long execute_load_oam_u16u     # 0x07 OAM RAM unaligned
-  .long execute_load_gamepak8_u16u# 0x08 gamepak unaligned
-  .long execute_load_gamepak9_u16u# 0x09 gamepak unaligned
-  .long execute_load_gamepakA_u16u# 0x0A gamepak unaligned
-  .long execute_load_gamepakB_u16u# 0x0B gamepak unaligned
-  .long execute_load_gamepakC_u16u# 0x0C gamepak unaligned
-  .long execute_load_eeprom_u16u  # 0x0D gamepak/eeprom unaligned
-  .long execute_load_backup_u16u  # 0x0E Flash ROM/SRAM unaligned
-  .long execute_load_open_u16u    # 0x0F open unaligned
-
-patch_load_u16:
-  patch_handler_align load_u16_ftable, 1
-
-# Signed aligned 16bit load handlers
-
-execute_load_bios_s16:
-  region_check_align 0, 1, 0, patch_load_s16
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFF             # generate offset
-  addu $2, $2, $4
-  load_s16 bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  ins $2, $4, 0, 2                # bit 1 contributes
-  load_s16 bios_read_protect
-
-2:
-  open_load16_core
-  seh $2, $2
-
-
-execute_load_ewram_s16:
-  translate_region_ewram_load_align 1, 0, patch_load_s16
-  load_s16 (ewram + 0x8000)
-
-execute_load_s16:
-execute_load_iwram_s16:
-  translate_region_align 3, 1, 0, patch_load_s16, (iwram + 0x8000), 0x7FFF
-  load_s16 (iwram + 0x8000)
-
-execute_load_io_s16:
-  translate_region_align 4, 1, 0, patch_load_s16, io_registers, 0x3FF
-  load_s16 io_registers
-
-execute_load_palette_s16:
-  translate_region_align 5, 1, 0, patch_load_s16, palette_ram, 0x3FF
-  load_s16 palette_ram
-
-execute_load_vram_s16:
-  translate_region_vram_load_align 1, 0, patch_load_s16
-  load_s16 vram
-
-execute_load_oam_s16:
-  translate_region_align 7, 1, 0, patch_load_s16, oam_ram, 0x3FF
-  load_s16 oam_ram
-
-execute_load_gamepak8_s16:
-  translate_region_gamepak_align 8, 1, 0, patch_load_s16
-  load_s16 0
-
-execute_load_gamepak9_s16:
-  translate_region_gamepak_align 9, 1, 0, patch_load_s16
-  load_s16 0
-
-execute_load_gamepakA_s16:
-  translate_region_gamepak_align 10, 1, 0, patch_load_s16
-  load_s16 0
-
-execute_load_gamepakB_s16:
-  translate_region_gamepak_align 11, 1, 0, patch_load_s16
-  load_s16 0
-
-execute_load_gamepakC_s16:
-  translate_region_gamepak_align 12, 1, 0, patch_load_s16
-  load_s16 0
-
-execute_load_eeprom_s16:
-  eeprom_load_align 1, 0, patch_load_s16
-
-execute_load_backup_s16:
-  backup_load_align 1, 0, patch_load_s16
-  nop
-
-execute_load_open_s16:
-  open_load16_align 1, 0, patch_load_s16
-  nop
-
-
-# Signed unaligned 16bit load handlers
-
-execute_load_bios_s16u:
-  region_check_align 0, 1, 1, patch_load_s16
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFE             # generate offset
-  addu $2, $1, $4
-  load_s16_unaligned bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  ext $1, $4, 1, 1
-  ins $2, $1, 1, 1                # bit 1 contributes
-  load_s16_unaligned bios_read_protect
-
-2:
-  open_load16_core
-  seb $2, $2
-
-execute_load_ewram_s16u:
-  translate_region_ewram_load_align16 1, 1, patch_load_s16
-  load_s16_unaligned (ewram + 0x8000)
-
-execute_load_iwram_s16u:
-  translate_region_align 3, 1, 1, patch_load_s16, (iwram + 0x8000), 0x7FFE
-  load_s16_unaligned (iwram + 0x8000)
-
-execute_load_io_s16u:
-  translate_region_align 4, 1, 1, patch_load_s16, io_registers, 0x3FE
-  load_s16_unaligned io_registers
-
-execute_load_palette_s16u:
-  translate_region_align 5, 1, 1, patch_load_s16, palette_ram, 0x3FE
-  load_s16_unaligned palette_ram
-
-execute_load_vram_s16u:
-  translate_region_vram_load_align16 1, 1, patch_load_s16
-  load_s16_unaligned vram
-
-execute_load_oam_s16u:
-  translate_region_align 7, 1, 1, patch_load_s16, oam_ram, 0x3FE
-  load_s16_unaligned oam_ram
-
-execute_load_gamepak8_s16u:
-  translate_region_gamepak_align16 8, 1, 1, patch_load_s16
-  load_s16_unaligned 0
-
-execute_load_gamepak9_s16u:
-  translate_region_gamepak_align16 9, 1, 1, patch_load_s16
-  load_s16_unaligned 0
-
-execute_load_gamepakA_s16u:
-  translate_region_gamepak_align16 10, 1, 1, patch_load_s16
-  load_s16_unaligned 0
-
-execute_load_gamepakB_s16u:
-  translate_region_gamepak_align16 11, 1, 1, patch_load_s16
-  load_s16_unaligned 0
-
-execute_load_gamepakC_s16u:
-  translate_region_gamepak_align16 12, 1, 1, patch_load_s16
-  load_s16_unaligned 0
-
-execute_load_eeprom_s16u:
-  eeprom_load_align 1, 1, patch_load_s16
-
-execute_load_backup_s16u:
-  backup_load_align 1, 1, patch_load_s16
-  seb $2, $2                      # sign extend result from 8bits
-
-execute_load_open_s16u:
-  open_load16_align 1, 1, patch_load_s16
-  seb $2, $2                      # sign extend result from 8bits
-
-load_s16_ftable:
-  .long execute_load_bios_s16     # 0x00 BIOS
-  .long execute_load_open_s16     # 0x01 open address
-  .long execute_load_ewram_s16    # 0x02 EWRAM
-  .long execute_load_iwram_s16    # 0x03 IWRAM
-  .long execute_load_io_s16       # 0x04 I/O registers
-  .long execute_load_palette_s16  # 0x05 Palette RAM
-  .long execute_load_vram_s16     # 0x06 VRAM
-  .long execute_load_oam_s16      # 0x07 OAM RAM
-  .long execute_load_gamepak8_s16 # 0x08 gamepak
-  .long execute_load_gamepak9_s16 # 0x09 gamepak
-  .long execute_load_gamepakA_s16 # 0x0A gamepak
-  .long execute_load_gamepakB_s16 # 0x0B gamepak
-  .long execute_load_gamepakC_s16 # 0x0C gamepak
-  .long execute_load_eeprom_s16   # 0x0D gamepak/eeprom
-  .long execute_load_backup_s16   # 0x0E Flash ROM/SRAM
-  .long execute_load_open_s16     # 0x0F open unaligned
-
-  .long execute_load_bios_s16u    # 0x00 BIOS unaligned
-  .long execute_load_open_s16u    # 0x01 open address unaligned
-  .long execute_load_ewram_s16u   # 0x02 EWRAM unaligned
-  .long execute_load_iwram_s16u   # 0x03 IWRAM unaligned
-  .long execute_load_io_s16u      # 0x04 I/O registers unaligned
-  .long execute_load_palette_s16u # 0x05 Palette RAM unaligned
-  .long execute_load_vram_s16u    # 0x06 VRAM unaligned
-  .long execute_load_oam_s16u     # 0x07 OAM RAM unaligned
-  .long execute_load_gamepak8_s16u# 0x08 gamepak unaligned
-  .long execute_load_gamepak9_s16u# 0x09 gamepak unaligned
-  .long execute_load_gamepakA_s16u# 0x0A gamepak unaligned
-  .long execute_load_gamepakB_s16u# 0x0B gamepak unaligned
-  .long execute_load_gamepakC_s16u# 0x0C gamepak unaligned
-  .long execute_load_eeprom_s16u  # 0x0D gamepak/eeprom unaligned
-  .long execute_load_backup_s16u  # 0x0E Flash ROM/SRAM unaligned
-  .long execute_load_open_s16u    # 0x0F open unaligned
-
-patch_load_s16:
-  patch_handler_align load_s16_ftable, 1
-
-
-
-# Unsigned aligned 32bit load handlers
-
-execute_load_bios_u32:
-  region_check_align 0, 2, 0, patch_load_u32
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFF             # generate offset
-  addu $2, $2, $4
-  load_u32 bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  load_u32 bios_read_protect
-
-2:
-  open_load32_core
-  nop
-
-
-execute_load_ewram_u32:
-  translate_region_ewram_load_align 2, 0, patch_load_u32
-  load_u32 (ewram + 0x8000)
-
-execute_load_u32:
-execute_load_iwram_u32:
-  translate_region_align 3, 2, 0, patch_load_u32, (iwram + 0x8000), 0x7FFF
-  load_u32 (iwram + 0x8000)
-
-execute_load_io_u32:
-  translate_region_align 4, 2, 0, patch_load_u32, io_registers, 0x3FF
-  load_u32 io_registers
-
-execute_load_palette_u32:
-  translate_region_align 5, 2, 0, patch_load_u32, palette_ram, 0x3FF
-  load_u32 palette_ram
-
-execute_load_vram_u32:
-  translate_region_vram_load_align 2, 0, patch_load_u32
-  load_u32 vram
-
-execute_load_oam_u32:
-  translate_region_align 7, 2, 0, patch_load_u32, oam_ram, 0x3FF
-  load_u32 oam_ram
-
-execute_load_gamepak8_u32:
-  translate_region_gamepak_align 8, 2, 0, patch_load_u32
-  load_u32 0
-
-execute_load_gamepak9_u32:
-  translate_region_gamepak_align 9, 2, 0, patch_load_u32
-  load_u32 0
-
-execute_load_gamepakA_u32:
-  translate_region_gamepak_align 10, 2, 0, patch_load_u32
-  load_u32 0
-
-execute_load_gamepakB_u32:
-  translate_region_gamepak_align 11, 2, 0, patch_load_u32
-  load_u32 0
-
-execute_load_gamepakC_u32:
-  translate_region_gamepak_align 12, 2, 0, patch_load_u32
-  load_u32 0
-
-execute_load_eeprom_u32:
-  eeprom_load_align 2, 0, patch_load_u32
-
-execute_load_backup_u32:
-  backup_load_align 2, 0, patch_load_u32
-  nop
-
-execute_load_open_u32:
-  open_load32_align 2, 0, patch_load_u32
-  nop
-
-
-# Unsigned unaligned (by 1) 32bit load handlers
-
-execute_load_bios_u32u1:
-  region_check_align 0, 2, 1, patch_load_u32
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFC             # generate offset
-  addu $2, $2, $4
-  load_u32_unaligned bios_rom, 1
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  load_u32_unaligned bios_read_protect, 1
-
-2:
-  open_load32_core
-  ror $2, $2, 8
-
-execute_load_ewram_u32u1:
-  translate_region_ewram_load_align32 2, 1, patch_load_u32
-  load_u32_unaligned (ewram + 0x8000), 1
-
-execute_load_iwram_u32u1:
-  translate_region_align 3, 2, 1, patch_load_u32, (iwram + 0x8000), 0x7FFC
-  load_u32_unaligned (iwram + 0x8000), 1
-
-execute_load_io_u32u1:
-  translate_region_align 4, 2, 1, patch_load_u32, io_registers, 0x3FC
-  load_u32_unaligned io_registers, 1
-
-execute_load_palette_u32u1:
-  translate_region_align 5, 2, 1, patch_load_u32, palette_ram, 0x3FC
-  load_u32_unaligned palette_ram, 1
-
-execute_load_vram_u32u1:
-  translate_region_vram_load_align32 2, 1, patch_load_u32
-  load_u32_unaligned vram, 1
-
-execute_load_oam_u32u1:
-  translate_region_align 7, 2, 1, patch_load_u32, oam_ram, 0x3FC
-  load_u32_unaligned oam_ram, 1
-
-execute_load_gamepak8_u32u1:
-  translate_region_gamepak_align32 8, 2, 1, patch_load_u32
-  load_u32_unaligned 0, 1
-
-execute_load_gamepak9_u32u1:
-  translate_region_gamepak_align32 9, 2, 1, patch_load_u32
-  load_u32_unaligned 0, 1
-
-execute_load_gamepakA_u32u1:
-  translate_region_gamepak_align32 10, 2, 1, patch_load_u32
-  load_u32_unaligned 0, 1
-
-execute_load_gamepakB_u32u1:
-  translate_region_gamepak_align32 11, 2, 1, patch_load_u32
-  load_u32_unaligned 0, 1
-
-execute_load_gamepakC_u32u1:
-  translate_region_gamepak_align32 12, 2, 1, patch_load_u32
-  load_u32_unaligned 0, 1
-
-execute_load_eeprom_u32u1:
-  eeprom_load_align32 2, 1, patch_load_u32
-
-execute_load_backup_u32u1:
-  backup_load_align32 2, 1, patch_load_u32
-  ror $2, $2, 8                   # rotate value by 8bits
-
-execute_load_open_u32u1:
-  open_load32_align32 2, 1, patch_load_u32
-  ror $2, $2, 8                   # rotate value by 8bits
-
-
-# Unsigned unaligned (by 2) 32bit load handlers
-
-execute_load_bios_u32u2:
-  region_check_align 0, 2, 2, patch_load_u32
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFC             # generate offset
-  addu $2, $2, $4
-  load_u32_unaligned bios_rom, 2
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  load_u32_unaligned bios_read_protect, 2
-
-2:
-  open_load32_core
-  ror $2, $2, 16
-
-execute_load_ewram_u32u2:
-  translate_region_ewram_load_align32 2, 2, patch_load_u32
-  load_u32_unaligned (ewram + 0x8000), 2
-
-execute_load_iwram_u32u2:
-  translate_region_align 3, 2, 2, patch_load_u32, (iwram + 0x8000), 0x7FFC
-  load_u32_unaligned (iwram + 0x8000), 2
-
-execute_load_io_u32u2:
-  translate_region_align 4, 2, 2, patch_load_u32, io_registers, 0x3FC
-  load_u32_unaligned io_registers, 2
-
-execute_load_palette_u32u2:
-  translate_region_align 5, 2, 2, patch_load_u32, palette_ram, 0x3FC
-  load_u32_unaligned palette_ram, 2
-
-execute_load_vram_u32u2:
-  translate_region_vram_load_align32 2, 2, patch_load_u32
-  load_u32_unaligned vram, 2
-
-execute_load_oam_u32u2:
-  translate_region_align 7, 2, 2, patch_load_u32, oam_ram, 0x3FC
-  load_u32_unaligned oam_ram, 2
-
-execute_load_gamepak8_u32u2:
-  translate_region_gamepak_align32 8, 2, 2, patch_load_u32
-  load_u32_unaligned 0, 2
-
-execute_load_gamepak9_u32u2:
-  translate_region_gamepak_align32 9, 2, 2, patch_load_u32
-  load_u32_unaligned 0, 2
-
-execute_load_gamepakA_u32u2:
-  translate_region_gamepak_align32 10, 2, 2, patch_load_u32
-  load_u32_unaligned 0, 2
-
-execute_load_gamepakB_u32u2:
-  translate_region_gamepak_align32 11, 2, 2, patch_load_u32
-  load_u32_unaligned 0, 2
-
-execute_load_gamepakC_u32u2:
-  translate_region_gamepak_align32 12, 2, 2, patch_load_u32
-  load_u32_unaligned 0, 2
-
-execute_load_eeprom_u32u2:
-  eeprom_load_align32 2, 2, patch_load_u32
-
-execute_load_backup_u32u2:
-  backup_load_align32 2, 2, patch_load_u32
-  ror $2, $2, 16                   # rotate value by 16bits
-
-execute_load_open_u32u2:
-  open_load32_align32 2, 2, patch_load_u32
-  ror $2, $2, 16                   # rotate value by 16bits
-
-# Unsigned unaligned (by 1) 32bit load handlers
-
-execute_load_bios_u32u3:
-  region_check_align 0, 2, 3, patch_load_u32
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFC             # generate offset
-  addu $2, $2, $4
-  load_u32_unaligned bios_rom, 3
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  load_u32_unaligned bios_read_protect, 3
-
-2:
-  open_load32_core
-  ror $2, $2, 24
-
-execute_load_ewram_u32u3:
-  translate_region_ewram_load_align32 2, 3, patch_load_u32
-  load_u32_unaligned (ewram + 0x8000), 3
-
-execute_load_iwram_u32u3:
-  translate_region_align 3, 2, 3, patch_load_u32, (iwram + 0x8000), 0x7FFC
-  load_u32_unaligned (iwram + 0x8000), 3
-
-execute_load_io_u32u3:
-  translate_region_align 4, 2, 3, patch_load_u32, io_registers, 0x3FC
-  load_u32_unaligned io_registers, 3
-
-execute_load_palette_u32u3:
-  translate_region_align 5, 2, 3, patch_load_u32, palette_ram, 0x3FC
-  load_u32_unaligned palette_ram, 3
-
-execute_load_vram_u32u3:
-  translate_region_vram_load_align32 2, 3, patch_load_u32
-  load_u32_unaligned vram, 3
-
-execute_load_oam_u32u3:
-  translate_region_align 7, 2, 3, patch_load_u32, oam_ram, 0x3FC
-  load_u32_unaligned oam_ram, 3
-
-execute_load_gamepak8_u32u3:
-  translate_region_gamepak_align32 8, 2, 3, patch_load_u32
-  load_u32_unaligned 0, 3
-
-execute_load_gamepak9_u32u3:
-  translate_region_gamepak_align32 9, 2, 3, patch_load_u32
-  load_u32_unaligned 0, 3
-
-execute_load_gamepakA_u32u3:
-  translate_region_gamepak_align32 10, 2, 3, patch_load_u32
-  load_u32_unaligned 0, 3
-
-execute_load_gamepakB_u32u3:
-  translate_region_gamepak_align32 11, 2, 3, patch_load_u32
-  load_u32_unaligned 0, 3
-
-execute_load_gamepakC_u32u3:
-  translate_region_gamepak_align32 12, 2, 3, patch_load_u32
-  load_u32_unaligned 0, 3
-
-execute_load_eeprom_u32u3:
-  eeprom_load_align32 2, 3, patch_load_u32
-
-execute_load_backup_u32u3:
-  backup_load_align32 2, 3, patch_load_u32
-  ror $2, $2, 24                  # rotate value by 24bits
-
-execute_load_open_u32u3:
-  open_load32_align32 2, 3, patch_load_u32
-  ror $2, $2, 24                  # rotate value by 24bits
-
-
-load_u32_ftable:
-  .long execute_load_bios_u32     # 0x00 BIOS
-  .long execute_load_open_u32     # 0x01 open address
-  .long execute_load_ewram_u32    # 0x02 EWRAM
-  .long execute_load_iwram_u32    # 0x03 IWRAM
-  .long execute_load_io_u32       # 0x04 I/O registers
-  .long execute_load_palette_u32  # 0x05 Palette RAM
-  .long execute_load_vram_u32     # 0x06 VRAM
-  .long execute_load_oam_u32      # 0x07 OAM RAM
-  .long execute_load_gamepak8_u32 # 0x08 gamepak
-  .long execute_load_gamepak9_u32 # 0x09 gamepak
-  .long execute_load_gamepakA_u32 # 0x0A gamepak
-  .long execute_load_gamepakB_u32 # 0x0B gamepak
-  .long execute_load_gamepakC_u32 # 0x0C gamepak
-  .long execute_load_eeprom_u32   # 0x0D gamepak/eeprom
-  .long execute_load_backup_u32   # 0x0E Flash ROM/SRAM
-  .long execute_load_open_u32     # 0x0F open
-
-  .long execute_load_bios_u32u1     # 0x00 BIOS unaligned (1b)
-  .long execute_load_open_u32u1     # 0x01 open address unaligned (1b)
-  .long execute_load_ewram_u32u1    # 0x02 EWRAM unaligned (1b)
-  .long execute_load_iwram_u32u1    # 0x03 IWRAM unaligned (1b)
-  .long execute_load_io_u32u1       # 0x04 I/O registers unaligned (1b)
-  .long execute_load_palette_u32u1  # 0x05 Palette RAM unaligned (1b)
-  .long execute_load_vram_u32u1     # 0x06 VRAM unaligned (1b)
-  .long execute_load_oam_u32u1      # 0x07 OAM RAM unaligned (1b)
-  .long execute_load_gamepak8_u32u1 # 0x08 gamepak unaligned (1b)
-  .long execute_load_gamepak9_u32u1 # 0x09 gamepak unaligned (1b)
-  .long execute_load_gamepakA_u32u1 # 0x0A gamepak unaligned (1b)
-  .long execute_load_gamepakB_u32u1 # 0x0B gamepak unaligned (1b)
-  .long execute_load_gamepakC_u32u1 # 0x0C gamepak unaligned (1b)
-  .long execute_load_eeprom_u32u1   # 0x0D gamepak/eeprom unaligned (1b)
-  .long execute_load_backup_u32u1   # 0x0E Flash ROM/SRAM unaligned (1b)
-  .long execute_load_open_u32u1     # 0x0F open unaligned (1b)
-
-  .long execute_load_bios_u32u2     # 0x00 BIOS unaligned (2b)
-  .long execute_load_open_u32u2     # 0x01 open address unaligned (2b)
-  .long execute_load_ewram_u32u2    # 0x02 EWRAM unaligned (2b)
-  .long execute_load_iwram_u32u2    # 0x03 IWRAM unaligned (2b)
-  .long execute_load_io_u32u2       # 0x04 I/O registers unaligned (2b)
-  .long execute_load_palette_u32u2  # 0x05 Palette RAM unaligned (2b)
-  .long execute_load_vram_u32u2     # 0x06 VRAM unaligned (2b)
-  .long execute_load_oam_u32u2      # 0x07 OAM RAM unaligned (2b)
-  .long execute_load_gamepak8_u32u2 # 0x08 gamepak unaligned (2b)
-  .long execute_load_gamepak9_u32u2 # 0x09 gamepak unaligned (2b)
-  .long execute_load_gamepakA_u32u2 # 0x0A gamepak unaligned (2b)
-  .long execute_load_gamepakB_u32u2 # 0x0B gamepak unaligned (2b)
-  .long execute_load_gamepakC_u32u2 # 0x0C gamepak unaligned (2b)
-  .long execute_load_eeprom_u32u2   # 0x0D gamepak/eeprom unaligned (2b)
-  .long execute_load_backup_u32u2   # 0x0E Flash ROM/SRAM unaligned (2b)
-  .long execute_load_open_u32u2     # 0x0F open unaligned (2b)
-
-  .long execute_load_bios_u32u3     # 0x00 BIOS unaligned (3b)
-  .long execute_load_open_u32u3     # 0x01 open address unaligned (3b)
-  .long execute_load_ewram_u32u3    # 0x02 EWRAM unaligned (3b)
-  .long execute_load_iwram_u32u3    # 0x03 IWRAM unaligned (3b)
-  .long execute_load_io_u32u3       # 0x04 I/O registers unaligned (3b)
-  .long execute_load_palette_u32u3  # 0x05 Palette RAM unaligned (3b)
-  .long execute_load_vram_u32u3     # 0x06 VRAM unaligned (3b)
-  .long execute_load_oam_u32u3      # 0x07 OAM RAM unaligned (3b)
-  .long execute_load_gamepak8_u32u3 # 0x08 gamepak unaligned (3b)
-  .long execute_load_gamepak9_u32u3 # 0x09 gamepak unaligned (3b)
-  .long execute_load_gamepakA_u32u3 # 0x0A gamepak unaligned (3b)
-  .long execute_load_gamepakB_u32u3 # 0x0B gamepak unaligned (3b)
-  .long execute_load_gamepakC_u32u3 # 0x0C gamepak unaligned (3b)
-  .long execute_load_eeprom_u32u3   # 0x0D gamepak/eeprom unaligned (3b)
-  .long execute_load_backup_u32u3   # 0x0E Flash ROM/SRAM unaligned (3b)
-  .long execute_load_open_u32u3     # 0x0F open unaligned (3b)
-
-patch_load_u32:
-  patch_handler_align load_u32_ftable, 2
-
-
-
-# Unsigned always aligned 32bit load handlers
-
-execute_load_bios_u32a:
-  region_check 0, patch_load_u32a
-  srl $2, $4, 14                  # check if address is in BIOS region
-  bne $2, $0, 2f                  # if not, perform open read
-  srl $1, $5, 14                  # check if PC is in BIOS region
-  bne $1, $0, 1f                  # if not, perform BIOS protected read
-  lui $2, %hi(bios_rom)           # generate upper address (delay)
-
-  andi $4, $4, 0x3FFF             # generate offset
-  addu $2, $2, $4
-  load_u32 bios_rom
-
-1:
-  lui $2, %hi(bios_read_protect)  # generate upper address
-  load_u32 bios_read_protect
-
-2:
-  open_load32_core
-  nop
-
-execute_load_ewram_u32a:
-  translate_region_ewram patch_load_u32a
-  load_u32 (ewram + 0x8000)
-
-execute_aligned_load32:
-execute_load_iwram_u32a:
-  translate_region 3, patch_load_u32a, (iwram + 0x8000), 0x7FFF
-  load_u32 (iwram + 0x8000)
-
-execute_load_io_u32a:
-  translate_region 4, patch_load_u32a, io_registers, 0x3FF
-  load_u32 io_registers
-
-execute_load_palette_u32a:
-  translate_region 5, patch_load_u32a, palette_ram, 0x3FF
-  load_u32 palette_ram
-
-execute_load_vram_u32a:
-  translate_region_vram patch_load_u32a
-  load_u32 vram
-
-execute_load_oam_u32a:
-  translate_region 7, patch_load_u32a, oam_ram, 0x3FF
-  load_u32 oam_ram
-
-execute_load_gamepak8_u32a:
-  translate_region_gamepak_a 8, patch_load_u32a
-  load_u32 0
-
-execute_load_gamepak9_u32a:
-  translate_region_gamepak_a 9, patch_load_u32a
-  load_u32 0
-
-execute_load_gamepakA_u32a:
-  translate_region_gamepak_a 10, patch_load_u32a
-  load_u32 0
-
-execute_load_gamepakB_u32a:
-  translate_region_gamepak_a 11, patch_load_u32a
-  load_u32 0
-
-execute_load_gamepakC_u32a:
-  translate_region_gamepak_a 12, patch_load_u32a
-  load_u32 0
-
-execute_load_eeprom_u32a:
-  eeprom_load_a patch_load_u32a
-
-execute_load_backup_u32a:
-  backup_load_a patch_load_u32a
-  nop
-
-execute_load_open_u32a:
-  open_load32_a patch_load_u32a
-
-load_u32a_ftable:
-  .long execute_load_bios_u32a      # 0x00 BIOS unaligned (3b)
-  .long execute_load_open_u32a      # 0x01 open address unaligned (3b)
-  .long execute_load_ewram_u32a     # 0x02 EWRAM unaligned (3b)
-  .long execute_load_iwram_u32a     # 0x03 IWRAM unaligned (3b)
-  .long execute_load_io_u32a        # 0x04 I/O registers unaligned (3b)
-  .long execute_load_palette_u32a   # 0x05 Palette RAM unaligned (3b)
-  .long execute_load_vram_u32a      # 0x06 VRAM unaligned (3b)
-  .long execute_load_oam_u32a       # 0x07 OAM RAM unaligned (3b)
-  .long execute_load_gamepak8_u32a  # 0x08 gamepak unaligned (3b)
-  .long execute_load_gamepak9_u32a  # 0x09 gamepak unaligned (3b)
-  .long execute_load_gamepakA_u32a  # 0x0A gamepak unaligned (3b)
-  .long execute_load_gamepakB_u32a  # 0x0B gamepak unaligned (3b)
-  .long execute_load_gamepakC_u32a  # 0x0C gamepak unaligned (3b)
-  .long execute_load_eeprom_u32a    # 0x0D gamepak/eeprom unaligned (3b)
-  .long execute_load_backup_u32a    # 0x0E Flash ROM/SRAM unaligned (3b)
-  .long execute_load_open_u32a      # 0x0F open unaligned (3b)
-
-patch_load_u32a:
-  patch_handler load_u32a_ftable, 1
-
-
-# Unsigned 8bit store handlers
-
-execute_store_ignore0_u8:
-  ignore_region 0, patch_store_u8
-
-execute_store_ignore1_u8:
-  ignore_region 1, patch_store_u8
-
-execute_store_ewram_u8:
-  translate_region_ewram patch_store_u8
-  store_u8_smc (ewram + 0x8000)
-
-execute_store_u8:
-execute_store_iwram_u8:
-  translate_region 3, patch_store_u8, (iwram + 0x8000), 0x7FFF
-  store_u8_smc (iwram + 0x8000)
-
-execute_store_io_u8:
-  region_check 4, patch_store_u8
-  andi $5, $5, 0xFF               # make value 8bit
-  andi $4, $4, 0x3FF              # wrap around address
-  sw $ra, REG_SAVE3($16)          # preserve $ra
-
-  save_registers
-  jal write_io_register8          # write the value out
-  sw $6, REG_PC($16)              # save the PC (delay slot)
-  j write_io_epilogue             # handle any state changes
-  nop
-
-execute_store_palette_u8:
-  region_check 5, patch_store_u8
-  andi $2, $4, 0x3FE              # align palette address
-  ins $5, $5, 8, 8                # double value
-  addu $2, $2, $16
-  sh $5, 0x100($2)                # palette_ram[address] = value
-  sll $1, $5, 1                   # make green 6bits
-  ins $1, $0, 0, 6                # make bottom bit 0
-  ins $1, $5, 0, 5                # insert red channel into $1
-  jr $ra                          # return
-  sh $1, 0x500($2)
-
-execute_store_vram_u8:
-  translate_region_vram_store_align16 patch_store_u8
-  store_u8_double vram
-
-execute_store_oam_u8:
-  translate_region 7, patch_store_u8, oam_ram, 0x3FE
-  lui $1, %hi(oam_update)         # write non-zero to oam_update
-  sw $1, %lo(oam_update)($1)      # cheap, but this is non-zero
-  store_u8_double oam_ram
-
-execute_store_ignore8_u8:
-  ignore_region 8, patch_store_u8
-
-execute_store_ignore9_u8:
-  ignore_region 9, patch_store_u8
-
-execute_store_ignoreA_u8:
-  ignore_region 10, patch_store_u8
-
-execute_store_ignoreB_u8:
-  ignore_region 11, patch_store_u8
-
-execute_store_ignoreC_u8:
-  ignore_region 12, patch_store_u8
-
-execute_store_eeprom_u8:
-  store_function write_eeprom, 13, patch_store_u8, 0x3FF
-
-execute_store_backup_u8:
-  store_function write_backup, 14, patch_store_u8, 0xFFFF
-
-execute_store_ignoreF_u8:
-  ignore_high patch_store_u8
-
-store_u8_ftable:
-  .long execute_store_ignore0_u8  # 0x00 BIOS
-  .long execute_store_ignore1_u8  # 0x01 open address
-  .long execute_store_ewram_u8    # 0x02 EWRAM
-  .long execute_store_iwram_u8    # 0x03 IWRAM
-  .long execute_store_io_u8       # 0x04 I/O registers
-  .long execute_store_palette_u8  # 0x05 Palette RAM
-  .long execute_store_vram_u8     # 0x06 VRAM
-  .long execute_store_oam_u8      # 0x07 OAM RAM
-  .long execute_store_ignore8_u8  # 0x08 gamepak
-  .long execute_store_ignore9_u8  # 0x09 gamepak
-  .long execute_store_ignoreA_u8  # 0x0A gamepak
-  .long execute_store_ignoreB_u8  # 0x0B gamepak
-  .long execute_store_ignoreC_u8  # 0x0C gamepak
-  .long execute_store_eeprom_u8   # 0x0D gamepak/eeprom
-  .long execute_store_backup_u8   # 0x0E Flash ROM/SRAM
-  .long execute_store_ignoreF_u8  # 0x0F open address
-
-patch_store_u8:
-  patch_handler store_u8_ftable, 0x0F
-
-
-# Unsigned 16bit store handlers
-
-execute_store_ignore0_u16:
-  ignore_region 0, patch_store_u16
-
-execute_store_ignore1_u16:
-  ignore_region 1, patch_store_u16
-
-execute_store_ewram_u16:
-  translate_region_ewram_store_align16 patch_store_u16
-  store_u16_smc (ewram + 0x8000)
-
-execute_store_u16:
-execute_store_iwram_u16:
-  translate_region 3, patch_store_u16, (iwram + 0x8000), 0x7FFE
-  store_u16_smc (iwram + 0x8000)
-
-execute_store_io_u16:
-  region_check 4, patch_store_u16
-  andi $5, $5, 0xFFFF             # make value 16bit
-  andi $4, $4, 0x3FE              # wrap around/align address
-  sw $ra, REG_SAVE3($16)          # preserve $ra
-
-  save_registers
-  jal write_io_register16         # write the value out
-  sw $6, REG_PC($16)              # save the PC (delay slot)
-  j write_io_epilogue             # handle any state changes
-  nop
-
-execute_store_palette_u16:
-  region_check 5, patch_store_u16
-  andi $2, $4, 0x3FE              # wrap/align palette address
-  addu $2, $2, $16
-  sh $5, 0x100($2)                # palette_ram[address] = value
-  sll $1, $5, 1                   # make green 6bits
-  ins $1, $0, 0, 6                # make bottom bit 0
-  ins $1, $5, 0, 5                # insert red channel into $1
-  jr $ra                          # return
-  sh $1, 0x500($2)
-
-execute_store_vram_u16:
-  translate_region_vram_store_align16 patch_store_u16
-  store_u16 vram
-
-execute_store_oam_u16:
-  translate_region 7, patch_store_u16, oam_ram, 0x3FE
-  lui $1, %hi(oam_update)         # write non-zero to oam_update
-  sw $1, %lo(oam_update)($1)      # cheap, but this is non-zero
-  store_u16 oam_ram
-
-execute_store_rtc_u16:
-  store_function write_rtc, 8, patch_store_u16, 0xFE
-
-execute_store_ignore9_u16:
-  ignore_region 9, patch_store_u16
-
-execute_store_ignoreA_u16:
-  ignore_region 10, patch_store_u16
-
-execute_store_ignoreB_u16:
-  ignore_region 11, patch_store_u16
-
-execute_store_ignoreC_u16:
-  ignore_region 12, patch_store_u16
-
-execute_store_eeprom_u16:
-  store_function write_eeprom, 13, patch_store_u16, 0x3FE
-
-execute_store_ignoreE_u16:
-  ignore_region 14, patch_store_u16
-
-execute_store_ignoreF_u16:
-  ignore_high patch_store_u16
-
-store_u16_ftable:
-  .long execute_store_ignore0_u16 # 0x00 BIOS
-  .long execute_store_ignore1_u16 # 0x01 open address
-  .long execute_store_ewram_u16   # 0x02 EWRAM
-  .long execute_store_iwram_u16   # 0x03 IWRAM
-  .long execute_store_io_u16      # 0x04 I/O registers
-  .long execute_store_palette_u16 # 0x05 Palette RAM
-  .long execute_store_vram_u16    # 0x06 VRAM
-  .long execute_store_oam_u16     # 0x07 OAM RAM
-  .long execute_store_rtc_u16     # 0x08 gamepak
-  .long execute_store_ignore9_u16 # 0x09 gamepak
-  .long execute_store_ignoreA_u16 # 0x0A gamepak
-  .long execute_store_ignoreB_u16 # 0x0B gamepak
-  .long execute_store_ignoreC_u16 # 0x0C gamepak
-  .long execute_store_eeprom_u16  # 0x0D gamepak/eeprom
-  .long execute_store_ignoreE_u16 # 0x0E Flash ROM/SRAM
-  .long execute_store_ignoreF_u16 # 0x0F open address
-
-
-patch_store_u16:
-  patch_handler store_u16_ftable, 0x0F
-
-
-
-
-# Unsigned 32bit store handlers
-
-execute_store_ignore0_u32:
-  ignore_region 0, patch_store_u32
-
-execute_store_ignore1_u32:
-  ignore_region 1, patch_store_u32
-
-execute_store_ewram_u32:
-  translate_region_ewram_store_align32 patch_store_u32
-  store_u32_smc (ewram + 0x8000)
-
-execute_store_u32:
-execute_store_iwram_u32:
-  translate_region 3, patch_store_u32, (iwram + 0x8000), 0x7FFC
-  store_u32_smc (iwram + 0x8000)
-
-execute_store_io_u32:
-  region_check 4, patch_store_u32
-  nop
-  andi $4, $4, 0x3FC              # wrap around/align address
-  sw $ra, REG_SAVE3($16)          # preserve $ra
-
-  save_registers
-  jal write_io_register32         # write the value out
-  sw $6, REG_PC($16)              # save the PC (delay slot)
-  j write_io_epilogue             # handle any state changes
-  nop
-
-execute_store_palette_u32:
-  region_check 5, patch_store_u32
-  andi $2, $4, 0x3FC              # wrap/align palette address
-  addu $2, $2, $16
-  sw $5, 0x100($2)                # palette_ram[address] = value
-
-  sll $1, $5, 1                   # make green 6bits
-  ins $1, $0, 0, 6                # make bottom bit 0
-  ins $1, $5, 0, 5                # insert red channel into $1
-  sh $1, 0x500($2)
-
-  srl $5, $5, 16                  # shift down to next palette value
-  sll $1, $5, 1                   # make green 6bits
-  ins $1, $0, 0, 6                # make bottom bit 0
-  ins $1, $5, 0, 5                # insert red channel into $1
-
-  jr $ra                          # return
-  sh $1, 0x502($2)
-
-execute_store_vram_u32:
-  translate_region_vram_store_align32 patch_store_u32
-  store_u32 vram
-
-execute_store_oam_u32:
-  translate_region 7, patch_store_u32, oam_ram, 0x3FC
-  lui $1, %hi(oam_update)         # write non-zero to oam_update
-  sw $1, %lo(oam_update)($1)      # cheap, but this is non-zero
-  store_u32 oam_ram
-
-execute_store_ignore8_u32:
-  ignore_region 8, patch_store_u32
-
-execute_store_ignore9_u32:
-  ignore_region 9, patch_store_u32
-
-execute_store_ignoreA_u32:
-  ignore_region 10, patch_store_u32
-
-execute_store_ignoreB_u32:
-  ignore_region 11, patch_store_u32
-
-execute_store_ignoreC_u32:
-  ignore_region 12, patch_store_u32
-
-execute_store_eeprom_u32:
-  store_function write_eeprom, 13, patch_store_u32, 0x3FC
-
-execute_store_ignoreE_u32:
-  ignore_region 14, patch_store_u32
-
-execute_store_ignoreF_u32:
-  ignore_high patch_store_u32
-
-store_u32_ftable:
-  .long execute_store_ignore0_u32 # 0x00 BIOS
-  .long execute_store_ignore1_u32 # 0x01 open address
-  .long execute_store_ewram_u32   # 0x02 EWRAM
-  .long execute_store_iwram_u32   # 0x03 IWRAM
-  .long execute_store_io_u32      # 0x04 I/O registers
-  .long execute_store_palette_u32 # 0x05 Palette RAM
-  .long execute_store_vram_u32    # 0x06 VRAM
-  .long execute_store_oam_u32     # 0x07 OAM RAM
-  .long execute_store_ignore8_u32 # 0x08 gamepak
-  .long execute_store_ignore9_u32 # 0x09 gamepak
-  .long execute_store_ignoreA_u32 # 0x0A gamepak
-  .long execute_store_ignoreB_u32 # 0x0B gamepak
-  .long execute_store_ignoreC_u32 # 0x0C gamepak
-  .long execute_store_eeprom_u32  # 0x0D gamepak/eeprom
-  .long execute_store_ignoreE_u32 # 0x0E Flash ROM/SRAM
-  .long execute_store_ignoreF_u32 # 0x0F open address
-
-
-patch_store_u32:
-  patch_handler store_u32_ftable, 0x0F
-
-
-
-# Unsigned always aligned, a2 safe 32bit store handlers
-
-execute_store_ignore0_u32a:
-  ignore_region 0, patch_store_u32a
-
-execute_store_ignore1_u32a:
-  ignore_region 1, patch_store_u32a
-
-execute_store_ewram_u32a:
-  translate_region_ewram_store_align32 patch_store_u32a
-  store_u32 (ewram + 0x8000)
-
-execute_aligned_store32:
-execute_store_iwram_u32a:
-  translate_region 3, patch_store_u32a, (iwram + 0x8000), 0x7FFC
-  store_u32 (iwram + 0x8000)
-
-execute_store_io_u32a:
-  region_check 4, patch_store_u32a
-  nop
-  sw $6, REG_SAVE($16)            # save a2
-  sw $ra, REG_SAVE2($16)          # save ra
-
-  andi $4, $4, 0x3FC              # wrap around/align address
-
-  save_registers
-  jal write_io_register32         # write the value out
-  nop
-
-  restore_registers
-
-  lw $ra, REG_SAVE2($16)          # restore ra
-  jr $ra
-  lw $6, REG_SAVE($16)            # restore a2
-
-execute_store_palette_u32a:
-  region_check 5, patch_store_u32a
-  andi $2, $4, 0x3FC              # wrap/align palette address
-  addu $2, $2, $16
-  sw $5, 0x100($2)                # palette_ram[address] = value
-
-  sll $1, $5, 1                   # make green 6bits
-  ins $1, $0, 0, 6                # make bottom bit 0
-  ins $1, $5, 0, 5                # insert red channel into $1
-  sh $1, 0x500($2)
-
-  srl $5, $5, 16                  # shift down to next palette value
-  sll $1, $5, 1                   # make green 6bits
-  ins $1, $0, 0, 6                # make bottom bit 0
-  ins $1, $5, 0, 5                # insert red channel into $1
-
-  jr $ra                          # return
-  sh $1, 0x502($2)
-
-execute_store_vram_u32a:
-  translate_region_vram_store_align32 patch_store_u32a
-  store_u32 vram
-
-execute_store_oam_u32a:
-  translate_region 7, patch_store_u32a, oam_ram, 0x3FC
-  lui $1, %hi(oam_update)         # write non-zero to oam_update
-  sw $1, %lo(oam_update)($1)      # cheap, but this is non-zero
-  store_u32 oam_ram
-
-execute_store_ignore8_u32a:
-  ignore_region 8, patch_store_u32a
-
-execute_store_ignore9_u32a:
-  ignore_region 9, patch_store_u32a
-
-execute_store_ignoreA_u32a:
-  ignore_region 10, patch_store_u32a
-
-execute_store_ignoreB_u32a:
-  ignore_region 11, patch_store_u32a
-
-execute_store_ignoreC_u32a:
-  ignore_region 12, patch_store_u32a
-
-execute_store_eeprom_u32a:
-  store_function_a write_eeprom, 13, patch_store_u32a, 0x3FC
-
-execute_store_ignoreE_u32a:
-  ignore_region 14, patch_store_u32a
-
-execute_store_ignoreF_u32a:
-  ignore_high patch_store_u32a
-
-store_u32a_ftable:
-  .long execute_store_ignore0_u32a# 0x00 BIOS
-  .long execute_store_ignore1_u32a# 0x01 open address
-  .long execute_store_ewram_u32a  # 0x02 EWRAM
-  .long execute_store_iwram_u32a  # 0x03 IWRAM
-  .long execute_store_io_u32a     # 0x04 I/O registers
-  .long execute_store_palette_u32a# 0x05 Palette RAM
-  .long execute_store_vram_u32a   # 0x06 VRAM
-  .long execute_store_oam_u32a    # 0x07 OAM RAM
-  .long execute_store_ignore8_u32a# 0x08 gamepak
-  .long execute_store_ignore9_u32a# 0x09 gamepak
-  .long execute_store_ignoreA_u32a# 0x0A gamepak
-  .long execute_store_ignoreB_u32a# 0x0B gamepak
-  .long execute_store_ignoreC_u32a# 0x0C gamepak
-  .long execute_store_eeprom_u32a # 0x0D gamepak/eeprom
-  .long execute_store_ignoreE_u32a# 0x0E Flash ROM/SRAM
-  .long execute_store_ignoreF_u32a# 0x0F open address
-
-patch_store_u32a:
-  patch_handler store_u32a_ftable, 0x0F
 
 
 write_io_epilogue:
@@ -2491,8 +309,7 @@ write_io_epilogue:
 
 
 alert_loop:
-  jal update_gba                  # process the next event
-  nop
+  cfncall update_gba, 0           # process the next event
 
   lw $1, COMPLETED_FRAME($16)     # Check whether we completed a frame
   bne $1, $0, return_to_main      # Return to main thread now
@@ -2519,16 +336,16 @@ no_alert:
   nop
 
 smc_dma:
-  jal flush_translation_cache_ram # flush translation cache
-  nop
+  cfncall flush_translation_cache_ram, 4
   j lookup_pc
   nop
 
 smc_write:
   save_registers
-  jal flush_translation_cache_ram # flush translation cache
-  sw $6, REG_PC($16)              # save PC (delay slot)
+  sw $6, REG_PC($16)              # save PC
+  cfncall flush_translation_cache_ram, 4
 
+mips_lookup_pc:
 lookup_pc:
   lw $2, REG_CPSR($16)            # $2 = cpsr
   andi $2, $2, 0x20               # isolate mode bit
@@ -2536,17 +353,17 @@ lookup_pc:
   nop
 
 lookup_pc_thumb:
-  jal block_lookup_address_thumb  # get Thumb address
-  lw $4, REG_PC($16)              # load PC as arg 0 (delay slot)
+  lw $4, REG_PC($16)                     # load PC as arg 0
+  cfncall block_lookup_address_thumb, 2  # get Thumb address
   restore_registers
-  jr $2                           # jump to result
+  jr $2                                  # jump to result
   nop
 
 lookup_pc_arm:
-  jal block_lookup_address_arm    # get ARM address
-  lw $4, REG_PC($16)              # load PC as arg 0 (delay slot)
+  lw $4, REG_PC($16)                   # load PC as arg 0
+  cfncall block_lookup_address_arm, 1  # get ARM address
   restore_registers
-  jr $2                           # jump to result
+  jr $2                                # jump to result
   nop
 
 # Return the current cpsr
@@ -2578,8 +395,8 @@ execute_swi:
   ori $2, 0x13                    # set mode to supervisor
   sw $2, REG_CPSR($16)            # write back CPSR
   save_registers
-  jal set_cpu_mode                # set the CPU mode to supervisor
-  li $4, 3                        # 3 is supervisor mode (delay slot)
+  li $4, 3                        # 3 is supervisor mode
+  cfncall set_cpu_mode, 5         # set the CPU mode to supervisor
   restore_registers
   lw $ra, ($sp)                   # pop $ra
   jr $ra                          # return
@@ -2601,8 +418,7 @@ execute_spsr_restore:
   addiu $sp, $sp, -4
   sw $ra, ($sp)
   save_registers
-  jal execute_spsr_restore_body   # do the dirty work in this C function
-  nop
+  cfncall execute_spsr_restore_body, 6  # do the dirty work in this C function
   restore_registers
   addu $4, $2, $0                 # move return value to $4
   lw $ra, ($sp)
@@ -2624,27 +440,26 @@ execute_store_cpsr:
   and $2, $2, $4                  # $2 = (cpsr & (~store_mask))
   or $1, $1, $2                   # $1 = new cpsr combined with old
   extract_flags_body              # extract flags from $1
-  addiu $sp, $sp, -4
-  sw $ra, ($sp)
+  sw $ra, REG_SAVE3($16)
   save_registers
-  jal execute_store_cpsr_body     # do the dirty work in this C function
-  addu $4, $1, $0                 # load the new CPSR (delay slot)
+  addu $4, $1, $0                 # load the new CPSR
+  cfncall execute_store_cpsr_body, 7   # do the dirty work in this C function
 
   bne $2, $0, changed_pc_cpsr     # this could have changed the pc
   nop
 
   restore_registers
 
-  lw $ra, ($sp)
+  lw $ra, REG_SAVE3($16)
   jr $ra
-  addiu $sp, $sp, 4
+  nop
 
 changed_pc_cpsr:
-  jal block_lookup_address_arm    # GBA address is in $4
-  addu $4, $2, $0                 # load new address in $4 (delay slot)
-  restore_registers               # restore registers
-  jr $2                           # jump to the new address
-  addiu $sp, $sp, 4               # get rid of the old ra (delay slot)
+  addu $4, $2, $0                      # load new address in $4
+  cfncall block_lookup_address_arm, 1  # GBA address is in $4
+  restore_registers                    # restore registers
+  jr $2                                # jump to the new address
+  nop
 
 
 # $4: new spsr
@@ -2747,8 +562,9 @@ ror_zero_shift:
   rotrv $4, $4, $5                # return (value ror shift) delay
 
 # $4: cycle counter argument
+# $5: pointer to reg
 
-execute_arm_translate:
+execute_arm_translate_internal:
   add $sp, $sp, -48               # Store the main thread context
   sw $s0,  0($sp)
   sw $s1,  4($sp)
@@ -2761,9 +577,7 @@ execute_arm_translate:
   sw $fp, 32($sp)
   sw $ra, 36($sp)
 
-  lui $16, %hi(reg)               # load reg address into base reg
-  addiu $16, %lo(reg)
-
+  move $16, $5
   sw $28, GP_SAVE($16)
 
   addu $17, $4, $0                # load cycle counter register
@@ -2780,15 +594,13 @@ execute_arm_translate:
   bne $1, $0, 1f
   lw $4, REG_PC($16)              # load PC into $4 (delay)
 
-  jal block_lookup_address_arm    # lookup initial jump address
-  nop
+  cfncall block_lookup_address_arm, 1
   restore_registers               # load initial register values
   jr $2                           # jump to return
   nop
 
 1:
-  jal block_lookup_address_thumb  # lookup initial jump address
-  nop
+  cfncall block_lookup_address_thumb, 2
   restore_registers               # load initial register values
   jr $2                           # jump to return
   nop
@@ -2797,11 +609,14 @@ execute_arm_translate:
 .data
 .align 6
 
+memory_map_write:
+  .space 0x8000
+
 memory_map_read:
   .space 0x8000
 
-# This must be between memory_map_read and memory_map_write because it's used
-# to calculate their addresses elsewhere in this file.
+# memory_map_read is immediately before arm_reg on purpose (offset used
+# to access it, via lw op). We do not use write though.
 reg:
   .space 0x100
 
@@ -2815,5 +630,22 @@ spsr:
 reg_mode:
   .space 196    # u32[7][7];
 
-memory_map_write:
-  .space 0x8000
+# Here we store:
+#  void *tmemld[11][16];  # 10 types of loads
+#  void *tmemst[ 4][16];  #  3 types of stores
+# Essentially a list of pointers to the different mem load handlers
+# Keep them close for a fast patcher.
+tmemld:
+  .space 704
+tmemst:
+  .space 256
+fnptrs:
+  .long update_gba                     # 0
+  .long block_lookup_address_arm       # 1
+  .long block_lookup_address_thumb     # 2
+  .long block_lookup_address_dual      # 3
+  .long flush_translation_cache_ram    # 4
+  .long set_cpu_mode                   # 5
+  .long execute_spsr_restore_body      # 6
+  .long execute_store_cpsr_body        # 7
+

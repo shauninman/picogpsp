@@ -2299,4 +2299,6 @@ void function_cc swi_hle_div(void)
   generate_update_pc(pc);                                                     \
   generate_indirect_branch_no_cycle_update(type)                              \
 
+void init_emitter(void) {}
+
 #endif

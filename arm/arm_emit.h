@@ -1933,4 +1933,6 @@ void execute_swi_hle_div_c(void)
   generate_update_pc(pc);                                                     \
   generate_indirect_branch_no_cycle_update(type)                              \
 
+void init_emitter(void) {}
+
 #endif

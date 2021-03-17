@@ -427,7 +427,7 @@ u32 eeprom_address = 0;
 s32 eeprom_counter = 0;
 u8 eeprom_buffer[8];
 
-void function_cc write_eeprom(u32 address, u32 value)
+void function_cc write_eeprom(u32 unused_address, u32 value)
 {
   switch(eeprom_mode)
   {
@@ -749,6 +749,7 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
 
 cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
 {
+  value &= 0xff;
   switch(address)
   {
     case 0x00:
@@ -1165,6 +1166,7 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
 
 cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
 {
+  value &= 0xffff;
   switch(address)
   {
     case 0x00:
@@ -1967,6 +1969,10 @@ u8 function_cc read_memory8(u32 address)
   return value;
 }
 
+u32 read_memory8s(u32 address) {
+  return (u32)((s8)read_memory8(address));
+}
+
 u16 function_cc read_memory16_signed(u32 address)
 {
   u16 value;
@@ -1979,21 +1985,20 @@ u16 function_cc read_memory16_signed(u32 address)
   return value;
 }
 
+u32 read_memory16s(u32 address) {
+  return (u32)((s16)read_memory16_signed(address));
+}
+
 // unaligned reads are actually 32bit
 
 u32 function_cc read_memory16(u32 address)
 {
   u32 value;
-
-  if(address & 0x01)
-  {
-    address &= ~0x01;
-    read_memory(16);
+  bool unaligned = (address & 0x01);
+  address &= ~0x01;
+  read_memory(16);
+  if (unaligned) {
     ror(value, value, 8);
-  }
-  else
-  {
-    read_memory(16);
   }
 
   return value;
@@ -2003,18 +2008,10 @@ u32 function_cc read_memory16(u32 address)
 u32 function_cc read_memory32(u32 address)
 {
   u32 value;
-  if(address & 0x03)
-  {
-    u32 rotate = (address & 0x03) * 8;
-    address &= ~0x03;
-    read_memory(32);
-    ror(value, value, rotate);
-  }
-  else
-  {
-    read_memory(32);
-  }
-
+  u32 rotate = (address & 0x03) * 8;
+  address &= ~0x03;
+  read_memory(32);
+  ror(value, value, rotate);
   return value;
 }
 
