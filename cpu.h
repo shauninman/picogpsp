@@ -90,7 +90,6 @@ typedef enum
 {
   TRANSLATION_REGION_RAM,
   TRANSLATION_REGION_ROM,
-  TRANSLATION_REGION_BIOS
 } translation_region_type;
 
 extern u32 instruction_count;
@@ -124,12 +123,10 @@ s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
 #if defined(PSP)
   #define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4)
   #define RAM_TRANSLATION_CACHE_SIZE (1024 * 384)
-  #define BIOS_TRANSLATION_CACHE_SIZE (1024 * 128)
   #define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024)
 #else
   #define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4 * 5)
   #define RAM_TRANSLATION_CACHE_SIZE (1024 * 384 * 2)
-  #define BIOS_TRANSLATION_CACHE_SIZE (1024 * 128 * 2)
   #define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024 * 32)
 #endif
 
@@ -138,28 +135,22 @@ s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
 #if defined(HAVE_MMAP)
 extern u8* rom_translation_cache;
 extern u8* ram_translation_cache;
-extern u8* bios_translation_cache;
 #elif defined(_3DS)
 #define rom_translation_cache ((u8*)0x02000000 - ROM_TRANSLATION_CACHE_SIZE)
 #define ram_translation_cache (rom_translation_cache - RAM_TRANSLATION_CACHE_SIZE)
-#define bios_translation_cache (ram_translation_cache - BIOS_TRANSLATION_CACHE_SIZE)
 extern u8* rom_translation_cache_ptr;
 extern u8* ram_translation_cache_ptr;
-extern u8* bios_translation_cache_ptr;
 #elif defined(VITA)
 extern u8* rom_translation_cache;
 extern u8* ram_translation_cache;
-extern u8* bios_translation_cache;
 extern int sceBlock;
 #else
 extern u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
 extern u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
-extern u8 bios_translation_cache[BIOS_TRANSLATION_CACHE_SIZE];
 extern u32 stub_arena[STUB_ARENA_SIZE];
 #endif
 extern u8 *rom_translation_ptr;
 extern u8 *ram_translation_ptr;
-extern u8 *bios_translation_ptr;
 
 #define MAX_TRANSLATION_GATES 8
 
@@ -182,7 +173,6 @@ extern u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
 
 void flush_translation_cache_rom(void);
 void flush_translation_cache_ram(void);
-void flush_translation_cache_bios(void);
 void dump_translation_cache(void);
 
 extern u32 reg_mode[7][7];

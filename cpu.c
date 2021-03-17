@@ -1639,8 +1639,6 @@ void raise_interrupt(irq_type irq_raised)
     reg[REG_CPSR] = 0xD2;
     reg[REG_PC] = 0x00000018;
 
-    bios_region_read_allow();
-
     set_cpu_mode(MODE_IRQ);
     reg[CPU_HALT_STATE] = CPU_ACTIVE;
     reg[CHANGED_PC_STATUS] = 1;

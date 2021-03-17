@@ -310,8 +310,7 @@ u16 io_registers[1024 * 16];
 u8 ewram[1024 * 256 * 2];
 u8 iwram[1024 * 32 * 2];
 u8 vram[1024 * 96];
-
-u8 bios_rom[1024 * 16 * 2];
+u8 bios_rom[1024 * 16];
 u32 bios_read_protect;
 
 // Up to 128kb, store SRAM, flash ROM, or EEPROM here.
@@ -3373,17 +3372,6 @@ void memory_term(void)
   }
 }
 
-void bios_region_read_allow(void)
-{
-  memory_map_read[0] = bios_rom;
-}
-
-void bios_region_read_protect(void)
-{
-  memory_map_read[0] = NULL;
-}
-
-
 #define savestate_block(type)   \
   cpu_##type##_savestate();     \
   input_##type##_savestate();   \
@@ -3409,7 +3397,6 @@ void gba_load_state(const void* src)
    {
       flush_translation_cache_ram();
       flush_translation_cache_rom();
-      flush_translation_cache_bios();
    }
 #endif
 

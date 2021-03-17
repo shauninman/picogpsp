@@ -192,8 +192,6 @@ void update_backup(void);
 void init_memory(void);
 void init_gamepak_buffer(void);
 void memory_term(void);
-void bios_region_read_allow(void);
-void bios_region_read_protect(void);
 u8 *load_gamepak_page(u32 physical_index);
 
 extern u8 *gamepak_rom;
@@ -209,8 +207,8 @@ extern u16 oam_ram[512];
 extern u16 palette_ram_converted[512];
 extern u16 io_registers[1024 * 16];
 extern u8 vram[1024 * 96];
+extern u8 bios_rom[1024 * 16];
 // Double buffer used for SMC detection
-extern u8 bios_rom[1024 * 16 * 2];
 extern u8 ewram[1024 * 256 * 2];
 extern u8 iwram[1024 * 32 * 2];
 
