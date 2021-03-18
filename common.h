@@ -31,6 +31,7 @@
   #define PATH_SEPARATOR_CHAR '/'
 #endif
 
+/* On x86 we pass arguments via registers instead of stack */
 #ifdef X86_ARCH
   #define function_cc __attribute__((regparm(2)))
 #else
@@ -55,8 +56,6 @@
 // functions on PSP for vastly improved memstick performance.
 
 #ifdef PSP
-  #define fastcall
-
   #include <pspkernel.h>
   #include <pspdebug.h>
   #include <pspctrl.h>
@@ -64,13 +63,8 @@
   #include <pspaudio.h>
   #include <pspaudiolib.h>
   #include <psprtc.h>
-
-  #define convert_palette(value)  \
-    value = ((value & 0x7FE0) << 1) | (value & 0x1F)
-
   #include <time.h>
 #else
-
   typedef unsigned char u8;
   typedef signed char s8;
   typedef unsigned short int u16;
@@ -79,10 +73,14 @@
   typedef signed int s32;
   typedef unsigned long long int u64;
   typedef signed long long int s64;
+#endif
 
+#ifdef USE_BGR_FORMAT
+  #define convert_palette(value)  \
+    value = ((value & 0x7FE0) << 1) | (value & 0x1F)
+#else
   #define convert_palette(value) \
     value = ((value & 0x1F) << 11) | ((value & 0x03E0) << 1) | (value >> 10)
-
 #endif
 
 #define GBA_SCREEN_WIDTH  (240)

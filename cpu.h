@@ -174,6 +174,7 @@ extern u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
 void flush_translation_cache_rom(void);
 void flush_translation_cache_ram(void);
 void dump_translation_cache(void);
+void wipe_caches(void);
 
 extern u32 reg_mode[7][7];
 extern u32 spsr[6];

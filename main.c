@@ -114,8 +114,7 @@ void init_main(void)
   video_count = 960;
 
 #ifdef HAVE_DYNAREC
-  flush_translation_cache_rom();
-  flush_translation_cache_ram();
+  wipe_caches();
   init_emitter();
 #endif
 }
