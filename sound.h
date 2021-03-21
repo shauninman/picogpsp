@@ -108,6 +108,7 @@ extern u32 sound_frequency;
 extern u32 sound_on;
 
 extern u32 global_enable_audio;
+extern u32 global_process_audio;
 extern u32 enable_low_pass_filter;
 
 void sound_timer_queue8(u32 channel, u8 value);

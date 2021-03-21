@@ -2386,7 +2386,7 @@ char gamepak_code[5];
 char gamepak_maker[3];
 char gamepak_filename[512];
 
-u32 load_gamepak(const struct retro_game_info* info, const char *name)
+u32 load_gamepak(const char *name)
 {
    char cheats_filename[256];
    char *p;

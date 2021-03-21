@@ -18,6 +18,10 @@
  */
 
 #include "common.h"
+#ifndef __LIBRETRO__
+#include "frontend/main.h"
+#include "frontend/libpicofe/input.h"
+#endif
 
 static u32 old_key = 0;
 static retro_input_state_t input_state_cb;
@@ -45,6 +49,7 @@ static void trigger_key(u32 key)
   }
 }
 
+#ifdef __LIBRETRO__
 u32 update_input(void)
 {
    unsigned i;
@@ -64,6 +69,35 @@ u32 update_input(void)
 
    return 0;
 }
+#else
+
+u32 update_input(void)
+{
+  int actions[IN_BINDTYPE_COUNT] = { 0, };
+  uint32_t new_key = 0;
+  unsigned int emu_act;
+  int which = EACTION_NONE;
+
+  in_update(actions);
+  emu_act = actions[IN_BINDTYPE_EMU];
+  if (emu_act) {
+    for (; !(emu_act & 1); emu_act >>= 1, which++)
+			;
+		emu_act = which;
+  }
+  handle_emu_action(which);
+
+  new_key = actions[IN_BINDTYPE_PLAYER12];
+
+  if ((new_key | old_key) != old_key)
+    trigger_key(new_key);
+
+  old_key = new_key;
+  io_registers[REG_P1] = (~old_key) & 0x3FF;
+
+  return 0;
+}
+#endif
 
 #define input_savestate_builder(type)   \
 void input_##type##_savestate(void)     \

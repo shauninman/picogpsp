@@ -31,6 +31,10 @@
   #define PATH_SEPARATOR_CHAR '/'
 #endif
 
+#define prefetch(a,b)   __builtin_prefetch(a,b)
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
+
 /* On x86 we pass arguments via registers instead of stack */
 #ifdef X86_ARCH
   #define function_cc __attribute__((regparm(2)))
@@ -40,7 +44,7 @@
 
 #ifdef ARM_ARCH
 
-#define _BSD_SOURCE // sync
+#define _DEFAULT_SOURCE 1 // sync
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>

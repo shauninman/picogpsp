@@ -19,7 +19,12 @@
 
 
 #include "common.h"
+#ifndef __LIBRETRO__
+#include "frontend/plat.h"
+#endif
+
 u32 global_enable_audio = 1;
+u32 global_process_audio = 1;
 
 direct_sound_struct direct_sound_channel[2];
 gbc_sound_struct gbc_sound_channel[4];
@@ -658,7 +663,12 @@ void render_audio(void)
          stream_base[i] = current_sample << 4;
          source[i] = 0;
       }
+#ifdef __LIBRETRO__
       audio_batch_cb(stream_base, 256);
+#else
+      if (global_process_audio)
+        plat_sound_write(stream_base, 1024);
+#endif
       sound_buffer_base += 512;
       sound_buffer_base &= BUFFER_SIZE_MASK;
    }

@@ -185,7 +185,7 @@ extern char gamepak_filename[512];
 
 cpu_alert_type dma_transfer(dma_transfer_type *dma);
 u8 *memory_region(u32 address, u32 *memory_limit);
-u32 load_gamepak(const struct retro_game_info* info, const char *name);
+u32 load_gamepak(const char *name);
 u32 load_backup(char *name);
 s32 load_bios(char *name);
 void update_backup(void);

@@ -46,7 +46,7 @@ u8* rom_translation_cache_ptr;
 u8* ram_translation_cache_ptr;
 u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
-#else
+#elif defined(ARM_MEMORY_DYNAREC)
 
 #ifdef __ANDROID__
 // Workaround for 'attempt to map x bytes at offset y'
@@ -66,6 +66,11 @@ u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE]
 u8 *ram_translation_ptr = ram_translation_cache;
 
 __asm__(".section .text");
+#else
+u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
+u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
+u8 *rom_translation_ptr = rom_translation_cache;
+u8 *ram_translation_ptr = ram_translation_cache;
 #endif
 
 u32 iwram_code_min = 0xFFFFFFFF;
