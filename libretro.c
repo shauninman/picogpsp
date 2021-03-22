@@ -65,6 +65,7 @@ static unsigned audio_buff_occupancy         = 0;
 static bool audio_buff_underrun              = false;
 static unsigned audio_latency                = 0;
 static bool update_audio_latency             = false;
+static bios_type selected_bios               = auto_detect;
 
 static retro_log_printf_t log_cb;
 static retro_video_refresh_t video_cb;
@@ -75,6 +76,7 @@ struct retro_perf_callback perf_cb;
 
 int dynarec_enable;
 int use_libretro_save_method = 0;
+boot_mode selected_boot_mode = boot_game;
 
 u32 idle_loop_target_pc = 0xFFFFFFFF;
 u32 iwram_stack_optimize = 1;
@@ -112,6 +114,25 @@ static void info_msg(const char* text)
 {
    if (log_cb)
       log_cb(RETRO_LOG_INFO, "[gpSP]: %s\n", text);
+}
+
+static void show_warning_message(const char* text, unsigned durationms) {
+  unsigned ifversion = 0;
+  if (!environ_cb(RETRO_ENVIRONMENT_GET_MESSAGE_INTERFACE_VERSION, &ifversion) || ifversion >= 1) {
+    /* Use the new API to display messages */
+    struct retro_message_ext msg = {
+      .msg = text, .duration = durationms,
+      .priority = 2, .level = RETRO_LOG_WARN,
+      .target = RETRO_MESSAGE_TARGET_ALL,
+      .type = RETRO_MESSAGE_TYPE_NOTIFICATION,
+      .progress = -1,
+    };
+    environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE_EXT, &msg);
+  }
+  else {
+    struct retro_message msg = {.msg = text, .frames = durationms / 17};
+    environ_cb(RETRO_ENVIRONMENT_SET_MESSAGE, &msg);
+  }
 }
 
 /* Frameskip START */
@@ -348,8 +369,8 @@ static void video_run(void)
    sceGuTexMode(GU_PSM_5650, 0, 0, GU_FALSE);
    sceGuCopyImage(GU_PSM_5650, 0, 0, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT, GBA_SCREEN_WIDTH,
                gba_screen_pixels_buf, 0, 0, GBA_SCREEN_WIDTH, texture_vram_p);
-	sceGuTexImage(0, next_pow2(GBA_SCREEN_WIDTH), next_pow2(GBA_SCREEN_HEIGHT), GBA_SCREEN_WIDTH, texture_vram_p);
-	sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGB);
+   sceGuTexImage(0, next_pow2(GBA_SCREEN_WIDTH), next_pow2(GBA_SCREEN_HEIGHT), GBA_SCREEN_WIDTH, texture_vram_p);
+   sceGuTexFunc(GU_TFX_REPLACE, GU_TCC_RGB);
    sceGuDisable(GU_BLEND);
 
    sceGuFinish();
@@ -484,6 +505,8 @@ void retro_init(void)
    audio_buff_underrun    = false;
    audio_latency          = 0;
    update_audio_latency   = false;
+   selected_bios          = auto_detect;
+   selected_boot_mode     = boot_game;
 }
 
 void retro_deinit(void)
@@ -660,6 +683,32 @@ static void check_variables(int started_from_load)
    dynarec_enable = 0;
 #endif
 
+   if (started_from_load) {
+     var.key                = "gpsp_bios";
+     var.value              = 0;
+
+     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+     {
+        if (!strcmp(var.value, "auto"))
+           selected_bios = auto_detect;
+        else if (!strcmp(var.value, "builtin"))
+           selected_bios = builtin_bios;
+        else if (!strcmp(var.value, "official"))
+           selected_bios = official_bios;
+     }
+
+     var.key                = "gpsp_boot_mode";
+     var.value              = 0;
+
+     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+     {
+        if (!strcmp(var.value, "game"))
+           selected_boot_mode = boot_game;
+        else if (!strcmp(var.value, "bios"))
+           selected_boot_mode = boot_bios;
+     }
+   }
+
    var.key                = "gpsp_frameskip";
    var.value              = 0;
    frameskip_type_prev    = current_frameskip_type;
@@ -795,30 +844,41 @@ bool retro_load_game(const struct retro_game_info* info)
 
    extract_directory(main_path, info->path, sizeof(main_path));
 
-   if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
-      strcpy(filename_bios, dir);
-   else
-      strcpy(filename_bios, main_path);
-
-   strcat(filename_bios, "/gba_bios.bin");
-
-
    if (environ_cb(RETRO_ENVIRONMENT_GET_SAVE_DIRECTORY, &dir) && dir)
       strcpy(save_path, dir);
    else
       strcpy(save_path, main_path);
 
-   if (load_bios(filename_bios) != 0)
+   if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &dir) && dir)
+      strcpy(filename_bios, dir);
+   else
+      strcpy(filename_bios, main_path);
+
+   bool bios_loaded = false;
+   printf("USE %d\n", (int)selected_bios);
+   if (selected_bios == auto_detect || selected_bios == official_bios)
    {
-      error_msg("Could not load BIOS image file.");
-      return false;
+     bios_loaded = true;
+     strcat(filename_bios, "/gba_bios.bin");
+
+     if (load_bios(filename_bios) != 0)
+     {
+        if (selected_bios == official_bios)
+          show_warning_message("Could not load BIOS image file, using built-in BIOS", 2500);
+        bios_loaded = false;
+     }
+
+     if (bios_loaded && bios_rom[0] != 0x18)
+     {
+        if (selected_bios == official_bios)
+          show_warning_message("BIOS image seems incorrect, using built-in BIOS", 2500);
+        bios_loaded = false;
+     }
    }
 
-   if (bios_rom[0] != 0x18)
-   {
-      info_msg("You have an incorrect BIOS image.");
-      info_msg("While many games will work fine, some will not.");
-      info_msg("It is strongly recommended that you obtain the correct BIOS file.");
+   if (!bios_loaded) {
+     /* Load the built-in BIOS */
+     memcpy(bios_rom, open_gba_bios_rom, sizeof(bios_rom));
    }
 
    memset(gamepak_backup, -1, sizeof(gamepak_backup));
@@ -921,8 +981,8 @@ void retro_run(void)
 
    input_poll_cb();
 
-	/* Check whether current frame should
-	 * be skipped */
+   /* Check whether current frame should
+    * be skipped */
    skip_next_frame = 0;
 
    if (current_frameskip_type != no_frameskip)

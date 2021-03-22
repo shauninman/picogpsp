@@ -54,6 +54,29 @@ extern "C" {
 
 struct retro_core_option_definition option_defs_us[] = {
    {
+      "gpsp_bios",
+      "BIOS",
+      "Choose the BIOS image to use. The official BIOS must be provided by the user. Using a non-official (or builtin) BIOS might result in incompatibility problems with some games. Best results are to be achieved with the official Nintendo BIOS.",
+      {
+         { "auto",      "Auto select" },
+         { "builtin",   "Builtin BIOS" },
+         { "official",  "Original BIOS" },
+         { NULL, NULL },
+      },
+      "auto"
+   },
+   {
+      "gpsp_boot_mode",
+      "Boot mode",
+      "Choose whether to boot the BIOS before the game or not. There's not much difference in either modes.",
+      {
+         { "game",      "Boot to game" },
+         { "bios",      "Boot to BIOS" },
+         { NULL, NULL },
+      },
+      "game"
+   },
+   {
       "gpsp_frameskip",
       "Frameskip",
       "Skip frames to avoid audio buffer under-run (crackling). Improves performance at the expense of visual smoothness. 'Auto' skips frames when advised by the frontend. 'Auto (Threshold)' utilises the 'Frameskip Threshold (%)' setting. 'Fixed Interval' utilises the 'Frameskip Interval' setting.",

@@ -64,6 +64,19 @@ typedef enum
   fixed_interval_frameskip
 } frameskip_type;
 
+typedef enum
+{
+  auto_detect = 0,
+  builtin_bios,
+  official_bios
+} bios_type;
+
+typedef enum
+{
+  boot_game = 0,
+  boot_bios
+} boot_mode;
+
 extern u32 cpu_ticks;
 extern u32 execute_cycles;
 extern u32 global_cycles_per_instruction;
@@ -98,6 +111,7 @@ u32 file_length(FILE *fp);
 
 extern u32 num_skipped_frames;
 extern int dynarec_enable;
+extern boot_mode selected_boot_mode;
 
 void change_ext(const char *src, char *buffer, const char *extension);
 
