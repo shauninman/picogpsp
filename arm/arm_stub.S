@@ -1,14 +1,14 @@
+
+#include "../gpsp_config.h"
+
+#define defsymbl(symbol) \
+.global symbol ;         \
+.global _##symbol ;      \
+symbol:                  \
+_##symbol:
+
+.text
 .align 2
-
-.globl invalidate_icache_region
-.globl invalidate_cache_region
-
-.globl memory_map_read
-.globl reg
-.globl palette_ram
-.globl palette_ram_converted
-.globl reg_mode
-.globl spsr
 
 #define REG_R0            (0 * 4)
 #define REG_R1            (1 * 4)
@@ -178,10 +178,7 @@
 #define arm_update_gba_builder(name, mode, return_op)                        ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl arm_update_gba_##name                                                 ;\
-.globl _arm_update_gba_##name                                                ;\
-arm_update_gba_##name:                                                       ;\
-_arm_update_gba_##name:                                                      ;\
+defsymbl(arm_update_gba_##name)                                              ;\
   load_pc_##return_op()                                                      ;\
   str r0, [reg_base, #REG_PC]             /* write out the PC              */;\
                                                                              ;\
@@ -243,30 +240,21 @@ arm_update_gba_builder(idle_thumb, thumb, add)
 @ r0: PC to branch to
 
 .align 2
-.globl arm_indirect_branch_arm
-.globl _arm_indirect_branch_arm
-arm_indirect_branch_arm:
-_arm_indirect_branch_arm:
+defsymbl(arm_indirect_branch_arm)
   save_flags()
   call_c_function(block_lookup_address_arm)
   restore_flags()
   bx r0
 
 .align 2
-.globl arm_indirect_branch_thumb
-.globl _arm_indirect_branch_thumb
-arm_indirect_branch_thumb:
-_arm_indirect_branch_thumb:
+defsymbl(arm_indirect_branch_thumb)
   save_flags()
   call_c_function(block_lookup_address_thumb)
   restore_flags()
   bx r0
 
 .align 2
-.globl arm_indirect_branch_dual_arm
-.globl _arm_indirect_branch_dual_arm
-arm_indirect_branch_dual_arm:
-_arm_indirect_branch_dual_arm:
+defsymbl(arm_indirect_branch_dual_arm)
   save_flags()
   tst r0, #0x01                           @ check lower bit
   bne 1f                                  @ if set going to Thumb mode
@@ -286,10 +274,7 @@ _arm_indirect_branch_dual_arm:
   bx r0                                   @ return
 
 .align 2
-.globl arm_indirect_branch_dual_thumb
-.globl _arm_indirect_branch_dual_thumb
-arm_indirect_branch_dual_thumb:
-_arm_indirect_branch_dual_thumb:
+defsymbl(arm_indirect_branch_dual_thumb)
   save_flags()
   tst r0, #0x01                           @ check lower bit
   beq 1f                                  @ if set going to ARM mode
@@ -317,10 +302,7 @@ _arm_indirect_branch_dual_thumb:
 @ r2: current PC
 
 .align 2
-.globl execute_store_cpsr
-.globl _execute_store_cpsr
-execute_store_cpsr:
-_execute_store_cpsr:
+defsymbl(execute_store_cpsr)
   save_flags()
   and reg_flags, r0, r1                   @ reg_flags = new_cpsr & store_mask
   ldr r0, [reg_base, #REG_CPSR]           @ r0 = cpsr
@@ -354,10 +336,7 @@ _execute_store_cpsr:
 @ r1: bitmask of which bits in spsr to update
 
 .align 2
-.globl execute_store_spsr
-.globl _execute_store_spsr
-execute_store_spsr:
-_execute_store_spsr:
+defsymbl(execute_store_spsr)
   ldr r1, =spsr                           @ r1 = spsr
   ldr r2, [reg_base, #CPU_MODE]           @ r2 = CPU_MODE
   str r0, [r1, r2, lsl #2]                @ spsr[CPU_MODE] = new_spsr
@@ -369,10 +348,7 @@ _execute_store_spsr:
 @ r0: spsr
 
 .align 2
-.globl execute_read_spsr
-.globl _execute_read_spsr
-execute_read_spsr:
-_execute_read_spsr:
+defsymbl(execute_read_spsr)
   ldr r0, =spsr                           @ r0 = spsr
   ldr r1, [reg_base, #CPU_MODE]           @ r1 = CPU_MODE
   ldr r0, [r0, r1, lsl #2]                @ r0 = spsr[CPU_MODE]
@@ -385,10 +361,7 @@ _execute_read_spsr:
 @ r0: current pc
 
 .align 2
-.globl execute_spsr_restore
-.globl _execute_spsr_restore
-execute_spsr_restore:
-_execute_spsr_restore:
+defsymbl(execute_spsr_restore)
   save_flags()
   ldr r1, =spsr                           @ r1 = spsr
   ldr r2, [reg_base, #CPU_MODE]           @ r2 = cpu_mode
@@ -425,10 +398,7 @@ _execute_spsr_restore:
 #define execute_swi_builder(mode)                                            ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_swi_##mode                                                    ;\
-.globl _execute_swi_##mode                                                   ;\
-execute_swi_##mode:                                                          ;\
-_execute_swi_##mode:                                                          ;\
+defsymbl(execute_swi_##mode)                                                 ;\
   save_flags()                                                               ;\
   ldr r1, =reg_mode                       /* r1 = reg_mode                 */;\
   /* reg_mode[MODE_SUPERVISOR][6] = pc                                     */;\
@@ -460,10 +430,7 @@ execute_swi_builder(thumb)
 #define execute_swi_function_builder(swi_function, mode)                     ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_swi_hle_##swi_function##_##mode                               ;\
-.globl _execute_swi_hle_##swi_function##_##mode                              ;\
-execute_swi_hle_##swi_function##_##mode:                                     ;\
-_execute_swi_hle_##swi_function##_##mode:                                    ;\
+defsymbl(execute_swi_hle_##swi_function##_##mode)                            ;\
   save_flags()                                                               ;\
   store_registers_##mode()                                                   ;\
   call_c_function(execute_swi_hle_##swi_function##_c)                        ;\
@@ -485,10 +452,7 @@ execute_swi_function_builder(div, thumb)
 @ Uses sp as reg_base; must hold consistently true.
 
 .align 2
-.globl execute_arm_translate
-.globl _execute_arm_translate
-execute_arm_translate:
-_execute_arm_translate:
+defsymbl(execute_arm_translate)
 
   @ save the registers to be able to return later
   stmdb sp!, { r4, r5, r6, r7, r8, r9, r10, r11, r12, lr }
@@ -615,10 +579,7 @@ ext_store_ignore:
 #define execute_store_builder(store_type, store_op, load_op)                 ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_store_u##store_type                                           ;\
-.globl _execute_store_u##store_type                                          ;\
-execute_store_u##store_type:                                                 ;\
-_execute_store_u##store_type:                                                ;\
+defsymbl(execute_store_u##store_type)                                        ;\
   execute_store_body(store_type, store_op)                                   ;\
                                                                              ;\
 ext_store_u##store_type:                                                     ;\
@@ -676,10 +637,7 @@ execute_store_builder(32, str, ldr)
 
 @ This is a store that is executed in a strm case (so no SMC checks in-between)
 
-.globl execute_store_u32_safe
-.globl _execute_store_u32_safe
-execute_store_u32_safe:
-_execute_store_u32_safe:
+defsymbl(execute_store_u32_safe)
   execute_store_body(32_safe, str)
   restore_flags()
   ldr pc, [reg_base, #REG_SAVE3]          @ return
@@ -822,10 +780,7 @@ lookup_pc_arm:
 #define execute_load_builder(load_type, load_function, load_op, mask)        ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_load_##load_type                                              ;\
-.globl _execute_load_##load_type                                             ;\
-execute_load_##load_type:                                                    ;\
-_execute_load_##load_type:                                                   ;\
+defsymbl(execute_load_##load_type)                                           ;\
   save_flags()                                                               ;\
   tst r0, mask                            /* make sure address is in range */;\
   bne ext_load_##load_type                /* if not do ext load            */;\
@@ -859,19 +814,38 @@ execute_load_builder(u32, 32, ldrne, #0xF0000000)
 
 .data
 
-memory_map_read:
+defsymbl(memory_map_read)
   .space 0x8000
-palette_ram:
+defsymbl(palette_ram)
   .space 0x400
-palette_ram_converted:
+defsymbl(palette_ram_converted)
   .space 0x400
-spsr:
+defsymbl(spsr)
   .space 24
-reg_mode:
+defsymbl(reg_mode)
   .space 196
 
-.globl reg
-.globl _reg
-reg:
+defsymbl(reg)
   .space 0x100, 0
+
+@ Vita and 3DS (and of course mmap) map their own cache sections through some
+@ platform-speficic mechanisms.
+#if !defined(HAVE_MMAP) && !defined(VITA) && !defined(_3DS)
+
+@ Make this section executable!
+.text
+#ifdef __ANDROID__
+@ Unfortunately Android builds don't like nobits, so we ship a ton of zeros
+@ TODO: Revisit this whenever we upgrade to the latest clang NDK
+.section .jit,"awx",%progbits
+#else
+.section .jit,"awx",%nobits
+#endif
+.align 4
+defsymbl(rom_translation_cache)
+  .space ROM_TRANSLATION_CACHE_SIZE
+defsymbl(ram_translation_cache)
+  .space RAM_TRANSLATION_CACHE_SIZE
+
+#endif
 

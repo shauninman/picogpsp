@@ -47,26 +47,10 @@ u8* ram_translation_cache_ptr;
 u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
 #else
-
-#ifdef __ANDROID__
-// Workaround for 'attempt to map x bytes at offset y'
-__asm__(".section .jit,\"awx\",%progbits");
-#else
-__asm__(".section .jit,\"awx\",%nobits");
-#endif
-
-u32 stub_arena[STUB_ARENA_SIZE]
-        __attribute__ ((aligned(4),section(".jit")));
-u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE]
-		__attribute__ ((aligned(4),section(".jit")));
 u8 *rom_translation_ptr = rom_translation_cache;
-
-u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE]
-		__attribute__ ((aligned(4),section(".jit")));
 u8 *ram_translation_ptr = ram_translation_cache;
-
-__asm__(".section .text");
 #endif
+/* Note, see stub files for more cache definitions */
 
 u32 iwram_code_min = 0xFFFFFFFF;
 u32 iwram_code_max = 0xFFFFFFFF;

@@ -2618,11 +2618,7 @@ static void emit_mem_access_loadop(
   #define genccall(fn) mips_emit_jal(((u32)fn) >> 2);
 #endif
 
-// Stub memory map:
-// 0   ..  63  First patch handler [#0]
-// 448 .. 511  Last patch handler  [#7]
-// 512+        smc_write handler
-#define SMC_WRITE_OFF32    160
+#define SMC_WRITE_OFF32    (10*16)   /* 10 handlers (16 insts) */
 
 // Describes a "plain" memory are, that is, an area that is just accessed
 // as normal memory (with some caveats tho).
@@ -2862,8 +2858,7 @@ static void emit_pmemst_stub(
     }
     // If the data is non zero, we just wrote over code
     // Local-jump to the smc_write (which lives at offset:0)
-    unsigned instoffset = (&stub_arena[SMC_WRITE_OFF32] - (((u32*)translation_ptr) + 1));
-    mips_emit_b(bne, reg_zero, reg_temp, instoffset);
+    mips_emit_b(bne, reg_zero, reg_temp, branch_offset(&stub_arena[SMC_WRITE_OFF32]));
   }
 
   // Store the data (delay slot from the SMC branch)
