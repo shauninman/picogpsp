@@ -1003,7 +1003,6 @@ const u32 psr_masks[16] =
 
 #define fast_write_memory(size, type, address, value)                         \
 {                                                                             \
-  u8 *map;                                                                    \
   u32 _address = (address) & ~(aligned_address_mask##size & 0x03);            \
   if(_address < 0x10000000)                                                   \
   {                                                                           \
@@ -1011,17 +1010,9 @@ const u32 psr_masks[16] =
     memory_writes_##type++;                                                   \
   }                                                                           \
                                                                               \
-  if(((_address & aligned_address_mask##size) == 0) &&                        \
-   (map = memory_map_write[_address >> 15]))                                  \
-  {                                                                           \
-    *((type *)((u8 *)map + (_address & 0x7FFF))) = value;                     \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    cpu_alert = write_memory##size(_address, value);                          \
-    if(cpu_alert)                                                             \
-      goto alert;                                                             \
-  }                                                                           \
+  cpu_alert = write_memory##size(_address, value);                            \
+  if(cpu_alert)                                                               \
+    goto alert;                                                               \
 }                                                                             \
 
 #define load_aligned32(address, dest)                                         \
@@ -1046,22 +1037,14 @@ const u32 psr_masks[16] =
 #define store_aligned32(address, value)                                       \
 {                                                                             \
   u32 _address = address;                                                     \
-  u8 *map = memory_map_write[_address >> 15];                                 \
   if(_address < 0x10000000)                                                   \
   {                                                                           \
     memory_region_access_write_u32[_address >> 24]++;                         \
     memory_writes_u32++;                                                      \
   }                                                                           \
-  if(map)                                                                     \
-  {                                                                           \
-    address32(map, _address & 0x7FFF) = value;                                \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    cpu_alert = write_memory32(_address, value);                              \
-    if(cpu_alert)                                                             \
-      goto alert;                                                             \
-  }                                                                           \
+  cpu_alert = write_memory32(_address, value);                                \
+  if(cpu_alert)                                                               \
+    goto alert;                                                               \
 }                                                                             \
 
 #define load_memory_u8(address, dest)                                         \
@@ -1647,7 +1630,6 @@ void raise_interrupt(irq_type irq_raised)
 
 #ifndef HAVE_DYNAREC
 u8 *memory_map_read [8 * 1024];
-u8 *memory_map_write[8 * 1024];
 u16 palette_ram[512];
 u16 palette_ram_converted[512];
 #endif

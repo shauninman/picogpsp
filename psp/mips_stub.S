@@ -44,7 +44,6 @@
 
 .global write_io_epilogue
 .global memory_map_read
-.global memory_map_write
 .global tmemld
 .global tmemst
 .global tmemst
@@ -608,9 +607,6 @@ execute_arm_translate_internal:
 
 .data
 .align 6
-
-memory_map_write:
-  .space 0x8000
 
 memory_map_read:
   .space 0x8000

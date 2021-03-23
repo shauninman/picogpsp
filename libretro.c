@@ -809,15 +809,8 @@ static void set_memory_descriptors(void)
 {
    const uint64_t mem = RETRO_MEMORY_SYSTEM_RAM;
    struct retro_memory_descriptor desc[9] = {
-      { mem, iwram, 0x00000 + 0x8000, 0x3000000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x00000 + 0x8000, 0x2000000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x10000 + 0x8000, 0x2008000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x20000 + 0x8000, 0x2010000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x30000 + 0x8000, 0x2018000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x40000 + 0x8000, 0x2020000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x50000 + 0x8000, 0x2028000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x60000 + 0x8000, 0x2030000, 0, 0, 0x8000, NULL },
-      { mem, ewram, 0x70000 + 0x8000, 0x2038000, 0, 0, 0x8000, NULL }
+      { mem, iwram, 0x00000 + 0x8000, 0x3000000, 0, 0,  0x8000, NULL },
+      { mem, ewram, 0x00000,          0x2000000, 0, 0, 0x40000, NULL },
    };
    struct retro_memory_map retromap = {
       desc,
