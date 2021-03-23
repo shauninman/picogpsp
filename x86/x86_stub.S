@@ -16,21 +16,18 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+#include "../gpsp_config.h"
+
 .align 4
 
+#define defsymbl(symbol) \
+.global symbol ;         \
+.global _##symbol ;      \
+symbol:                  \
+_##symbol:
+
 #ifndef _WIN32
-#define _x86_update_gba x86_update_gba
-#define _x86_indirect_branch_arm x86_indirect_branch_arm
-#define _x86_indirect_branch_thumb x86_indirect_branch_thumb
-#define _x86_indirect_branch_dual x86_indirect_branch_dual
-#define _execute_store_u8 execute_store_u8
-#define _execute_store_u16 execute_store_u16
-#define _execute_store_u32 execute_store_u32
-#define _execute_store_cpsr execute_store_cpsr
-#define _execute_arm_translate execute_arm_translate
-#define _memory_map_read memory_map_read
-#define _reg reg
-#define _reg_mode reg_mode
+# External symbols (data + functions)
 #define _oam_update oam_update
 #define _iwram iwram
 #define _ewram ewram
@@ -38,7 +35,6 @@
 #define _oam_ram oam_ram
 #define _bios_rom bios_rom
 #define _io_registers io_registers
-#define _spsr spsr
 
 #define _update_gba update_gba
 #define _block_lookup_address_arm block_lookup_address_arm
@@ -47,8 +43,6 @@
 #define _write_io_register8 write_io_register8
 #define _write_io_register16 write_io_register16
 #define _write_io_register32 write_io_register32
-#define _palette_ram palette_ram
-#define _palette_ram_converted palette_ram_converted
 #define _flush_translation_cache_ram flush_translation_cache_ram
 #define _write_eeprom write_eeprom
 #define _write_backup write_backup
@@ -56,25 +50,7 @@
 #define _execute_store_cpsr_body execute_store_cpsr_body
 #endif
 
-.global _x86_update_gba
-.global _x86_indirect_branch_arm
-.global _x86_indirect_branch_thumb
-.global _x86_indirect_branch_dual
-.global _execute_store_u8
-.global _execute_store_u16
-.global _execute_store_u32
-.global _execute_store_cpsr
-.global _execute_arm_translate
-
-.global _memory_map_read
-.global _reg
-.global _reg_mode
-.global _spsr
-.global _palette_ram
-.global _palette_ram_converted
-
 .global _oam_update
-
 .global _iwram
 .global _ewram
 .global _vram
@@ -147,7 +123,7 @@
 st:
   .asciz "u\n"
 
-_x86_update_gba:
+defsymbl(x86_update_gba)
   mov %eax, REG_PC(%ebx)      # current PC = eax
   collapse_flags              # update cpsr, trashes ecx and edx
 
@@ -171,14 +147,14 @@ _x86_update_gba:
 # eax: GBA address to branch to
 # edi: Cycle counter
 
-_x86_indirect_branch_arm:
+defsymbl(x86_indirect_branch_arm)
   call _block_lookup_address_arm
   jmp *%eax
 
 # For indirect branches that'll definitely go to Thumb. In
 # Thumb mode any indirect branches except for BX.
 
-_x86_indirect_branch_thumb:
+defsymbl(x86_indirect_branch_thumb)
   call _block_lookup_address_thumb
   jmp *%eax
 
@@ -186,7 +162,7 @@ _x86_indirect_branch_thumb:
 # mainly BX (also data processing to PC with S bit set, be
 # sure to adjust the target with a 1 in the lowest bit for this)
 
-_x86_indirect_branch_dual:
+defsymbl(x86_indirect_branch_dual)
   call _block_lookup_address_dual
   jmp *%eax
 
@@ -297,7 +273,7 @@ ext_store_u8_jtable:
 # edx: value to write
 # ecx: current pc
 
-_execute_store_u8:
+defsymbl(execute_store_u8)
   mov %ecx, REG_PC(%ebx)      # write out the PC
   mov %eax, %ecx              # ecx = address
   shr $24, %ecx               # ecx = address >> 24
@@ -383,7 +359,7 @@ ext_store_u16_jtable:
   .long ext_store_eeprom      # 0x0D EEPROM (possibly)
   .long ext_store_ignore      # 0x0E Flash ROM/SRAM must be 8bit
 
-_execute_store_u16:
+defsymbl(execute_store_u16)
   mov %ecx, REG_PC(%ebx)      # write out the PC
   and $~0x01, %eax            # fix alignment
   mov %eax, %ecx              # ecx = address
@@ -400,6 +376,7 @@ ext_store_iwram32:
   and $0x7FFF, %eax                 # wrap around address
   mov %edx, (_iwram+0x8000)(%eax)   # perform store
   cmpl $0, _iwram(%eax)             # Check SMC mirror
+
   jne smc_write
   ret
 
@@ -456,7 +433,7 @@ ext_store_u32_jtable:
   .long ext_store_ignore      # 0x0E Flash ROM/SRAM must be 8bit
 
 
-_execute_store_u32:
+defsymbl(execute_store_u32)
   mov %ecx, REG_PC(%ebx)      # write out the PC
   and $~0x03, %eax            # fix alignment
   mov %eax, %ecx              # ecx = address
@@ -470,7 +447,7 @@ _execute_store_u32:
 # %eax = new_cpsr
 # %edx = store_mask
 
-_execute_store_cpsr:
+defsymbl(execute_store_cpsr)
   mov %edx, REG_SAVE(%ebx)        # save store_mask
   mov %ecx, REG_SAVE2(%ebx)       # save PC too
 
@@ -515,7 +492,7 @@ lookup_pc_arm:
 
 # eax: cycle counter
 
-_execute_arm_translate:
+defsymbl(execute_arm_translate)
   # Save main context, since we need to return gracefully
   pushl %ebx
   pushl %esi
@@ -556,18 +533,30 @@ return_to_main:
 .data
 .align 64
 
-_reg:
+defsymbl(reg)
   .space 0x100, 0
-_palette_ram:
+defsymbl(palette_ram)
   .space 0x400
-_palette_ram_converted:
+defsymbl(palette_ram_converted)
   .space 0x400
-_spsr:
+defsymbl(spsr)
   .space 24
-_reg_mode:
+defsymbl(reg_mode)
   .space 196
 
-_memory_map_read:
+defsymbl(memory_map_read)
   .space 0x8000
 
+#if !defined(HAVE_MMAP)
+
+# Make this section executable!
+.text
+.section .jit,"awx",%nobits
+.align 4
+defsymbl(rom_translation_cache)
+  .space ROM_TRANSLATION_CACHE_SIZE
+defsymbl(ram_translation_cache)
+  .space RAM_TRANSLATION_CACHE_SIZE
+
+#endif
 

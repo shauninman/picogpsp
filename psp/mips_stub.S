@@ -16,6 +16,8 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
+#include "../gpsp_config.h"
+
 .set mips32r2
 .align 4
 
@@ -644,4 +646,23 @@ fnptrs:
   .long set_cpu_mode                   # 5
   .long execute_spsr_restore_body      # 6
   .long execute_store_cpsr_body        # 7
+
+#if !defined(HAVE_MMAP)
+
+# Make this section executable!
+.text
+.section .jit,"awx",%nobits
+.align 2
+.global stub_arena
+.global rom_translation_cache
+.global ram_translation_cache
+
+stub_arena:
+  .space STUB_ARENA_SIZE
+rom_translation_cache:
+  .space ROM_TRANSLATION_CACHE_SIZE
+ram_translation_cache:
+  .space RAM_TRANSLATION_CACHE_SIZE
+
+#endif
 

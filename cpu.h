@@ -20,6 +20,8 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include "gpsp_config.h"
+
 // System mode and user mode are represented as the same here
 
 typedef enum
@@ -120,18 +122,6 @@ s32 translate_block_arm(u32 pc, translation_region_type translation_region,
 s32 translate_block_thumb(u32 pc, translation_region_type translation_region,
  u32 smc_enable);
 
-#if defined(PSP)
-  #define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4)
-  #define RAM_TRANSLATION_CACHE_SIZE (1024 * 384)
-  #define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024)
-#else
-  #define ROM_TRANSLATION_CACHE_SIZE (1024 * 512 * 4 * 5)
-  #define RAM_TRANSLATION_CACHE_SIZE (1024 * 384 * 2)
-  #define TRANSLATION_CACHE_LIMIT_THRESHOLD (1024 * 32)
-#endif
-
-#define STUB_ARENA_SIZE  (4*1024)
-
 #if defined(HAVE_MMAP)
 extern u8* rom_translation_cache;
 extern u8* ram_translation_cache;
@@ -147,8 +137,8 @@ extern int sceBlock;
 #else
 extern u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
 extern u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
-extern u32 stub_arena[STUB_ARENA_SIZE];
 #endif
+extern u32 stub_arena[STUB_ARENA_SIZE / 4];
 extern u8 *rom_translation_ptr;
 extern u8 *ram_translation_ptr;
 
@@ -162,9 +152,6 @@ extern u32 translation_gate_target_pc[MAX_TRANSLATION_GATES];
 
 extern u32 in_interrupt;
 
-#define ROM_BRANCH_HASH_SIZE (1024 * 64)
-
-/* EDIT: Shouldn't this be extern ?! */
 extern u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
 
 void flush_translation_cache_rom(void);
