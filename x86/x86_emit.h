@@ -1485,23 +1485,13 @@ u32 function_cc execute_aligned_load32(u32 address)
     return read_memory32(address);
 }
 
-void function_cc execute_aligned_store32(u32 address, u32 source)
-{
-  u8 *map;
-
-  if(!(address & 0xF0000000) && (map = memory_map_write[address >> 15]))
-    address32(map, address & 0x7FFF) = source;
-  else
-    write_memory32(address, source);
-}
-
 #define arm_block_memory_load()                                               \
   generate_function_call(execute_aligned_load32);                             \
   generate_store_reg(rv, i)                                                   \
 
 #define arm_block_memory_store()                                              \
   generate_load_reg_pc(a1, i, 8);                                             \
-  generate_function_call(execute_aligned_store32)                             \
+  generate_function_call(write_memory32)                                      \
 
 #define arm_block_memory_final_load()                                         \
   arm_block_memory_load()                                                     \
@@ -1956,7 +1946,7 @@ u32 function_cc execute_ror_imm_op(u32 value, u32 shift)
 #define thumb_block_memory_extra_push_lr(base_reg)                            \
   generate_add_reg_reg_imm(a0, s0, (bit_count[reg_list] * 4));                \
   generate_load_reg(a1, REG_LR);                                              \
-  generate_function_call(execute_aligned_store32)                             \
+  generate_function_call(write_memory32)                                      \
 
 #define thumb_block_memory_load()                                             \
   generate_function_call(execute_aligned_load32);                             \
@@ -1964,7 +1954,7 @@ u32 function_cc execute_ror_imm_op(u32 value, u32 shift)
 
 #define thumb_block_memory_store()                                            \
   generate_load_reg(a1, i);                                                   \
-  generate_function_call(execute_aligned_store32)                             \
+  generate_function_call(write_memory32)                                      \
 
 #define thumb_block_memory_final_load()                                       \
   thumb_block_memory_load()                                                   \

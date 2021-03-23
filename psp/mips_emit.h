@@ -1010,46 +1010,9 @@ u32 generate_load_rm_sh_##flags_op(u32 rm)                                    \
 {                                                                             \
   u32 _address = (u32)(address);                                              \
   u32 _address_hi = (_address + 0x8000) >> 16;                                \
-  generate_load_imm(ireg, address);                                           \
   mips_emit_lui(ireg, _address_hi >> 16)                                      \
   generate_load_memory_##type(ireg, _address - (_address_hi << 16));          \
 }                                                                             \
-
-#define generate_known_address_load_builder(type)                             \
-  u32 generate_known_address_load_##type(u32 rd, u32 address)                 \
-  {                                                                           \
-    switch(address >> 24)                                                     \
-    {                                                                         \
-      /* Read from the BIOS ROM, can be converted to an immediate load.       \
-         Only really possible to do this from the BIOS but should be okay     \
-         to allow it everywhere */                                            \
-      case 0x00:                                                              \
-        u32 imm = read_memory_constant_##type(address);                       \
-        generate_load_imm(arm_to_mips_reg[rd], imm);                          \
-        return 1;                                                             \
-                                                                              \
-      /* Read from RAM, can be converted to a load */                         \
-      case 0x02:                                                              \
-        generate_load_memory(type, arm_to_mips_reg[rd], (u8 *)ewram +         \
-         (address & 0x7FFF) + ((address & 0x38000) * 2) + 0x8000);            \
-        return 1;                                                             \
-                                                                              \
-      case 0x03:                                                              \
-        generate_load_memory(type, arm_to_mips_reg[rd], (u8 *)iwram +         \
-         (address & 0x7FFF) + 0x8000);                                        \
-        return 1;                                                             \
-                                                                              \
-      /* Read from gamepak ROM, this has to be an immediate load because      \
-         it might not actually be in memory anymore when we get to it. */     \
-      case 0x08:                                                              \
-        u32 imm = read_memory_constant_##type(address);                       \
-        generate_load_imm(arm_to_mips_reg[rd], imm);                          \
-        return 1;                                                             \
-                                                                              \
-      default:                                                                \
-        return 0;                                                             \
-    }                                                                         \
-  }                                                                           \
 
 #define generate_block_extra_vars()                                           \
   u32 stored_pc = pc;                                                         \
@@ -1059,12 +1022,6 @@ u32 generate_load_rm_sh_##flags_op(u32 rm)                                    \
   generate_block_extra_vars();                                                \
   generate_load_rm_sh_builder(flags);                                         \
   generate_load_rm_sh_builder(no_flags);                                      \
-                                                                              \
-/*  generate_known_address_load_builder(u8);                                  \
-  generate_known_address_load_builder(u16);                                   \
-  generate_known_address_load_builder(u32);                                   \
-  generate_known_address_load_builder(s8);                                    \
-  generate_known_address_load_builder(s16); */                                \
                                                                               \
   u32 generate_load_offset_sh(u32 rm)                                         \
   {                                                                           \
@@ -2787,12 +2744,13 @@ static void emit_pmemld_stub(
     mips_emit_lui(reg_rv, ((base_addr + 0x8000) >> 16));
 
     if (region == 2) {
-      // EWRAM is a bit special
+      // Can't do EWRAM with an `andi` instruction (18 bits mask)
+      mips_emit_ext(reg_a0, reg_a0, 0, 18);      // &= 0x3ffff
+      if (!aligned && alignment != 0) {
+        mips_emit_ins(reg_a0, reg_zero, 0, size);// addr & ~1/2 (align to size)
+      }
       // Need to insert a zero in the addr (due to how it's mapped)
-      mips_emit_andi(reg_temp, reg_a0, memmask); // Clears all but 15 bits (LSB)
-      mips_emit_ext(reg_a0,   reg_a0, 15, 3);    // Gets the 3 higher bits (from the 18)
-      mips_emit_ins(reg_temp, reg_a0, 16, 3);    // Puts the 3 bits into bits 18..16
-      mips_emit_addu(reg_rv, reg_rv, reg_temp);  // Adds to the base addr
+      mips_emit_addu(reg_rv, reg_rv, reg_a0);    // Adds to the base addr
     } else if (region == 6) {
       // VRAM is mirrored every 128KB but the last 32KB is mapped to the previous
       mips_emit_ext(reg_temp, reg_a0, 15, 2);    // Extract bits 15 and 16
@@ -2862,12 +2820,13 @@ static void emit_pmemst_stub(
   }
 
   if (region == 2) {
-    // EWRAM is a bit special
+    // Can't do EWRAM with an `andi` instruction (18 bits mask)
+    mips_emit_ext(reg_a0, reg_a0, 0, 18);      // &= 0x3ffff
+    if (!aligned && realsize != 0) {
+      mips_emit_ins(reg_a0, reg_zero, 0, size);// addr & ~1/2 (align to size)
+    }
     // Need to insert a zero in the addr (due to how it's mapped)
-    mips_emit_andi(reg_temp, reg_a0, memmask); // Clears all but 15 bits (LSB)
-    mips_emit_ext(reg_a0,   reg_a0, 15, 3);    // Gets the 3 higher bits (from the 18)
-    mips_emit_ins(reg_temp, reg_a0, 16, 3);    // Puts the 3 bits into bits 18..16
-    mips_emit_addu(reg_rv, reg_rv, reg_temp);  // Adds to the base addr
+    mips_emit_addu(reg_rv, reg_rv, reg_a0);    // Adds to the base addr
   } else if (region == 6) {
     // VRAM is mirrored every 128KB but the last 32KB is mapped to the previous
     mips_emit_ext(reg_temp, reg_a0, 15, 2);    // Extract bits 15 and 16
@@ -2888,7 +2847,12 @@ static void emit_pmemst_stub(
   // Generate SMC write and tracking
   // TODO: Should we have SMC checks here also for aligned?
   if (meminfo->check_smc && !aligned) {
-    mips_emit_addiu(reg_temp, reg_rv, 0x8000); // -32KB is the addr of the SMC buffer
+    if (region == 2) {
+      mips_emit_lui(reg_temp, 0x40000 >> 16);
+      mips_emit_addu(reg_temp, reg_rv, reg_temp); // SMC lives after the ewram
+    } else {
+      mips_emit_addiu(reg_temp, reg_rv, 0x8000); // -32KB is the addr of the SMC buffer
+    }
     if (realsize == 2) {
       mips_emit_lw(reg_temp, reg_temp, base_addr);
     } else if (realsize == 1) {
@@ -3272,8 +3236,8 @@ void init_emitter() {
   const t_stub_meminfo ldinfo [] = {
     { emit_pmemld_stub,  0, 0x4000, false, false, (u32)bios_rom },
     // 1 Open load / Ignore store
-    { emit_pmemld_stub,  2, 0x8000, true,  false, (u32)&ewram[0x8000] },
-    { emit_pmemld_stub,  3, 0x8000, true,  false, (u32)&iwram[0x8000] },   // memsize wrong on purpose, see above
+    { emit_pmemld_stub,  2, 0x8000, true,  false, (u32)ewram },      // memsize wrong on purpose
+    { emit_pmemld_stub,  3, 0x8000, true,  false, (u32)&iwram[0x8000] },
     { emit_pmemld_stub,  4,  0x400, false, false, (u32)io_registers },
     { emit_pmemld_stub,  5,  0x400, false, true,  (u32)palette_ram },
     { emit_pmemld_stub,  6,    0x0, false, true,  (u32)vram },             // same, vram is a special case
@@ -3308,8 +3272,8 @@ void init_emitter() {
   }
 
   const t_stub_meminfo stinfo [] = {
-    { emit_pmemst_stub, 2, 0x8000, true,  false, (u32)&ewram[0x8000] },
-    { emit_pmemst_stub, 3, 0x8000, true,  false, (u32)&iwram[0x8000] },   // memsize wrong on purpose, see above
+    { emit_pmemst_stub, 2, 0x8000, true,  false, (u32)ewram },
+    { emit_pmemst_stub, 3, 0x8000, true,  false, (u32)&iwram[0x8000] },
     // I/O is special and mapped with a function call
     { emit_palette_hdl, 5,  0x400, false, true,  (u32)palette_ram },
     { emit_pmemst_stub, 6,    0x0, false, true,  (u32)vram },             // same, vram is a special case
