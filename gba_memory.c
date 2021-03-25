@@ -342,13 +342,8 @@ gamepak_swap_entry_type *gamepak_memory_map;
 // a lot.
 FILE *gamepak_file_large = NULL;
 
-u32 direct_map_vram = 0;
-
 // Writes to these respective locations should trigger an update
 // so the related subsystem may react to it.
-
-// If OAM is written to:
-u32 oam_update = 1;
 
 // If GBC audio is written to:
 u32 gbc_sound_update = 0;
@@ -755,7 +750,7 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
       u32 dispcnt = io_registers[REG_DISPCNT];
 
       if((value & 0x07) != (dispcnt & 0x07))
-        oam_update = 1;
+        reg[OAM_UPDATED] = 1;
 
       address8(io_registers, 0x00) = value;
       break;
@@ -1171,7 +1166,7 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
     {
       u32 dispcnt = io_registers[REG_DISPCNT];
       if((value & 0x07) != (dispcnt & 0x07))
-        oam_update = 1;
+        reg[OAM_UPDATED] = 1;
 
       address16(io_registers, 0x00) = value;
       break;
@@ -1934,7 +1929,7 @@ void function_cc write_rtc(u32 address, u32 value)
                                                                               \
     case 0x07:                                                                \
       /* OAM RAM */                                                           \
-      oam_update = 1;                                                         \
+      reg[OAM_UPDATED] = 1;                                                   \
       address##type(oam_ram, address & 0x3FF) = value;                        \
       break;                                                                  \
                                                                               \
@@ -2529,7 +2524,7 @@ dma_region_type dma_region_map[16] =
   dma_smc_vars_##type()
 
 #define dma_oam_ram_dest()                                                    \
-  oam_update = 1                                                              \
+  reg[OAM_UPDATED] = 1                                                        \
 
 #define dma_vars_oam_ram(type)                                                \
   dma_oam_ram_##type()                                                        \
@@ -3331,7 +3326,7 @@ void gba_load_state(const void* src)
       wipe_caches();
 #endif
 
-   oam_update = 1;
+   reg[OAM_UPDATED] = 1;
    gbc_sound_update = 1;
 
    for(i = 0; i < 512; i++)

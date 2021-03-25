@@ -2512,7 +2512,8 @@ u8 swi_hle_handle[256] =
 #define ReOff_SaveR1   (21*4) // 3 save scratch regs
 #define ReOff_SaveR2   (22*4)
 #define ReOff_SaveR3   (23*4)
-#define ReOff_GP_Save  (32*4) // GP_SAVE
+#define ReOff_OamUpd   (33*4) // OAM_UPDATED
+#define ReOff_GP_Save  (34*4) // GP_SAVE
 
 // Saves all regs to their right slot and loads gp
 #define emit_save_regs(save_a2) {                                             \
@@ -2873,9 +2874,8 @@ static void emit_pmemst_stub(
   // Post processing store:
   // Signal that OAM was updated
   if (region == 7) {
-    u32 palcaddr = (u32)&oam_update;
-    mips_emit_lui(reg_temp, ((palcaddr + 0x8000) >> 16));
-    mips_emit_sw(reg_base, reg_temp, palcaddr & 0xffff);   // Write any nonzero data
+    // Write any nonzero data
+    mips_emit_sw(reg_base, reg_base, ReOff_OamUpd);
     generate_function_return_swap_delay();
   }
   else {

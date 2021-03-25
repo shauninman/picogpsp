@@ -52,6 +52,7 @@
 .global reg
 .global spsr
 .global reg_mode
+.global oam_update
 
 # MIPS register layout:
 
@@ -116,7 +117,8 @@
 .equ CPU_HALT_STATE,      (30 * 4)
 .equ CHANGED_PC_STATUS,   (31 * 4)
 .equ COMPLETED_FRAME,     (32 * 4)
-.equ GP_SAVE,             (33 * 4)
+.equ OAM_UPDATED,         (33 * 4)
+.equ GP_SAVE,             (34 * 4)
 
 .equ SPSR_BASE,           (0x900)
 .equ REGMODE_BASE,        (0x900 + 24)

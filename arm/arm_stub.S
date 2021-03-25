@@ -43,8 +43,8 @@ _##symbol:
 #define CPU_HALT_STATE    (30 * 4)
 #define CHANGED_PC_STATUS (31 * 4)
 #define COMPLETED_FRAME   (32 * 4)
-
-#define MAIN_THREAD_SP    (33 * 4)
+#define OAM_UPDATED       (33 * 4)
+#define MAIN_THREAD_SP    (34 * 4)
 
 #define reg_a0            r0
 #define reg_a1            r1

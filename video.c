@@ -4429,10 +4429,10 @@ void update_scanline(void)
 
   // If OAM has been modified since the last scanline has been updated then
   // reorder and reprofile the OBJ lists.
-  if(oam_update)
+  if(reg[OAM_UPDATED])
   {
     order_obj(video_mode);
-    oam_update = 0;
+    reg[OAM_UPDATED] = 0;
   }
 
   order_layers((dispcnt >> 8) & active_layers[video_mode]);
