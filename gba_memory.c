@@ -305,7 +305,6 @@ u32 gamepak_waitstate_sequential[2][3][3] =
   }
 };
 
-u16 oam_ram[512];
 u16 io_registers[1024 * 16];
 u8 ewram[1024 * 256 * 2];
 u8 iwram[1024 * 32 * 2];

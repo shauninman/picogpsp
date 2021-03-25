@@ -820,6 +820,8 @@ defsymbl(palette_ram)
   .space 0x400
 defsymbl(palette_ram_converted)
   .space 0x400
+defsymbl(oam_ram)
+  .space 0x400
 defsymbl(spsr)
   .space 24
 defsymbl(reg_mode)
