@@ -362,6 +362,15 @@ else ifneq (,$(findstring armv,$(platform)))
 	endif
 	LDFLAGS := -Wl,--no-undefined	
 
+# MIPS
+else ifeq ($(platform), mips32)
+	TARGET := $(TARGET_NAME)_libretro.so
+	SHARED := -shared -nostdlib -Wl,--version-script=link.T
+	fpic := -fPIC -DPIC
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	HAVE_DYNAREC := 1
+	CPU_ARCH := mips
+
 # emscripten
 else ifeq ($(platform), emscripten)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).bc

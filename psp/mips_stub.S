@@ -40,6 +40,7 @@
 .global reg_check
 .global palette_ram
 .global palette_ram_converted
+.global oam_ram
 .global init_emitter
 .global mips_lookup_pc
 .global smc_write
@@ -52,6 +53,7 @@
 .global reg
 .global spsr
 .global reg_mode
+.global oam_update
 
 # MIPS register layout:
 
@@ -116,13 +118,15 @@
 .equ CPU_HALT_STATE,      (30 * 4)
 .equ CHANGED_PC_STATUS,   (31 * 4)
 .equ COMPLETED_FRAME,     (32 * 4)
-.equ GP_SAVE,             (33 * 4)
+.equ OAM_UPDATED,         (33 * 4)
+.equ GP_SAVE,             (34 * 4)
 
-.equ SPSR_BASE,           (0x900)
-.equ REGMODE_BASE,        (0x900 + 24)
+.equ SPSR_BASE,           (0x100 + 0x400 * 3)
+.equ REGMODE_BASE,        (SPSR_BASE + 24)
 .equ SUPERVISOR_SPSR,     (3 * 4 + SPSR_BASE)
 .equ SUPERVISOR_LR,       ((3 * (7 * 4)) + (6 * 4) + REGMODE_BASE)
-.equ FNPTRS_BASE,         (0x900 + 220 + 960)
+.equ FNPTRS_MEMOPS,       (REGMODE_BASE + 196)
+.equ FNPTRS_BASE,         (FNPTRS_MEMOPS + 960)
 
 .set noat
 .set noreorder
@@ -622,6 +626,8 @@ reg:
 palette_ram:
   .space 0x400
 palette_ram_converted:
+  .space 0x400
+oam_ram:
   .space 0x400
 spsr:
   .space 24     # u32[6]

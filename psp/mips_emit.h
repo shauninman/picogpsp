@@ -2512,7 +2512,8 @@ u8 swi_hle_handle[256] =
 #define ReOff_SaveR1   (21*4) // 3 save scratch regs
 #define ReOff_SaveR2   (22*4)
 #define ReOff_SaveR3   (23*4)
-#define ReOff_GP_Save  (32*4) // GP_SAVE
+#define ReOff_OamUpd   (33*4) // OAM_UPDATED
+#define ReOff_GP_Save  (34*4) // GP_SAVE
 
 // Saves all regs to their right slot and loads gp
 #define emit_save_regs(save_a2) {                                             \
@@ -2629,6 +2630,7 @@ typedef struct {
   bool check_smc;       // Whether the memory can contain code
   bool bus16;           // Whether it can only be accessed at 16bit
   u32 baseptr;          // Memory base address.
+  u32 baseoff;          // Offset from base_reg
 } t_stub_meminfo;
 
 // Generates the stub to access memory for a given region, access type,
@@ -2737,7 +2739,11 @@ static void emit_pmemld_stub(
   } else {
     // Generate upper bits of the addr and do addr mirroring
     // (The address hi16 is rounded up since load uses signed offset)
-    mips_emit_lui(reg_rv, ((base_addr + 0x8000) >> 16));
+    if (!meminfo->baseoff) {
+      mips_emit_lui(reg_rv, ((base_addr + 0x8000) >> 16));
+    } else {
+      base_addr = meminfo->baseoff;
+    }
 
     if (region == 2) {
       // Can't do EWRAM with an `andi` instruction (18 bits mask)
@@ -2760,8 +2766,9 @@ static void emit_pmemld_stub(
       mips_emit_addu(reg_rv, reg_rv, reg_a0);    // addr = base + adjusted offset
     } else {
       // Generate regular (<=32KB) mirroring
-      mips_emit_andi(reg_a0, reg_a0, memmask);   // Clear upper bits (mirroring)
-      mips_emit_addu(reg_rv, reg_rv, reg_a0);    // Adds to base addr
+      mips_reg_number breg = (meminfo->baseoff ? reg_base : reg_rv);
+      mips_emit_andi(reg_temp, reg_a0, memmask); // Clear upper bits (mirroring)
+      mips_emit_addu(reg_rv, breg, reg_temp);    // Adds to base addr
     }
   }
 
@@ -2873,9 +2880,8 @@ static void emit_pmemst_stub(
   // Post processing store:
   // Signal that OAM was updated
   if (region == 7) {
-    u32 palcaddr = (u32)&oam_update;
-    mips_emit_lui(reg_temp, ((palcaddr + 0x8000) >> 16));
-    mips_emit_sw(reg_base, reg_temp, palcaddr & 0xffff);   // Write any nonzero data
+    // Write any nonzero data
+    mips_emit_sw(reg_base, reg_base, ReOff_OamUpd);
     generate_function_return_swap_delay();
   }
   else {
@@ -3154,7 +3160,7 @@ static void emit_phand(
     mips_emit_ins(reg_temp, reg_a0, 6, size); // Alignment bits (1 or 2, to bits 6 (and 7)
   }
 
-  unsigned tbloff = 256 + 2048 + 220 + 4 * toff;  // Skip regs and palettes
+  unsigned tbloff = 256 + 3*1024 + 220 + 4 * toff;  // Skip regs and RAMs
   mips_emit_addu(reg_rv, reg_temp, reg_base); // Add to the base_reg the table offset
   mips_emit_lw(reg_rv, reg_rv, tbloff);       // Read addr from table
   mips_emit_sll(reg_temp, reg_rv, 4);         // 26 bit immediate to the MSB
@@ -3229,21 +3235,21 @@ void init_emitter() {
 
   // Generate memory handlers
   const t_stub_meminfo ldinfo [] = {
-    { emit_pmemld_stub,  0, 0x4000, false, false, (u32)bios_rom },
+    { emit_pmemld_stub,  0, 0x4000, false, false, (u32)bios_rom, 0},
     // 1 Open load / Ignore store
-    { emit_pmemld_stub,  2, 0x8000, true,  false, (u32)ewram },      // memsize wrong on purpose
-    { emit_pmemld_stub,  3, 0x8000, true,  false, (u32)&iwram[0x8000] },
-    { emit_pmemld_stub,  4,  0x400, false, false, (u32)io_registers },
-    { emit_pmemld_stub,  5,  0x400, false, true,  (u32)palette_ram },
-    { emit_pmemld_stub,  6,    0x0, false, true,  (u32)vram },             // same, vram is a special case
-    { emit_pmemld_stub,  7,  0x400, false, true,  (u32)oam_ram },
-    { emit_pmemld_stub,  8, 0x8000, false, false,  0 },
-    { emit_pmemld_stub,  9, 0x8000, false, false,  0 },
-    { emit_pmemld_stub, 10, 0x8000, false, false,  0 },
-    { emit_pmemld_stub, 11, 0x8000, false, false,  0 },
-    { emit_pmemld_stub, 12, 0x8000, false, false,  0 },
+    { emit_pmemld_stub,  2, 0x8000, true,  false, (u32)ewram, 0 },      // memsize wrong on purpose
+    { emit_pmemld_stub,  3, 0x8000, true,  false, (u32)&iwram[0x8000], 0 },
+    { emit_pmemld_stub,  4,  0x400, false, false, (u32)io_registers, 0 },
+    { emit_pmemld_stub,  5,  0x400, false, true,  (u32)palette_ram, 0x100 },
+    { emit_pmemld_stub,  6,    0x0, false, true,  (u32)vram, 0 },             // same, vram is a special case
+    { emit_pmemld_stub,  7,  0x400, false, true,  (u32)oam_ram, 0x900 },
+    { emit_pmemld_stub,  8, 0x8000, false, false,  0, 0 },
+    { emit_pmemld_stub,  9, 0x8000, false, false,  0, 0 },
+    { emit_pmemld_stub, 10, 0x8000, false, false,  0, 0 },
+    { emit_pmemld_stub, 11, 0x8000, false, false,  0, 0 },
+    { emit_pmemld_stub, 12, 0x8000, false, false,  0, 0 },
     // 13 is EEPROM mapped already (a bit special)
-    { emit_pmemld_stub, 14,      0, false, false,  0 },                    // Mapped via function call
+    { emit_pmemld_stub, 14,      0, false, false,  0, 0 },                    // Mapped via function call
     // 15 Open load / Ignore store
   };
 
@@ -3267,12 +3273,12 @@ void init_emitter() {
   }
 
   const t_stub_meminfo stinfo [] = {
-    { emit_pmemst_stub, 2, 0x8000, true,  false, (u32)ewram },
-    { emit_pmemst_stub, 3, 0x8000, true,  false, (u32)&iwram[0x8000] },
+    { emit_pmemst_stub, 2, 0x8000, true,  false, (u32)ewram, 0 },
+    { emit_pmemst_stub, 3, 0x8000, true,  false, (u32)&iwram[0x8000], 0 },
     // I/O is special and mapped with a function call
-    { emit_palette_hdl, 5,  0x400, false, true,  (u32)palette_ram },
-    { emit_pmemst_stub, 6,    0x0, false, true,  (u32)vram },             // same, vram is a special case
-    { emit_pmemst_stub, 7,  0x400, false, true,  (u32)oam_ram },
+    { emit_palette_hdl, 5,  0x400, false, true,  (u32)palette_ram, 0x100 },
+    { emit_pmemst_stub, 6,    0x0, false, true,  (u32)vram, 0 },          // same, vram is a special case
+    { emit_pmemst_stub, 7,  0x400, false, true,  (u32)oam_ram, 0x900 },
   };
 
   // Store only for "regular"-ish mem regions

@@ -28,7 +28,6 @@ _##symbol:
 
 #ifndef _WIN32
 # External symbols (data + functions)
-#define _oam_update oam_update
 #define _iwram iwram
 #define _ewram ewram
 #define _vram vram
@@ -50,7 +49,6 @@ _##symbol:
 #define _execute_store_cpsr_body execute_store_cpsr_body
 #endif
 
-.global _oam_update
 .global _iwram
 .global _ewram
 .global _vram
@@ -75,6 +73,7 @@ _##symbol:
 .equ CPU_HALT_STATE,    (30 * 4)
 .equ CHANGED_PC_STATUS, (31 * 4)
 .equ COMPLETED_FRAME,   (32 * 4)
+.equ OAM_UPDATED,       (33 * 4)
 
 # destroys ecx and edx
 
@@ -241,7 +240,7 @@ ext_store_vram8b:
   ret
 
 ext_store_oam8:
-  movl $1, _oam_update        # flag OAM update
+  movl $1, OAM_UPDATED(%ebx)  # flag OAM update
   and $0x3FE, %eax            # wrap around address and align to 16bits
   mov %dl, %dh                # copy lower 8bits of value into full 16bits
   mov %dx, _oam_ram(%eax)     # perform 16bit store
@@ -332,7 +331,7 @@ ext_store_vram16b:
   ret
 
 ext_store_oam16:
-  movl $1, _oam_update        # flag OAM update
+  movl $1, OAM_UPDATED(%ebx)  # flag OAM update
   and $0x3FF, %eax            # wrap around address
   mov %dx, _oam_ram(%eax)     # perform 16bit store
   ret
@@ -410,7 +409,7 @@ ext_store_vram32b:
   ret
 
 ext_store_oam32:
-  movl $1, _oam_update        # flag OAM update
+  movl $1, OAM_UPDATED(%ebx)  # flag OAM update
   and $0x3FF, %eax            # wrap around address
   mov %edx, _oam_ram(%eax)    # perform 32bit store
   ret
@@ -538,6 +537,8 @@ defsymbl(reg)
 defsymbl(palette_ram)
   .space 0x400
 defsymbl(palette_ram_converted)
+  .space 0x400
+defsymbl(oam_ram)
   .space 0x400
 defsymbl(spsr)
   .space 24

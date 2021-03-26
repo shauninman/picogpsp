@@ -85,7 +85,8 @@ typedef enum
   CPU_MODE          = 29,
   CPU_HALT_STATE    = 30,
   CHANGED_PC_STATUS = 31,
-  COMPLETED_FRAME   = 32
+  COMPLETED_FRAME   = 32,
+  OAM_UPDATED       = 33
 } ext_reg_numbers;
 
 typedef enum
@@ -146,7 +147,6 @@ extern u8 *ram_translation_ptr;
 
 extern u32 idle_loop_target_pc;
 extern u32 iwram_stack_optimize;
-extern u32 direct_map_vram;
 extern u32 translation_gate_targets;
 extern u32 translation_gate_target_pc[MAX_TRANSLATION_GATES];
 
