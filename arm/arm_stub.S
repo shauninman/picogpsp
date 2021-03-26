@@ -538,7 +538,7 @@ return_to_main:
 @ The instruction at LR is not an inst but a u32 data that contains the PC
 @ Used for SMC. That's why return is essentially `pc = lr + 4`
 
-#define execute_store_body(store_type, store_op)                             ;\
+#define execute_store_body(store_type)                                       ;\
   save_flags()                                                               ;\
   str lr, [reg_base, #REG_SAVE3]          /* save lr                       */;\
   str r4, [reg_base, #REG_SAVE2]          /* save r4                       */;\
@@ -576,11 +576,11 @@ ext_store_ignore:
   add pc, lr, #4                          @ return
 
 
-#define execute_store_builder(store_type, store_op, load_op)                 ;\
+#define execute_store_builder(store_type, store_op, store_op16, load_op)     ;\
                                                                              ;\
 .align 2                                                                     ;\
 defsymbl(execute_store_u##store_type)                                        ;\
-  execute_store_body(store_type, store_op)                                   ;\
+  execute_store_body(store_type)                                             ;\
                                                                              ;\
 ext_store_u##store_type:                                                     ;\
   ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
@@ -619,7 +619,7 @@ ext_store_vram_u##store_type:                                                ;\
   cmp r0, #0x18000                        /* Check if exceeds 96KB         */;\
   subcs r0, r0, #0x8000                   /* Mirror to the last bank       */;\
   ldr r2, =(vram)                         /* r2 = vram base                */;\
-  store_op r1, [r0, r2]                   /* store data                    */;\
+  store_op16 r1, [r0, r2]                 /* store data                    */;\
   ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
   restore_flags()                                                            ;\
   add pc, lr, #4                          /* return                        */;\
@@ -627,7 +627,7 @@ ext_store_vram_u##store_type:                                                ;\
 ext_store_oam_ram_u##store_type:                                             ;\
   mask_addr_bus16_##store_type(10)        /* Mask to mirror memory (+align)*/;\
   add r2, reg_base, #256                  /* r2 = oam ram base             */;\
-  store_op r1, [r0, r2]                   /* store data                    */;\
+  store_op16 r1, [r0, r2]                 /* store data                    */;\
   str r2, [reg_base, #OAM_UPDATED]        /* write non zero to signal      */;\
   ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
   restore_flags()                                                            ;\
@@ -640,14 +640,14 @@ ext_store_oam_ram_u##store_type:                                             ;\
   b smc_write                             /* perform smc write             */;\
 
 
-execute_store_builder(8, strb, ldrb)
-execute_store_builder(16, strh, ldrh)
-execute_store_builder(32, str, ldr)
+execute_store_builder(8, strb, strh, ldrb)
+execute_store_builder(16, strh, strh, ldrh)
+execute_store_builder(32, str, str, ldr)
 
 @ This is a store that is executed in a strm case (so no SMC checks in-between)
 
 defsymbl(execute_store_u32_safe)
-  execute_store_body(32_safe, str)
+  execute_store_body(32_safe)
   restore_flags()
   ldr pc, [reg_base, #REG_SAVE3]          @ return
 
