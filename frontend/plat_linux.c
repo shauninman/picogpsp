@@ -11,7 +11,7 @@
 
 static SDL_Surface* screen;
 
-#define BUF_LEN 16384
+#define BUF_LEN 8192
 static short buf[BUF_LEN];
 static int buf_w, buf_r;
 

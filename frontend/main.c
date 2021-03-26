@@ -7,6 +7,11 @@
 #include "frontend/plat.h"
 #include "frontend/libpicofe/plat.h"
 
+/* Percentage of free space allowed in the audio buffer before
+ * skipping frames. Lower numbers mean more skipping but smoother
+ * audio, since the buffer will stay closer to filled. */
+#define FRAMESKIP_UNDERRUN_THRESHOLD 0.5
+
 int should_quit = 0;
 
 u32 idle_loop_target_pc = 0xFFFFFFFF;
@@ -174,7 +179,7 @@ void synchronize(void)
     case FRAMESKIP_AUTO:
       skip_next_frame = 0;
 
-      if (capacity > 0.5) {
+      if (capacity > FRAMESKIP_UNDERRUN_THRESHOLD) {
         skip_next_frame = 1;
         skipped_frames++;
       }
@@ -191,11 +196,6 @@ void synchronize(void)
   if (skipped_frames > max_frameskip) {
     skip_next_frame = 0;
     skipped_frames = 0;
-  }
-
-  while (limit_frames && capacity < 0.1) {
-    plat_sleep_ms(1);
-    capacity = plat_sound_capacity();
   }
 
   if (show_fps) {
