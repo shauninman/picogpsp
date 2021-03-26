@@ -379,6 +379,22 @@ else ifeq ($(platform), gcw0)
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 
+# GCW0 (OpenDingux Beta)
+else ifeq ($(platform), gcw0-odbeta)
+	TARGET := $(TARGET_NAME)_libretro.so
+	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
+	CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
+	AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
+	SHARED := -shared -nostdlib -Wl,--version-script=link.T
+	fpic := -fPIC -DPIC
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	# The ASM code and/or MIPS dynarec of GPSP does not respect
+	# MIPS calling conventions, so we must use '-fno-caller-saves'
+	# for the OpenDingux Beta build
+	CFLAGS += -fno-caller-saves
+	HAVE_DYNAREC := 1
+	CPU_ARCH := mips
+
 # Windows
 else
 	TARGET := $(TARGET_NAME)_libretro.dll
