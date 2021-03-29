@@ -538,19 +538,18 @@ return_to_main:
 @ The instruction at LR is not an inst but a u32 data that contains the PC
 @ Used for SMC. That's why return is essentially `pc = lr + 4`
 
-#define execute_store_body(store_type)                                       ;\
+#define execute_store_body(store_type, tblnum)                               ;\
   save_flags()                                                               ;\
   str lr, [reg_base, #REG_SAVE3]          /* save lr                       */;\
-  str r4, [reg_base, #REG_SAVE2]          /* save r4                       */;\
-  tst r0, #0xF0000000                     /* make sure address is in range */;\
-  bne ext_store_u##store_type             /* if not do ext store           */;\
                                                                              ;\
-  ldr lr, =ptr_tbl_##store_type           /* lr = ptr table                */;\
-  mov r4, r0, lsr #24                     /* r4 = region number            */;\
-  ldr lr, [lr, r4, lsl #2]                /* lr = function pointer         */;\
-  ldr r4, [reg_base, #REG_SAVE2]          /* restore r4                    */;\
-  bx lr                                   /* jump to handler               */;\
+  mov lr, r0, lsr #24                     /* lr = region number            */;\
+  cmp lr, #15                                                                ;\
+  movcs lr, #15                           /* lr = min(lr, 15)              */;\
                                                                              ;\
+  add lr, lr, #(16*tblnum + 64)           /* lr += table offset            */;\
+  ldr pc, [reg_base, lr, lsl #2]          /* jump to handler               */;\
+
+#define store_fnptr_table(store_type)                                        ;\
 ptr_tbl_##store_type:                                                        ;\
   .word ext_store_ignore                  /* 0x00: BIOS, ignore            */;\
   .word ext_store_ignore                  /* 0x01: ignore                  */;\
@@ -576,11 +575,11 @@ ext_store_ignore:
   add pc, lr, #4                          @ return
 
 
-#define execute_store_builder(store_type, store_op, store_op16, load_op)     ;\
+#define execute_store_builder(store_type, store_op, store_op16, load_op, tn) ;\
                                                                              ;\
 .align 2                                                                     ;\
 defsymbl(execute_store_u##store_type)                                        ;\
-  execute_store_body(store_type)                                             ;\
+  execute_store_body(store_type, tn)                                         ;\
                                                                              ;\
 ext_store_u##store_type:                                                     ;\
   ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
@@ -626,7 +625,7 @@ ext_store_vram_u##store_type:                                                ;\
                                                                              ;\
 ext_store_oam_ram_u##store_type:                                             ;\
   mask_addr_bus16_##store_type(10)        /* Mask to mirror memory (+align)*/;\
-  add r2, reg_base, #256                  /* r2 = oam ram base             */;\
+  sub r2, reg_base, #0x400                /* r2 = oam ram base             */;\
   store_op16 r1, [r0, r2]                 /* store data                    */;\
   str r2, [reg_base, #OAM_UPDATED]        /* write non zero to signal      */;\
   ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
@@ -640,14 +639,14 @@ ext_store_oam_ram_u##store_type:                                             ;\
   b smc_write                             /* perform smc write             */;\
 
 
-execute_store_builder(8, strb, strh, ldrb)
-execute_store_builder(16, strh, strh, ldrh)
-execute_store_builder(32, str, str, ldr)
+execute_store_builder(8,  strb, strh, ldrb, 0)
+execute_store_builder(16, strh, strh, ldrh, 1)
+execute_store_builder(32, str,  str,  ldr,  2)
 
 @ This is a store that is executed in a strm case (so no SMC checks in-between)
 
 defsymbl(execute_store_u32_safe)
-  execute_store_body(32_safe)
+  execute_store_body(32_safe, 3)
   restore_flags()
   ldr pc, [reg_base, #REG_SAVE3]          @ return
 
@@ -682,7 +681,7 @@ ext_store_vram_u32_safe:
 
 ext_store_oam_ram_u32_safe:
   mask_addr_8(10)                         @ Mask to mirror memory (no need to align!)
-  add r2, reg_base, #256                  @ r2 = oam ram base
+  sub r2, reg_base, #0x400                @ r2 = oam ram base
   str r1, [r0, r2]                        @ store data
   str r2, [reg_base, #OAM_UPDATED]        @ store anything non zero here
   restore_flags()
@@ -842,10 +841,15 @@ defsymbl(spsr)
 defsymbl(reg_mode)
   .space 196
 
-defsymbl(reg)
-  .space 0x100, 0
 defsymbl(oam_ram)
   .space 0x400
+defsymbl(reg)
+  .space 0x100, 0
+@ Store pointer tables down here
+store_fnptr_table(8)
+store_fnptr_table(16)
+store_fnptr_table(32)
+store_fnptr_table(32_safe)
 
 @ Vita and 3DS (and of course mmap) map their own cache sections through some
 @ platform-speficic mechanisms.
