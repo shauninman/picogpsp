@@ -675,7 +675,7 @@ static void check_variables(int started_from_load)
          dynarec_enable = 1;
 
       if (dynarec_enable != prevvalue)
-         wipe_caches();
+         init_caches();
    }
    else
       dynarec_enable = 1;

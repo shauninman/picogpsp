@@ -156,6 +156,66 @@ _##symbol:
   ldmia sp!, { call_c_saved_regs }                                           ;\
   ldr sp, =reg                                                               ;\
 
+@ Jumps to PC (ARM or Thumb modes)
+@ This is really two functions/routines in one
+@ r0 contains the PC
+
+.align 2
+#define execute_pc_builder(mode, align)                                      ;\
+defsymbl(arm_indirect_branch_##mode)                                         ;\
+  save_flags()                                                               ;\
+execute_pc_##mode:                                                           ;\
+  bic r0, r0, #(align)                    /* Align PC                      */;\
+  mov r1, r0, lsr #24                     /* Get region                    */;\
+  cmp r1, #2                                                                 ;\
+  beq 1f                                  /* ewram                         */;\
+  cmp r1, #3                                                                 ;\
+  beq 2f                                  /* iwram                         */;\
+3:                                                                           ;\
+  call_c_function(block_lookup_address_##mode)                               ;\
+  restore_flags()                                                            ;\
+  bx r0                                                                      ;\
+1:                                                                           ;\
+  ldr r1, =(ewram+0x40000)                /* Load base addr                */;\
+  mov r2, r0, lsl #14                     /* addr &= 0x3ffff               */;\
+  mov r2, r2, lsr #14                                                        ;\
+  ldrh r2, [r1, r2]                       /* Load half word there          */;\
+  ldr r1, =(ram_block_ptrs)                                                  ;\
+  ldr r1, [r1, r2, lsl #2]                /* Pointer to the cache          */;\
+  cmp r1, #0                              /* NULL means not translated     */;\
+  beq 3b                                  /* Need to translate             */;\
+  restore_flags()                                                            ;\
+  bx r1                                                                      ;\
+2:                                                                           ;\
+  ldr r1, =(iwram)                        /* Load base addr                */;\
+  mov r2, r0, lsl #17                     /* addr &= 0x7fff                */;\
+  mov r2, r2, lsr #17                                                        ;\
+  ldrh r2, [r1, r2]                       /* Load half word there          */;\
+  ldr r1, =(ram_block_ptrs)                                                  ;\
+  ldr r1, [r1, r2, lsl #2]                /* Pointer to the cache          */;\
+  cmp r1, #0                              /* NULL means not translated     */;\
+  beq 3b                                  /* Need to translate             */;\
+  restore_flags()                                                            ;\
+  bx r1                                                                      ;\
+
+
+execute_pc_builder(arm, 0x3)
+execute_pc_builder(thumb, 0x1)
+
+@ Resumes execution from saved PC, in any mode
+
+execute_pc:
+  ldr r0, [reg_base, #REG_PC]             @ load new PC
+  ldr r1, [reg_base, #REG_CPSR]           @ r1 = flags
+  tst r1, #0x20                           @ see if Thumb bit is set
+  bne 2f
+
+  load_registers_arm()
+  b execute_pc_arm
+
+2:
+  load_registers_thumb()
+  b execute_pc_thumb
 
 @ Update the GBA hardware (video, sound, input, etc)
 
@@ -201,28 +261,11 @@ wait_halt_##name:                                                            ;\
                                                                              ;\
   ldr r0, [reg_base, #CHANGED_PC_STATUS]  /* load PC changed status        */;\
   cmp r0, #0                              /* see if PC has changed         */;\
-  beq 1f                                  /* if not return                 */;\
+  bne execute_pc                          /* go jump/translate             */;\
                                                                              ;\
-  ldr r0, [reg_base, #REG_PC]             /* load new PC                   */;\
-  ldr r1, [reg_base, #REG_CPSR]           /* r1 = flags                    */;\
-  tst r1, #0x20                           /* see if Thumb bit is set       */;\
-  bne 2f                                  /* if so load Thumb PC           */;\
-                                                                             ;\
-  load_registers_arm()                    /* load ARM regs                 */;\
-  call_c_function(block_lookup_address_arm)                                  ;\
-  restore_flags()                                                            ;\
-  bx r0                                   /* jump to new ARM block         */;\
-                                                                             ;\
-1:                                                                           ;\
   load_registers_##mode()                 /* reload registers              */;\
   restore_flags()                                                            ;\
-  return_##return_op()                                                       ;\
-                                                                             ;\
-2:                                                                           ;\
-  load_registers_thumb()                  /* load Thumb regs               */;\
-  call_c_function(block_lookup_address_thumb)                                ;\
-  restore_flags()                                                            ;\
-  bx r0                                   /* jump to new ARM block         */;\
+  return_##return_op()                    /* continue, no PC change        */;\
 
 
 arm_update_gba_builder(arm, arm, straight)
@@ -240,58 +283,31 @@ arm_update_gba_builder(idle_thumb, thumb, add)
 @ r0: PC to branch to
 
 .align 2
-defsymbl(arm_indirect_branch_arm)
-  save_flags()
-  call_c_function(block_lookup_address_arm)
-  restore_flags()
-  bx r0
-
-.align 2
-defsymbl(arm_indirect_branch_thumb)
-  save_flags()
-  call_c_function(block_lookup_address_thumb)
-  restore_flags()
-  bx r0
-
-.align 2
 defsymbl(arm_indirect_branch_dual_arm)
   save_flags()
   tst r0, #0x01                           @ check lower bit
-  bne 1f                                  @ if set going to Thumb mode
-  call_c_function(block_lookup_address_arm)
-  restore_flags()
-  bx r0                                   @ return
+  beq execute_pc_arm                      @ Keep executing ARM code
 
-1:
-  bic r0, r0, #0x01
+  bic r0, r0, #0x01                       @ Switch to Thumb mode
   store_registers_arm()                   @ save out ARM registers
   load_registers_thumb()                  @ load in Thumb registers
   ldr r1, [reg_base, #REG_CPSR]           @ load cpsr
   orr r1, r1, #0x20                       @ set Thumb mode
   str r1, [reg_base, #REG_CPSR]           @ store flags
-  call_c_function(block_lookup_address_thumb)
-  restore_flags()
-  bx r0                                   @ return
+  b execute_pc_thumb                      @ Now execute Thumb
 
 .align 2
 defsymbl(arm_indirect_branch_dual_thumb)
   save_flags()
   tst r0, #0x01                           @ check lower bit
-  beq 1f                                  @ if set going to ARM mode
-  bic r0, r0, #0x01
-  call_c_function(block_lookup_address_thumb)
-  restore_flags()
-  bx r0                                   @ return
+  bne execute_pc_thumb                    @ Keep executing Thumb mode
 
-1:
   store_registers_thumb()                 @ save out Thumb registers
   load_registers_arm()                    @ load in ARM registers
   ldr r1, [reg_base, #REG_CPSR]           @ load cpsr
   bic r1, r1, #0x20                       @ clear Thumb mode
   str r1, [reg_base, #REG_CPSR]           @ store flags
-  call_c_function(block_lookup_address_arm)
-  restore_flags()
-  bx r0                                   @ return
+  b execute_pc_arm                        @ Now execute ARM
 
 
 @ Update the cpsr.
@@ -319,10 +335,7 @@ defsymbl(execute_store_cpsr)
   cmp r0, #0                              @ check new PC
   beq 1f                                  @ if it's zero, return
 
-  call_c_function(block_lookup_address_arm)
-
-  restore_flags()
-  bx r0                                   @ return to new ARM address
+  b execute_pc_arm
 
 1:
   restore_flags()
@@ -378,16 +391,11 @@ defsymbl(execute_spsr_restore)
   bne 2f                                  @ if so handle it
 
   load_registers_arm()                    @ restore ARM registers
-  call_c_function(block_lookup_address_arm)
-  restore_flags()
-  bx r0
+  b execute_pc_arm
 
 2:
   load_registers_thumb()                  @ load Thumb registers
-  call_c_function(block_lookup_address_thumb)
-  restore_flags()
-  bx r0
-
+  b execute_pc_thumb
 
 
 @ Setup the mode transition work for calling an SWI.
@@ -718,21 +726,7 @@ alert_loop:
   bne alert_loop                          @ Keep looping until it is
 
   mvn reg_cycles, r0                      @ load new cycle count
-  ldr r0, [reg_base, #REG_PC]             @ load new PC
-  ldr r1, [reg_base, #REG_CPSR]           @ r1 = flags
-  tst r1, #0x20                           @ see if Thumb bit is set
-  bne 2f
-
-  load_registers_arm()
-  call_c_function(block_lookup_address_arm)
-  restore_flags()
-  bx r0                                   @ jump to new ARM block
-
-2:
-  load_registers_thumb()
-  call_c_function(block_lookup_address_thumb)
-  restore_flags()
-  bx r0                                   @ jump to new Thumb block
+  b execute_pc                            @ restart execution at PC
 
 4:
   restore_flags()
@@ -746,17 +740,8 @@ lookup_pc:
   ldr r0, [reg_base, #REG_PC]             @ r0 = new pc
   ldr r1, [reg_base, #REG_CPSR]           @ r1 = flags
   tst r1, #0x20                           @ see if Thumb bit is set
-  beq lookup_pc_arm                       @ if not lookup ARM
-
-lookup_pc_thumb:
-  call_c_function(block_lookup_address_thumb)
-  restore_flags()
-  bx r0                                   @ jump to new Thumb block
-
-lookup_pc_arm:
-  call_c_function(block_lookup_address_arm)
-  restore_flags()
-  bx r0                                   @ jump to new ARM block
+  beq execute_pc_arm                      @ if not lookup ARM
+  b   execute_pc_thumb
 
 
 #define sign_extend_u8(reg)

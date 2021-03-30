@@ -3644,7 +3644,7 @@ void flush_translation_cache_rom(void)
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
 }
 
-void wipe_caches(void)
+void init_caches(void)
 {
   /* Ensure we wipe everything including the SMC mirrors */
   flush_translation_cache_rom();
@@ -3653,6 +3653,8 @@ void wipe_caches(void)
   iwram_code_min = 0;
   iwram_code_max = 0x7FFF;
   flush_translation_cache_ram();
+  /* Ensure 0 and FFFF get zeroed out */
+  memset(ram_block_ptrs, 0, sizeof(ram_block_ptrs));
 }
 
 #define cache_dump_prefix ""

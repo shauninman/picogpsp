@@ -3322,7 +3322,7 @@ void gba_load_state(const void* src)
 
 #ifdef HAVE_DYNAREC
    if (dynarec_enable)
-      wipe_caches();
+      init_caches();
 #endif
 
    reg[OAM_UPDATED] = 1;
