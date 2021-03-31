@@ -8,7 +8,7 @@
 CC        = $(CROSS_COMPILE)gcc
 SYSROOT   = $(shell $(CC) --print-sysroot)
 
-OBJS      = main.o cpu.o gba_memory.o video.o input.o sound.o cheats.o cpu_threaded.o x86/x86_stub.o gba_cc_lut.o \
+OBJS      = main.o cpu.o gba_memory.o video.o input.o sound.o cheats.o cpu_threaded.o bios_data.o x86/x86_stub.o gba_cc_lut.o \
             frontend/libpicofe/input.o frontend/libpicofe/in_sdl.o frontend/libpicofe/linux/in_evdev.o frontend/libpicofe/linux/plat.o frontend/libpicofe/fonts.o frontend/libpicofe/readpng.o frontend/libpicofe/config_file.o \
             frontend/config.o frontend/menu.o frontend/plat_linux.o frontend/main.o frontend/scale.o
 

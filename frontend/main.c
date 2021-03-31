@@ -296,6 +296,7 @@ fail:
 
 int main(int argc, char *argv[])
 {
+  bool bios_loaded = false;
   char bios_filename[MAXPATHLEN];
   char filename[MAXPATHLEN];
   char path[MAXPATHLEN];
@@ -316,11 +317,30 @@ int main(int argc, char *argv[])
       filename[0] = 0;
   }
 
-  getcwd(bios_filename, MAXPATHLEN);
-  strncat(bios_filename, "/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
-  if (load_bios(bios_filename)) {
-    fprintf(stderr, "Could not load BIOS image file %s.\n", bios_filename);
-    return -1;
+  if (selected_bios == auto_detect || selected_bios == official_bios) {
+    bios_loaded = true;
+    getcwd(bios_filename, MAXPATHLEN);
+    strncat(bios_filename, "/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
+
+    if (load_bios(bios_filename)) {
+      if (selected_bios == official_bios)
+        printf("Could not load BIOS image file\n");
+      bios_loaded = false;
+    }
+
+    if (bios_loaded && bios_rom[0] != 0x18) {
+      if (selected_bios == official_bios)
+        printf("BIOS image seems incorrect\n");
+      bios_loaded = false;
+    }
+  }
+
+  if (bios_loaded) {
+    printf("Using official BIOS\n");
+  } else {
+    /* Load the built-in BIOS */
+    memcpy(bios_rom, open_gba_bios_rom, sizeof(bios_rom));
+    printf("Using built-in BIOS\n");
   }
 
   plat_get_root_dir(save_path, 512);
@@ -345,7 +365,7 @@ int main(int argc, char *argv[])
   init_sound(1);
   menu_init();
 
-  #if defined(HAVE_DYNAREC)
+#if defined(HAVE_DYNAREC)
   if (dynarec_enable)
   {
 #ifdef HAVE_MMAP
