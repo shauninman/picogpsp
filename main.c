@@ -158,7 +158,7 @@ u32 update_gba(void)
         if((dispstat & 0x01) == 0)
         {
           u32 i;
-          if(oam_update)
+          if(reg[OAM_UPDATED])
             oam_update_count++;
 
           if(no_alpha)

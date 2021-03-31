@@ -1,15 +1,14 @@
+
+#include "../gpsp_config.h"
+
+#define defsymbl(symbol) \
+.global symbol ;         \
+.global _##symbol ;      \
+symbol:                  \
+_##symbol:
+
+.text
 .align 2
-
-.globl invalidate_icache_region
-.globl invalidate_cache_region
-
-.globl memory_map_read
-.globl memory_map_write
-.globl reg
-.globl palette_ram
-.globl palette_ram_converted
-.globl reg_mode
-.globl spsr
 
 #define REG_R0            (0 * 4)
 #define REG_R1            (1 * 4)
@@ -44,8 +43,8 @@
 #define CPU_HALT_STATE    (30 * 4)
 #define CHANGED_PC_STATUS (31 * 4)
 #define COMPLETED_FRAME   (32 * 4)
-
-#define MAIN_THREAD_SP    (33 * 4)
+#define OAM_UPDATED       (33 * 4)
+#define MAIN_THREAD_SP    (34 * 4)
 
 #define reg_a0            r0
 #define reg_a1            r1
@@ -179,10 +178,7 @@
 #define arm_update_gba_builder(name, mode, return_op)                        ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl arm_update_gba_##name                                                 ;\
-.globl _arm_update_gba_##name                                                ;\
-arm_update_gba_##name:                                                       ;\
-_arm_update_gba_##name:                                                      ;\
+defsymbl(arm_update_gba_##name)                                              ;\
   load_pc_##return_op()                                                      ;\
   str r0, [reg_base, #REG_PC]             /* write out the PC              */;\
                                                                              ;\
@@ -244,30 +240,21 @@ arm_update_gba_builder(idle_thumb, thumb, add)
 @ r0: PC to branch to
 
 .align 2
-.globl arm_indirect_branch_arm
-.globl _arm_indirect_branch_arm
-arm_indirect_branch_arm:
-_arm_indirect_branch_arm:
+defsymbl(arm_indirect_branch_arm)
   save_flags()
   call_c_function(block_lookup_address_arm)
   restore_flags()
   bx r0
 
 .align 2
-.globl arm_indirect_branch_thumb
-.globl _arm_indirect_branch_thumb
-arm_indirect_branch_thumb:
-_arm_indirect_branch_thumb:
+defsymbl(arm_indirect_branch_thumb)
   save_flags()
   call_c_function(block_lookup_address_thumb)
   restore_flags()
   bx r0
 
 .align 2
-.globl arm_indirect_branch_dual_arm
-.globl _arm_indirect_branch_dual_arm
-arm_indirect_branch_dual_arm:
-_arm_indirect_branch_dual_arm:
+defsymbl(arm_indirect_branch_dual_arm)
   save_flags()
   tst r0, #0x01                           @ check lower bit
   bne 1f                                  @ if set going to Thumb mode
@@ -287,10 +274,7 @@ _arm_indirect_branch_dual_arm:
   bx r0                                   @ return
 
 .align 2
-.globl arm_indirect_branch_dual_thumb
-.globl _arm_indirect_branch_dual_thumb
-arm_indirect_branch_dual_thumb:
-_arm_indirect_branch_dual_thumb:
+defsymbl(arm_indirect_branch_dual_thumb)
   save_flags()
   tst r0, #0x01                           @ check lower bit
   beq 1f                                  @ if set going to ARM mode
@@ -318,10 +302,7 @@ _arm_indirect_branch_dual_thumb:
 @ r2: current PC
 
 .align 2
-.globl execute_store_cpsr
-.globl _execute_store_cpsr
-execute_store_cpsr:
-_execute_store_cpsr:
+defsymbl(execute_store_cpsr)
   save_flags()
   and reg_flags, r0, r1                   @ reg_flags = new_cpsr & store_mask
   ldr r0, [reg_base, #REG_CPSR]           @ r0 = cpsr
@@ -355,10 +336,7 @@ _execute_store_cpsr:
 @ r1: bitmask of which bits in spsr to update
 
 .align 2
-.globl execute_store_spsr
-.globl _execute_store_spsr
-execute_store_spsr:
-_execute_store_spsr:
+defsymbl(execute_store_spsr)
   ldr r1, =spsr                           @ r1 = spsr
   ldr r2, [reg_base, #CPU_MODE]           @ r2 = CPU_MODE
   str r0, [r1, r2, lsl #2]                @ spsr[CPU_MODE] = new_spsr
@@ -370,10 +348,7 @@ _execute_store_spsr:
 @ r0: spsr
 
 .align 2
-.globl execute_read_spsr
-.globl _execute_read_spsr
-execute_read_spsr:
-_execute_read_spsr:
+defsymbl(execute_read_spsr)
   ldr r0, =spsr                           @ r0 = spsr
   ldr r1, [reg_base, #CPU_MODE]           @ r1 = CPU_MODE
   ldr r0, [r0, r1, lsl #2]                @ r0 = spsr[CPU_MODE]
@@ -386,10 +361,7 @@ _execute_read_spsr:
 @ r0: current pc
 
 .align 2
-.globl execute_spsr_restore
-.globl _execute_spsr_restore
-execute_spsr_restore:
-_execute_spsr_restore:
+defsymbl(execute_spsr_restore)
   save_flags()
   ldr r1, =spsr                           @ r1 = spsr
   ldr r2, [reg_base, #CPU_MODE]           @ r2 = cpu_mode
@@ -426,10 +398,7 @@ _execute_spsr_restore:
 #define execute_swi_builder(mode)                                            ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_swi_##mode                                                    ;\
-.globl _execute_swi_##mode                                                   ;\
-execute_swi_##mode:                                                          ;\
-_execute_swi_##mode:                                                          ;\
+defsymbl(execute_swi_##mode)                                                 ;\
   save_flags()                                                               ;\
   ldr r1, =reg_mode                       /* r1 = reg_mode                 */;\
   /* reg_mode[MODE_SUPERVISOR][6] = pc                                     */;\
@@ -461,10 +430,7 @@ execute_swi_builder(thumb)
 #define execute_swi_function_builder(swi_function, mode)                     ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_swi_hle_##swi_function##_##mode                               ;\
-.globl _execute_swi_hle_##swi_function##_##mode                              ;\
-execute_swi_hle_##swi_function##_##mode:                                     ;\
-_execute_swi_hle_##swi_function##_##mode:                                    ;\
+defsymbl(execute_swi_hle_##swi_function##_##mode)                            ;\
   save_flags()                                                               ;\
   store_registers_##mode()                                                   ;\
   call_c_function(execute_swi_hle_##swi_function##_c)                        ;\
@@ -486,10 +452,7 @@ execute_swi_function_builder(div, thumb)
 @ Uses sp as reg_base; must hold consistently true.
 
 .align 2
-.globl execute_arm_translate
-.globl _execute_arm_translate
-execute_arm_translate:
-_execute_arm_translate:
+defsymbl(execute_arm_translate)
 
   @ save the registers to be able to return later
   stmdb sp!, { r4, r5, r6, r7, r8, r9, r10, r11, r12, lr }
@@ -533,31 +496,6 @@ return_to_main:
   bx lr
 
 
-@ Write out to memory.
-
-@ Input:
-@ r0: address
-@ r1: value
-@ r2: current pc
-
-#define execute_store_body(store_type, store_op)                             ;\
-  save_flags()                                                               ;\
-  str lr, [reg_base, #REG_SAVE3]          /* save lr                       */;\
-  tst r0, #0xF0000000                     /* make sure address is in range */;\
-  bne ext_store_u##store_type             /* if not do ext store           */;\
-                                                                             ;\
-  ldr r2, =memory_map_write               /* r2 = memory_map_write         */;\
-  mov lr, r0, lsr #15                     /* lr = page index of address    */;\
-  ldr r2, [r2, lr, lsl #2]                /* r2 = memory page              */;\
-                                                                             ;\
-  cmp r2, #0                              /* see if map is ext             */;\
-  beq ext_store_u##store_type             /* if so do ext store            */;\
-                                                                             ;\
-  mov r0, r0, lsl #17                     /* isolate bottom 15 bits in top */;\
-  mov r0, r0, lsr #17                     /* like performing and 0x7FFF    */;\
-  store_op r1, [r2, r0]                   /* store result                  */;\
-
-
 #define store_align_8()                                                      ;\
   and r1, r1, #0xff                                                          ;\
 
@@ -568,29 +506,81 @@ return_to_main:
 #define store_align_32()                                                     ;\
   bic r0, r0, #0x03                                                          ;\
 
+#define mask_addr_8(nbits)                                                   ;\
+  mov r0, r0, lsl #(32 - nbits)            /* isolate bottom n bits in top */;\
+  mov r0, r0, lsr #(32 - nbits)            /* high bits are now clear      */;\
 
-#define execute_store_builder(store_type, store_op, load_op)                 ;\
+#define mask_addr_16(nbits)                                                  ;\
+  mov r0, r0, lsl #(32 - nbits)            /* isolate bottom n bits in top */;\
+  mov r0, r0, lsr #(32 - nbits + 1)        /* high bits are now clear      */;\
+  mov r0, r0, lsl #1                       /* LSB is also zero             */;\
+
+#define mask_addr_32(nbits)                                                  ;\
+  mov r0, r0, lsl #(32 - nbits)            /* isolate bottom n bits in top */;\
+  mov r0, r0, lsr #(32 - nbits + 2)        /* high bits are now clear      */;\
+  mov r0, r0, lsl #2                       /* 2 LSB are also zero          */;\
+
+@ Vram, OAM and palette memories can only be accessed at a 16 bit boundary
+#define mask_addr_bus16_32(nbits) mask_addr_32(nbits)
+#define mask_addr_bus16_16(nbits) mask_addr_16(nbits)
+#define mask_addr_bus16_8(nbits) \
+  mask_addr_16(nbits)            \
+  extract_u16(r1, r1)
+
+
+@ Write out to memory.
+
+@ Input:
+@ r0: address
+@ r1: value
+@ r2: current pc
+@
+@ The instruction at LR is not an inst but a u32 data that contains the PC
+@ Used for SMC. That's why return is essentially `pc = lr + 4`
+
+#define execute_store_body(store_type)                                       ;\
+  save_flags()                                                               ;\
+  str lr, [reg_base, #REG_SAVE3]          /* save lr                       */;\
+  str r4, [reg_base, #REG_SAVE2]          /* save r4                       */;\
+  tst r0, #0xF0000000                     /* make sure address is in range */;\
+  bne ext_store_u##store_type             /* if not do ext store           */;\
+                                                                             ;\
+  ldr lr, =ptr_tbl_##store_type           /* lr = ptr table                */;\
+  mov r4, r0, lsr #24                     /* r4 = region number            */;\
+  ldr lr, [lr, r4, lsl #2]                /* lr = function pointer         */;\
+  ldr r4, [reg_base, #REG_SAVE2]          /* restore r4                    */;\
+  bx lr                                   /* jump to handler               */;\
+                                                                             ;\
+ptr_tbl_##store_type:                                                        ;\
+  .word ext_store_ignore                  /* 0x00: BIOS, ignore            */;\
+  .word ext_store_ignore                  /* 0x01: ignore                  */;\
+  .word ext_store_ewram_u##store_type     /* 0x02: ewram                   */;\
+  .word ext_store_iwram_u##store_type     /* 0x03: iwram                   */;\
+  .word ext_store_u##store_type           /* 0x04: I/O regs                */;\
+  .word ext_store_u##store_type           /* 0x05: palette RAM             */;\
+  .word ext_store_vram_u##store_type      /* 0x06: vram                    */;\
+  .word ext_store_oam_ram_u##store_type   /* 0x07: oam ram                 */;\
+  .word ext_store_u##store_type           /* 0x08: gamepak: ignore         */;\
+  .word ext_store_u##store_type           /* 0x09: gamepak: ignore         */;\
+  .word ext_store_u##store_type           /* 0x0A: gamepak: ignore         */;\
+  .word ext_store_u##store_type           /* 0x0B: gamepak: ignore         */;\
+  .word ext_store_u##store_type           /* 0x0C: gamepak: ignore         */;\
+  .word ext_store_u##store_type           /* 0x0D: EEPROM                  */;\
+  .word ext_store_u##store_type           /* 0x0E: backup                  */;\
+  .word ext_store_ignore                  /* 0x0F: ignore                  */;\
+
+@ for ignored areas, just return
+ext_store_ignore:
+  ldr lr, [reg_base, #REG_SAVE3]          @ pop lr off of stack
+  restore_flags()
+  add pc, lr, #4                          @ return
+
+
+#define execute_store_builder(store_type, store_op, store_op16, load_op)     ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_store_u##store_type                                           ;\
-.globl _execute_store_u##store_type                                          ;\
-execute_store_u##store_type:                                                 ;\
-_execute_store_u##store_type:                                                ;\
-  execute_store_body(store_type, store_op)                                   ;\
-  sub r2, r2, #0x8000                     /* Pointer to code status data   */;\
-  load_op r0, [r2, r0]                    /* check code flag               */;\
-                                                                             ;\
-  cmp r0, #0                              /* see if it's not 0             */;\
-  bne 2f                                  /* if so perform smc write       */;\
-  ldr lr, [reg_base, #REG_SAVE3]          /* restore lr                    */;\
-  restore_flags()                                                            ;\
-  add pc, lr, #4                          /* return                        */;\
-                                                                             ;\
-2:                                                                           ;\
-  ldr lr, [reg_base, #REG_SAVE3]          /* restore lr                    */;\
-  ldr r0, [lr]                            /* load PC                       */;\
-  str r0, [reg_base, #REG_PC]             /* write out PC                  */;\
-  b smc_write                             /* perform smc write             */;\
+defsymbl(execute_store_u##store_type)                                        ;\
+  execute_store_body(store_type)                                             ;\
                                                                              ;\
 ext_store_u##store_type:                                                     ;\
   ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
@@ -599,17 +589,65 @@ ext_store_u##store_type:                                                     ;\
   store_align_##store_type()                                                 ;\
   call_c_function(write_memory##store_type)                                  ;\
   b write_epilogue                        /* handle additional write stuff */;\
+                                                                             ;\
+ext_store_iwram_u##store_type:                                               ;\
+  mask_addr_##store_type(15)              /* Mask to mirror memory (+align)*/;\
+  ldr r2, =(iwram+0x8000)                 /* r2 = iwram base               */;\
+  store_op r1, [r0, r2]                   /* store data                    */;\
+  sub r2, r2, #0x8000                     /* r2 = iwram smc base           */;\
+  load_op r1, [r0, r2]                    /* r1 = SMC sentinel             */;\
+  cmp r1, #0                              /* see if it's not 0             */;\
+  bne 3f                                  /* if so perform smc write       */;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
+  restore_flags()                                                            ;\
+  add pc, lr, #4                          /* return                        */;\
+                                                                             ;\
+ext_store_ewram_u##store_type:                                               ;\
+  mask_addr_##store_type(18)              /* Mask to mirror memory (+align)*/;\
+  ldr r2, =(ewram)                        /* r2 = ewram base               */;\
+  store_op r1, [r0, r2]                   /* store data                    */;\
+  add r2, r2, #0x40000                    /* r2 = ewram smc base           */;\
+  load_op r1, [r0, r2]                    /* r1 = SMC sentinel             */;\
+  cmp r1, #0                              /* see if it's not 0             */;\
+  bne 3f                                  /* if so perform smc write       */;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
+  restore_flags()                                                            ;\
+  add pc, lr, #4                          /* return                        */;\
+                                                                             ;\
+ext_store_vram_u##store_type:                                                ;\
+  mask_addr_bus16_##store_type(17)        /* Mask to mirror memory (+align)*/;\
+  cmp r0, #0x18000                        /* Check if exceeds 96KB         */;\
+  subcs r0, r0, #0x8000                   /* Mirror to the last bank       */;\
+  ldr r2, =(vram)                         /* r2 = vram base                */;\
+  store_op16 r1, [r0, r2]                 /* store data                    */;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
+  restore_flags()                                                            ;\
+  add pc, lr, #4                          /* return                        */;\
+                                                                             ;\
+ext_store_oam_ram_u##store_type:                                             ;\
+  mask_addr_bus16_##store_type(10)        /* Mask to mirror memory (+align)*/;\
+  add r2, reg_base, #256                  /* r2 = oam ram base             */;\
+  store_op16 r1, [r0, r2]                 /* store data                    */;\
+  str r2, [reg_base, #OAM_UPDATED]        /* write non zero to signal      */;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* pop lr off of stack           */;\
+  restore_flags()                                                            ;\
+  add pc, lr, #4                          /* return                        */;\
+                                                                             ;\
+3:                                                                           ;\
+  ldr lr, [reg_base, #REG_SAVE3]          /* restore lr                    */;\
+  ldr r0, [lr]                            /* load PC                       */;\
+  str r0, [reg_base, #REG_PC]             /* write out PC                  */;\
+  b smc_write                             /* perform smc write             */;\
 
-execute_store_builder(8, strb, ldrb)
-execute_store_builder(16, strh, ldrh)
-execute_store_builder(32, str, ldr)
 
+execute_store_builder(8, strb, strh, ldrb)
+execute_store_builder(16, strh, strh, ldrh)
+execute_store_builder(32, str, str, ldr)
 
-.globl execute_store_u32_safe
-.globl _execute_store_u32_safe
-execute_store_u32_safe:
-_execute_store_u32_safe:
-  execute_store_body(32_safe, str)
+@ This is a store that is executed in a strm case (so no SMC checks in-between)
+
+defsymbl(execute_store_u32_safe)
+  execute_store_body(32_safe)
   restore_flags()
   ldr pc, [reg_base, #REG_SAVE3]          @ return
 
@@ -619,6 +657,36 @@ ext_store_u32_safe:
   restore_flags()
   bx lr                                   @ Return
 
+ext_store_iwram_u32_safe:
+  mask_addr_8(15)                         @ Mask to mirror memory (no need to align!)
+  ldr r2, =(iwram+0x8000)                 @ r2 = iwram base
+  str r1, [r0, r2]                        @ store data
+  restore_flags()
+  ldr pc, [reg_base, #REG_SAVE3]          @ return
+
+ext_store_ewram_u32_safe:
+  mask_addr_8(18)                         @ Mask to mirror memory (no need to align!)
+  ldr r2, =(ewram)                        @ r2 = ewram base
+  str r1, [r0, r2]                        @ store data
+  restore_flags()
+  ldr pc, [reg_base, #REG_SAVE3]          @ return
+
+ext_store_vram_u32_safe:
+  mask_addr_8(17)                         @ Mask to mirror memory (no need to align!)
+  ldr r2, =(vram)                         @ r2 = vram base
+  cmp r0, #0x18000                        @ Check if exceeds 96KB
+  subcs r0, r0, #0x8000                   @ Mirror to the last bank
+  str r1, [r0, r2]                        @ store data
+  restore_flags()
+  ldr pc, [reg_base, #REG_SAVE3]          @ return
+
+ext_store_oam_ram_u32_safe:
+  mask_addr_8(10)                         @ Mask to mirror memory (no need to align!)
+  add r2, reg_base, #256                  @ r2 = oam ram base
+  str r1, [r0, r2]                        @ store data
+  str r2, [reg_base, #OAM_UPDATED]        @ store anything non zero here
+  restore_flags()
+  ldr pc, [reg_base, #REG_SAVE3]          @ return
 
 write_epilogue:
   cmp r0, #0                              @ check if the write rose an alert
@@ -729,10 +797,7 @@ lookup_pc_arm:
 #define execute_load_builder(load_type, load_function, load_op, mask)        ;\
                                                                              ;\
 .align 2                                                                     ;\
-.globl execute_load_##load_type                                              ;\
-.globl _execute_load_##load_type                                             ;\
-execute_load_##load_type:                                                    ;\
-_execute_load_##load_type:                                                   ;\
+defsymbl(execute_load_##load_type)                                           ;\
   save_flags()                                                               ;\
   tst r0, mask                            /* make sure address is in range */;\
   bne ext_load_##load_type                /* if not do ext load            */;\
@@ -756,6 +821,7 @@ ext_load_##load_type:                                                        ;\
   restore_flags()                                                            ;\
   add pc, lr, #4                          /* return                        */;\
 
+.pool
 
 execute_load_builder(u8, 8, ldrneb, #0xF0000000)
 execute_load_builder(s8, 8, ldrnesb, #0xF0000000)
@@ -763,25 +829,42 @@ execute_load_builder(u16, 16, ldrneh, #0xF0000001)
 execute_load_builder(s16, 16_signed, ldrnesh, #0xF0000001)
 execute_load_builder(u32, 32, ldrne, #0xF0000000)
 
-.pool
-
 .data
 
-memory_map_read:
+defsymbl(memory_map_read)
   .space 0x8000
-memory_map_write:
-  .space 0x8000
-palette_ram:
+defsymbl(palette_ram)
   .space 0x400
-palette_ram_converted:
+defsymbl(palette_ram_converted)
   .space 0x400
-spsr:
+defsymbl(spsr)
   .space 24
-reg_mode:
+defsymbl(reg_mode)
   .space 196
 
-.globl reg
-.globl _reg
-reg:
+defsymbl(reg)
   .space 0x100, 0
+defsymbl(oam_ram)
+  .space 0x400
+
+@ Vita and 3DS (and of course mmap) map their own cache sections through some
+@ platform-speficic mechanisms.
+#if !defined(HAVE_MMAP) && !defined(VITA) && !defined(_3DS)
+
+@ Make this section executable!
+.text
+#ifdef __ANDROID__
+@ Unfortunately Android builds don't like nobits, so we ship a ton of zeros
+@ TODO: Revisit this whenever we upgrade to the latest clang NDK
+.section .jit,"awx",%progbits
+#else
+.section .jit,"awx",%nobits
+#endif
+.align 4
+defsymbl(rom_translation_cache)
+  .space ROM_TRANSLATION_CACHE_SIZE
+defsymbl(ram_translation_cache)
+  .space RAM_TRANSLATION_CACHE_SIZE
+
+#endif
 

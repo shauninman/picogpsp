@@ -1003,7 +1003,6 @@ const u32 psr_masks[16] =
 
 #define fast_write_memory(size, type, address, value)                         \
 {                                                                             \
-  u8 *map;                                                                    \
   u32 _address = (address) & ~(aligned_address_mask##size & 0x03);            \
   if(_address < 0x10000000)                                                   \
   {                                                                           \
@@ -1011,17 +1010,9 @@ const u32 psr_masks[16] =
     memory_writes_##type++;                                                   \
   }                                                                           \
                                                                               \
-  if(((_address & aligned_address_mask##size) == 0) &&                        \
-   (map = memory_map_write[_address >> 15]))                                  \
-  {                                                                           \
-    *((type *)((u8 *)map + (_address & 0x7FFF))) = value;                     \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    cpu_alert = write_memory##size(_address, value);                          \
-    if(cpu_alert)                                                             \
-      goto alert;                                                             \
-  }                                                                           \
+  cpu_alert = write_memory##size(_address, value);                            \
+  if(cpu_alert)                                                               \
+    goto alert;                                                               \
 }                                                                             \
 
 #define load_aligned32(address, dest)                                         \
@@ -1046,22 +1037,14 @@ const u32 psr_masks[16] =
 #define store_aligned32(address, value)                                       \
 {                                                                             \
   u32 _address = address;                                                     \
-  u8 *map = memory_map_write[_address >> 15];                                 \
   if(_address < 0x10000000)                                                   \
   {                                                                           \
     memory_region_access_write_u32[_address >> 24]++;                         \
     memory_writes_u32++;                                                      \
   }                                                                           \
-  if(map)                                                                     \
-  {                                                                           \
-    address32(map, _address & 0x7FFF) = value;                                \
-  }                                                                           \
-  else                                                                        \
-  {                                                                           \
-    cpu_alert = write_memory32(_address, value);                              \
-    if(cpu_alert)                                                             \
-      goto alert;                                                             \
-  }                                                                           \
+  cpu_alert = write_memory32(_address, value);                                \
+  if(cpu_alert)                                                               \
+    goto alert;                                                               \
 }                                                                             \
 
 #define load_memory_u8(address, dest)                                         \
@@ -1647,7 +1630,7 @@ void raise_interrupt(irq_type irq_raised)
 
 #ifndef HAVE_DYNAREC
 u8 *memory_map_read [8 * 1024];
-u8 *memory_map_write[8 * 1024];
+u16 oam_ram[512];
 u16 palette_ram[512];
 u16 palette_ram_converted[512];
 #endif
@@ -4297,13 +4280,23 @@ void init_cpu(void)
   for(i = 0; i < 16; i++)
     reg[i] = 0;
 
-  reg[REG_SP] = 0x03007F00;
-  reg[REG_PC] = 0x08000000;
-  reg[REG_CPSR] = 0x0000001F;
   reg[CPU_HALT_STATE] = CPU_ACTIVE;
-  reg[CPU_MODE] = MODE_USER;
   reg[CHANGED_PC_STATUS] = 0;
 
+  if (selected_boot_mode == boot_game) {
+    reg[REG_SP] = 0x03007F00;
+    reg[REG_PC] = 0x08000000;
+    reg[REG_CPSR] = 0x0000001F;   // system mode
+    reg[CPU_MODE] = MODE_USER;
+  } else {
+    reg[REG_SP] = 0x03007F00;
+    reg[REG_PC] = 0x00000000;
+    reg[REG_CPSR] = 0x00000013 | 0xC0;  // supervisor
+    reg[CPU_MODE] = MODE_SUPERVISOR;
+  }
+
+  // Stack pointers are set by BIOS, we set them
+  // nevertheless, should we not boot from BIOS
   reg_mode[MODE_USER][5] = 0x03007F00;
   reg_mode[MODE_IRQ][5] = 0x03007FA0;
   reg_mode[MODE_FIQ][5] = 0x03007FA0;

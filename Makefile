@@ -104,10 +104,18 @@ else ifeq ($(platform), osx)
 	ifeq ($(HAVE_DYNAREC),1)
 		HAVE_MMAP = 1
 	endif
-	ifndef ($(NOUNIVERSAL))
-		CFLAGS += $(ARCHFLAGS)
-		LDFLAGS += $(ARCHFLAGS)
-	endif
+
+   ifeq ($(CROSS_COMPILE),1)
+		TARGET_RULE   = -target $(LIBRETRO_APPLE_PLATFORM) -isysroot $(LIBRETRO_APPLE_ISYSROOT)
+		CFLAGS   += $(TARGET_RULE)
+		CPPFLAGS += $(TARGET_RULE)
+		CXXFLAGS += $(TARGET_RULE)
+		LDFLAGS  += $(TARGET_RULE)
+   endif
+
+	CFLAGS  += $(ARCHFLAGS)
+	CXXFLAGS  += $(ARCHFLAGS)
+	LDFLAGS += $(ARCHFLAGS)
 
 # iOS
 else ifneq (,$(findstring ios,$(platform)))
@@ -362,6 +370,15 @@ else ifneq (,$(findstring armv,$(platform)))
 	endif
 	LDFLAGS := -Wl,--no-undefined	
 
+# MIPS
+else ifeq ($(platform), mips32)
+	TARGET := $(TARGET_NAME)_libretro.so
+	SHARED := -shared -nostdlib -Wl,--version-script=link.T
+	fpic := -fPIC -DPIC
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	HAVE_DYNAREC := 1
+	CPU_ARCH := mips
+
 # emscripten
 else ifeq ($(platform), emscripten)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).bc
@@ -376,6 +393,22 @@ else ifeq ($(platform), gcw0)
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC -DPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	HAVE_DYNAREC := 1
+	CPU_ARCH := mips
+
+# GCW0 (OpenDingux Beta)
+else ifeq ($(platform), gcw0-odbeta)
+	TARGET := $(TARGET_NAME)_libretro.so
+	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
+	CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
+	AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
+	SHARED := -shared -nostdlib -Wl,--version-script=link.T
+	fpic := -fPIC -DPIC
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	# The ASM code and/or MIPS dynarec of GPSP does not respect
+	# MIPS calling conventions, so we must use '-fno-caller-saves'
+	# for the OpenDingux Beta build
+	CFLAGS += -fno-caller-saves
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 

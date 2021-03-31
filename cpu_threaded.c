@@ -46,32 +46,11 @@ u8* rom_translation_cache_ptr;
 u8* ram_translation_cache_ptr;
 u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
-#elif defined(ARM_MEMORY_DYNAREC)
-
-#ifdef __ANDROID__
-// Workaround for 'attempt to map x bytes at offset y'
-__asm__(".section .jit,\"awx\",%progbits");
 #else
-__asm__(".section .jit,\"awx\",%nobits");
-#endif
-
-u32 stub_arena[STUB_ARENA_SIZE]
-        __attribute__ ((aligned(4),section(".jit")));
-u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE]
-		__attribute__ ((aligned(4),section(".jit")));
-u8 *rom_translation_ptr = rom_translation_cache;
-
-u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE]
-		__attribute__ ((aligned(4),section(".jit")));
-u8 *ram_translation_ptr = ram_translation_cache;
-
-__asm__(".section .text");
-#else
-u8 rom_translation_cache[ROM_TRANSLATION_CACHE_SIZE];
-u8 ram_translation_cache[RAM_TRANSLATION_CACHE_SIZE];
 u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
 #endif
+/* Note, see stub files for more cache definitions */
 
 u32 iwram_code_min = 0xFFFFFFFF;
 u32 iwram_code_max = 0xFFFFFFFF;
@@ -80,12 +59,6 @@ u32 ewram_code_max = 0xFFFFFFFF;
 
 
 u32 *rom_branch_hash[ROM_BRANCH_HASH_SIZE];
-
-// Default
-u32 force_pc_update_target = 0xFFFFFFFF;
-u32 allow_smc_ram_u8 = 1;
-u32 allow_smc_ram_u16 = 1;
-u32 allow_smc_ram_u32 = 1;
 
 typedef struct
 {
@@ -2818,7 +2791,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
   switch(pc >> 24)                                                            \
   {                                                                           \
     case 0x2:                                                                 \
-      location = (u16 *)(ewram + (pc & 0x7FFF) + ((pc & 0x38000) * 2));       \
+      location = (u16 *)(ewram + (pc & 0x3FFFF) + 0x40000);                   \
       block_lookup_translate(type, ram, 1);                                   \
       break;                                                                  \
                                                                               \
@@ -3124,18 +3097,22 @@ block_lookup_address_builder(dual);
 block_data_type block_data[MAX_BLOCK_SIZE];
 block_exit_type block_exits[MAX_EXITS];
 
-#define smc_write_arm_yes()                                                   \
-  if(address32(pc_address_block, (block_end_pc & 0x7FFF) - 0x8000) == 0x0000) \
+#define smc_write_arm_yes() {                                                 \
+  int offset = (pc < 0x03000000) ? 0x40000 : -0x8000;                         \
+  if(address32(pc_address_block, (block_end_pc & 0x7FFF) + offset) == 0)      \
   {                                                                           \
-    address32(pc_address_block, (block_end_pc & 0x7FFF) - 0x8000) =           \
+    address32(pc_address_block, (block_end_pc & 0x7FFF) + offset) =           \
      0xFFFFFFFF;                                                              \
   }                                                                           \
+}
 
-#define smc_write_thumb_yes()                                                 \
-  if(address16(pc_address_block, (block_end_pc & 0x7FFF) - 0x8000) == 0x0000) \
+#define smc_write_thumb_yes() {                                               \
+  int offset = (pc < 0x03000000) ? 0x40000 : -0x8000;                         \
+  if(address16(pc_address_block, (block_end_pc & 0x7FFF) + offset) == 0)      \
   {                                                                           \
-    address16(pc_address_block, (block_end_pc & 0x7FFF) - 0x8000) = 0xFFFF;   \
+    address16(pc_address_block, (block_end_pc & 0x7FFF) + offset) = 0xFFFF;   \
   }                                                                           \
+}
 
 #define smc_write_arm_no()                                                    \
 
@@ -3433,7 +3410,6 @@ s32 translate_block_thumb(u32 pc, translation_region_type
   u32 opcode = 0;
   u32 last_opcode;
   u32 condition;
-  u32 last_condition;
   u32 pc_region = (pc >> 15);
   u32 new_pc_region;
   u8 *pc_address_block = memory_map_read[pc_region];
@@ -3518,8 +3494,6 @@ s32 translate_block_thumb(u32 pc, translation_region_type
 
   block_exit_position = 0;
   block_data_position = 0;
-
-  last_condition = 0x0E;
 
   while(pc != block_end_pc)
   {
@@ -3632,13 +3606,16 @@ s32 translate_block_thumb(u32 pc, translation_region_type
 void flush_translation_cache_ram(void)
 {
   flush_ram_count++;
-/*  printf("ram flush %d (pc %x), %x to %x, %x to %x\n",
+  /*printf("ram flush %d (pc %x), %x to %x, %x to %x\n",
    flush_ram_count, reg[REG_PC], iwram_code_min, iwram_code_max,
-   ewram_code_min, ewram_code_max); */
+   ewram_code_min, ewram_code_max);*/
 
   last_ram_translation_ptr = ram_translation_cache;
   ram_translation_ptr = ram_translation_cache;
   ram_block_tag_top = 0x0101;
+
+  // Proceed to clean the SMC area if needed
+  // (also try to memset as little as possible for performance)
   if(iwram_code_min != 0xFFFFFFFF)
   {
     iwram_code_min &= 0x7FFF;
@@ -3648,33 +3625,9 @@ void flush_translation_cache_ram(void)
 
   if(ewram_code_min != 0xFFFFFFFF)
   {
-    u32 ewram_code_min_page;
-    u32 ewram_code_max_page;
-    u32 ewram_code_min_offset;
-    u32 ewram_code_max_offset;
-    u32 i;
-
     ewram_code_min &= 0x3FFFF;
     ewram_code_max &= 0x3FFFF;
-
-    ewram_code_min_page = ewram_code_min >> 15;
-    ewram_code_max_page = ewram_code_max >> 15;
-    ewram_code_min_offset = ewram_code_min & 0x7FFF;
-    ewram_code_max_offset = ewram_code_max & 0x7FFF;
-
-    if(ewram_code_min_page == ewram_code_max_page)
-    {
-      memset(ewram + (ewram_code_min_page * 0x10000) +
-       ewram_code_min_offset, 0,
-       ewram_code_max_offset - ewram_code_min_offset);
-    }
-    else
-    {
-      for(i = ewram_code_min_page + 1; i < ewram_code_max_page; i++)
-        memset(ewram + (i * 0x10000), 0, 0x8000);
-
-      memset(ewram, 0, ewram_code_max_offset);
-    }
+    memset(&ewram[0x40000 + ewram_code_min], 0, ewram_code_max - ewram_code_min);
   }
 
   iwram_code_min = 0xFFFFFFFF;

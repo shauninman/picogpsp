@@ -201,6 +201,7 @@ extern u32 gbc_sound_update;
 extern u32 gbc_sound_wave_update;
 extern dma_transfer_type dma[4];
 
+extern u8 open_gba_bios_rom[1024*16];
 extern u32 bios_read_protect;
 extern u16 palette_ram[512];
 extern u16 oam_ram[512];
@@ -213,7 +214,6 @@ extern u8 ewram[1024 * 256 * 2];
 extern u8 iwram[1024 * 32 * 2];
 
 extern u8 *memory_map_read[8 * 1024];
-extern u8 *memory_map_write[8 * 1024];
 
 extern u32 reg[64];
 

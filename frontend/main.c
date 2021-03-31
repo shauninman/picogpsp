@@ -23,6 +23,8 @@ uint16_t *gba_screen_pixels_prev = NULL;
 uint16_t *gba_processed_pixels = NULL;
 
 int use_libretro_save_method = 0;
+bios_type selected_bios = auto_detect;
+boot_mode selected_boot_mode = boot_game;
 
 u32 skip_next_frame = 0;
 
