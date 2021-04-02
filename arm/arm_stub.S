@@ -2,6 +2,7 @@
 #include "../gpsp_config.h"
 
 #define defsymbl(symbol) \
+.type symbol, %function ;\
 .global symbol ;         \
 .global _##symbol ;      \
 symbol:                  \
@@ -197,7 +198,7 @@ execute_pc_##mode:                                                           ;\
   beq 3b                                  /* Need to translate             */;\
   restore_flags()                                                            ;\
   bx r1                                                                      ;\
-
+.size arm_indirect_branch_##mode, .-arm_indirect_branch_##mode
 
 execute_pc_builder(arm, 0x3)
 execute_pc_builder(thumb, 0x1)
@@ -266,7 +267,7 @@ wait_halt_##name:                                                            ;\
   load_registers_##mode()                 /* reload registers              */;\
   restore_flags()                                                            ;\
   return_##return_op()                    /* continue, no PC change        */;\
-
+.size arm_update_gba_##mode, .-arm_update_gba_##mode
 
 arm_update_gba_builder(arm, arm, straight)
 arm_update_gba_builder(thumb, thumb, straight)
@@ -295,6 +296,7 @@ defsymbl(arm_indirect_branch_dual_arm)
   orr r1, r1, #0x20                       @ set Thumb mode
   str r1, [reg_base, #REG_CPSR]           @ store flags
   b execute_pc_thumb                      @ Now execute Thumb
+.size arm_indirect_branch_dual_arm, .-arm_indirect_branch_dual_arm
 
 .align 2
 defsymbl(arm_indirect_branch_dual_thumb)
@@ -308,7 +310,7 @@ defsymbl(arm_indirect_branch_dual_thumb)
   bic r1, r1, #0x20                       @ clear Thumb mode
   str r1, [reg_base, #REG_CPSR]           @ store flags
   b execute_pc_arm                        @ Now execute ARM
-
+.size arm_indirect_branch_dual_thumb, .-arm_indirect_branch_dual_thumb
 
 @ Update the cpsr.
 
@@ -340,7 +342,7 @@ defsymbl(execute_store_cpsr)
 1:
   restore_flags()
   add pc, lr, #4                          @ return
-
+.size execute_store_cpsr, .-execute_store_cpsr
 
 @ Update the current spsr.
 
@@ -354,6 +356,7 @@ defsymbl(execute_store_spsr)
   ldr r2, [reg_base, #CPU_MODE]           @ r2 = CPU_MODE
   str r0, [r1, r2, lsl #2]                @ spsr[CPU_MODE] = new_spsr
   bx lr
+.size execute_store_spsr, .-execute_store_spsr
 
 @ Read the current spsr.
 
@@ -366,7 +369,7 @@ defsymbl(execute_read_spsr)
   ldr r1, [reg_base, #CPU_MODE]           @ r1 = CPU_MODE
   ldr r0, [r0, r1, lsl #2]                @ r0 = spsr[CPU_MODE]
   bx lr                                   @ return
-
+.size execute_read_spsr, .-execute_read_spsr
 
 @ Restore the cpsr from the mode spsr and mode shift.
 
@@ -645,7 +648,7 @@ ext_store_oam_ram_u##store_type:                                             ;\
   ldr r0, [lr]                            /* load PC                       */;\
   str r0, [reg_base, #REG_PC]             /* write out PC                  */;\
   b smc_write                             /* perform smc write             */;\
-
+.size execute_store_u##store_type, .-execute_store_u##store_type
 
 execute_store_builder(8,  strb, strh, ldrb, 0)
 execute_store_builder(16, strh, strh, ldrh, 1)
@@ -694,6 +697,7 @@ ext_store_oam_ram_u32_safe:
   str r2, [reg_base, #OAM_UPDATED]        @ store anything non zero here
   restore_flags()
   ldr pc, [reg_base, #REG_SAVE3]          @ return
+.size execute_store_u32_safe, .-execute_store_u32_safe
 
 write_epilogue:
   cmp r0, #0                              @ check if the write rose an alert
@@ -804,6 +808,7 @@ ext_load_##load_type:                                                        ;\
   sign_extend_##load_type(r0)             /* sign extend result            */;\
   restore_flags()                                                            ;\
   add pc, lr, #4                          /* return                        */;\
+.size execute_load_##load_type, .-execute_load_##load_type
 
 .pool
 
@@ -852,8 +857,10 @@ store_fnptr_table(32_safe)
 .align 4
 defsymbl(rom_translation_cache)
   .space ROM_TRANSLATION_CACHE_SIZE
+.size rom_translation_cache, .-rom_translation_cache
 defsymbl(ram_translation_cache)
   .space RAM_TRANSLATION_CACHE_SIZE
+.size ram_translation_cache, .-ram_translation_cache
 
 #endif
 
