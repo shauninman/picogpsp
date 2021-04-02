@@ -381,6 +381,56 @@ static inline void gba_nofilter_upscale(uint16_t *dst, uint16_t *src, int h)
   }
 }
 
+#define EXTRACT(c, mask, offset) ((c >> offset) & mask)
+#define BLENDCHANNEL(cl, cm, cr, mask, offset) ((((EXTRACT(cl, mask, offset) + 2 * EXTRACT(cm, mask, offset) + EXTRACT(cr, mask, offset)) >> 2) & mask) << offset)
+#define BLENDB(cl, cm, cr) BLENDCHANNEL(cl, cm, cr, 0b0000000000011111, 0)
+#define BLENDG(cl, cm, cr) BLENDCHANNEL(cl, cm, cr, 0b0000011111100000, 0)
+#define BLENDR(cl, cm, cr) BLENDCHANNEL(cl, cm, cr, 0b0011111000000000, 2)
+static inline void gba_smooth_subpx_upscale(uint16_t *dst, uint16_t *src, int h)
+{
+  int Eh = 0;
+  int dh = 0;
+  int width = 240;
+  int vf = 0;
+
+  dst += ((240-h)/2) * 320;  // blank upper border. h=240(full) or h=214(aspect)
+
+  int x, y;
+  for (y = 0; y < h; y++)
+  {
+    int source = dh * width;
+    for (x = 0; x < 320/4; x++)
+    {
+      register uint16_t a, b, c;
+
+      a = src[source];
+      b = src[source+1];
+      c = src[source+2];
+
+      if(vf == 1){
+        a = AVERAGE16(a, src[source+width]);
+        b = AVERAGE16(b, src[source+width+1]);
+        c = AVERAGE16(c, src[source+width+2]);
+      }
+
+      *dst++ = a;
+      *dst++ = BLENDB(a, a, b) | BLENDG(a, b, b) | BLENDR(b, b, b);
+      *dst++ = BLENDB(b, b, b) | BLENDG(b, b, c) | BLENDR(b, c, c);
+      *dst++ = c;
+
+      source+=3;
+    }
+    Eh += 160;
+    if(Eh >= h) {
+      Eh -= h;
+      dh++;
+      vf = 0;
+    }
+    else
+      vf = 1;
+  }
+}
+
 void video_clear_msg(uint16_t *dst, uint32_t h, uint32_t pitch)
 {
   memset(dst + (h - 10) * pitch, 0, 10 * pitch * sizeof(uint16_t));
@@ -403,14 +453,13 @@ void video_scale(uint16_t *dst, uint32_t h, uint32_t pitch) {
       gba_nofilter_upscale(dst, gba_screen_pixels_buf, 214);
       break;
     case SCALING_ASPECT_SMOOTH:
-      dst += ((h - (GBA_SCREEN_HEIGHT * 4 / 3)) / 2 * pitch);
-      gba_upscale_aspect(dst, gba_screen_pixels_buf, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT, GBA_SCREEN_PITCH * 2, pitch * 2);
+      gba_smooth_subpx_upscale(dst, gba_screen_pixels_buf, 214);
       break;
     case SCALING_FULL_SHARP:
       gba_nofilter_upscale(dst, gba_screen_pixels_buf, 240);
       break;
     case SCALING_FULL_SMOOTH:
-      gba_upscale(dst, gba_screen_pixels_buf, GBA_SCREEN_WIDTH, GBA_SCREEN_HEIGHT, GBA_SCREEN_PITCH * 2, pitch * 2);
+      gba_smooth_subpx_upscale(dst, gba_screen_pixels_buf, 240);
       break;
     default:
       gba_nofilter_noscale(dst, h, pitch, gba_screen_pixels_buf);
