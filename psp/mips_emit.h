@@ -2422,6 +2422,24 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   generate_indirect_branch_cycle_update(dual);                                \
 }                                                                             \
 
+#ifdef TRACE_INSTRUCTIONS
+  void trace_instruction(u32 pc)
+  {
+    printf("Executed %x\n", pc);
+  }
+
+  #define emit_trace_instruction(pc)                                            \
+    emit_save_regs(false);                                                      \
+    generate_load_imm(reg_a0, pc);                                              \
+    genccall(&trace_instruction);                                               \
+    emit_restore_regs(false)
+  #define emit_trace_thumb_instruction(pc) emit_trace_instruction(pc)
+  #define emit_trace_arm_instruction(pc)   emit_trace_instruction(pc)
+#else
+  #define emit_trace_thumb_instruction(pc)
+  #define emit_trace_arm_instruction(pc)
+#endif
+
 #define thumb_swi()                                                           \
   generate_swi_hle_handler(opcode & 0xFF);                                    \
   generate_load_pc(reg_a0, (pc + 2));                                         \

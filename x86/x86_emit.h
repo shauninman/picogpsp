@@ -96,6 +96,7 @@ typedef enum
   x86_opcode_push_reg                   = 0x50,
   x86_opcode_push_rm                    = 0xFF,
   x86_opcode_push_imm                   = 0x0668,
+  x86_opcode_pop_reg                    = 0x58,
   x86_opcode_call_offset                = 0xE8,
   x86_opcode_ret                        = 0xC3,
   x86_opcode_test_rm_imm                = 0x00F7,
@@ -265,6 +266,12 @@ typedef enum
 
 #define x86_emit_idiv_eax_reg(source)                                         \
   x86_emit_opcode_1b_ext_reg(idiv_eax_rm, source)                             \
+
+#define x86_emit_pop_reg(regn)                                                \
+  x86_emit_opcode_1b(pop_reg, regn)                                           \
+
+#define x86_emit_push_reg(regn)                                               \
+  x86_emit_opcode_1b(push_reg, regn)                                          \
 
 #define x86_emit_push_mem(base, offset)                                       \
   x86_emit_opcode_1b_mem(push_rm, 0x06, base, offset)                         \
@@ -522,6 +529,28 @@ typedef enum
   generate_load_reg(a1, ((opcode >> 8) & 0x0F));                              \
   generate_function_call(execute_##name##_##flags_op##_reg);                  \
   generate_mov(ireg, rv)                                                      \
+
+#ifdef TRACE_INSTRUCTIONS
+  void function_cc trace_instruction(u32 pc)
+  {
+    printf("Executed %x\n", pc);
+  }
+
+  #define emit_trace_thumb_instruction(pc)         \
+    x86_emit_push_reg(eax);                        \
+    x86_emit_push_reg(ecx);                        \
+    x86_emit_push_reg(edx);                        \
+    x86_emit_mov_reg_imm(eax, pc);                 \
+    generate_function_call(trace_instruction);     \
+    x86_emit_pop_reg(edx);                         \
+    x86_emit_pop_reg(ecx);                         \
+    x86_emit_pop_reg(eax);
+  #define emit_trace_arm_instruction(pc)           \
+    emit_trace_thumb_instruction(pc)
+#else
+  #define emit_trace_thumb_instruction(pc)
+  #define emit_trace_arm_instruction(pc)
+#endif
 
 u32 function_cc execute_lsl_no_flags_reg(u32 value, u32 shift)
 {

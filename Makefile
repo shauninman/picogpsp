@@ -434,6 +434,7 @@ ifeq ($(FORCE_32BIT_ARCH), 1)
 fpic :=
 endif
 
+# Add -DTRACE_INSTRUCTIONS to trace instruction execution
 ifeq ($(DEBUG), 1)
 	OPTIMIZE_SAFE := -O0 -g
 	OPTIMIZE      := -O0 -g

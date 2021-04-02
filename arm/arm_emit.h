@@ -1227,6 +1227,30 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   return 0;
 }
 
+#ifdef TRACE_INSTRUCTIONS
+  void trace_instruction(u32 pc)
+  {
+    printf("Executed %x\n", pc);
+  }
+
+  #define emit_trace_instruction(pc)               \
+    generate_save_flags();                         \
+    ARM_LDR_IMM(0, ARMREG_SP, reg_base, 34*4);     \
+    ARM_STMDB_WB(0, ARMREG_SP, 0x500C);            \
+    arm_load_imm_32bit(reg_a0, pc);                \
+    generate_function_call(trace_instruction);     \
+    ARM_LDMIA_WB(0, ARMREG_SP, 0x500C);            \
+    arm_load_imm_32bit(ARMREG_SP, (u32)reg);       \
+    generate_restore_flags();
+  #define emit_trace_thumb_instruction(pc)         \
+    emit_trace_instruction(pc)
+  #define emit_trace_arm_instruction(pc)           \
+    emit_trace_instruction(pc)
+#else
+  #define emit_trace_thumb_instruction(pc)
+  #define emit_trace_arm_instruction(pc)
+#endif
+
 #define arm_psr_load_new_reg()                                                \
   generate_load_reg(reg_a0, rm)                                               \
 

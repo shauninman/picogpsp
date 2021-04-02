@@ -168,10 +168,25 @@ defsymbl(arm_indirect_branch_##mode)                                         ;\
 execute_pc_##mode:                                                           ;\
   bic r0, r0, #(align)                    /* Align PC                      */;\
   mov r1, r0, lsr #24                     /* Get region                    */;\
-  cmp r1, #2                                                                 ;\
-  beq 1f                                  /* ewram                         */;\
-  cmp r1, #3                                                                 ;\
-  beq 2f                                  /* iwram                         */;\
+  ldr pc, [pc, r1, lsl #2]                                                   ;\
+  nop                                                                        ;\
+  .long 3f                                /* 0 BIOS (like ROM)             */;\
+  .long 3f                                /* 1 Bad region                  */;\
+  .long 1f                                /* 2 EWRAM                       */;\
+  .long 2f                                /* 3 IWRAM                       */;\
+  .long 3f                                /* 4 Not supported               */;\
+  .long 3f                                /* 5 Not supported               */;\
+  .long 3f                                /* 6 Not supported               */;\
+  .long 3f                                /* 7 Not supported               */;\
+  .long 3f                                /* 8 ROM                         */;\
+  .long 3f                                /* 9 ROM                         */;\
+  .long 3f                                /* A ROM                         */;\
+  .long 3f                                /* B ROM                         */;\
+  .long 3f                                /* C ROM                         */;\
+  .long 3f                                /* D ROM                         */;\
+  .long 3f                                /* E ROM                         */;\
+  .long 3f                                /* F Bad region                  */;\
+                                                                             ;\
 3:                                                                           ;\
   call_c_function(block_lookup_address_##mode)                               ;\
   restore_flags()                                                            ;\
