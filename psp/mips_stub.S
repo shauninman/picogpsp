@@ -391,8 +391,7 @@ execute_read_spsr:
 # $4: Current pc
 
 execute_swi:
-  add $sp, $sp, -4                # push $ra
-  sw $ra, ($sp)
+  sw $ra, REG_SAVE3($16)
   sw $4, SUPERVISOR_LR($16)       # store next PC in the supervisor's LR
   collapse_flags                  # get cpsr in $2
   sw $2, SUPERVISOR_SPSR($16)     # save cpsr in SUPERVISOR_CPSR
@@ -402,10 +401,10 @@ execute_swi:
   save_registers
   li $4, 3                        # 3 is supervisor mode
   cfncall set_cpu_mode, 5         # set the CPU mode to supervisor
+  lw $ra, REG_SAVE3($16)
   restore_registers
-  lw $ra, ($sp)                   # pop $ra
   jr $ra                          # return
-  add $sp, $sp, 4                 # fix stack (delay slot)
+  nop
 
 # $4: pc to restore to
 # returns in $4
@@ -420,15 +419,13 @@ execute_spsr_restore:
   lw $1, SPSR_BASE($2)            # $1 = spsr[cpu_mode]
   sw $1, REG_CPSR($16)            # cpsr = spsr[cpu_mode]
   extract_flags_body              # extract flags from $1
-  addiu $sp, $sp, -4
-  sw $ra, ($sp)
+  sw $ra, REG_SAVE3($16)
   save_registers
   cfncall execute_spsr_restore_body, 6  # do the dirty work in this C function
   restore_registers
-  addu $4, $2, $0                 # move return value to $4
-  lw $ra, ($sp)
+  lw $ra, REG_SAVE3($16)
   jr $ra
-  addiu $sp, $sp, 4
+  addu $4, $2, $0                 # move return value to $4
 
 no_spsr_restore:
   jr $ra
