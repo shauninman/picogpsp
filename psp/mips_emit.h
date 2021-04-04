@@ -2950,13 +2950,14 @@ static void emit_palette_hdl(
   }
   mips_emit_addu(reg_rv, reg_rv, reg_base);
 
-  // Store the data (delay slot from the SMC branch)
+  // Store the data in real palette memory
   if (realsize == 2) {
-    mips_emit_sw(reg_a1, reg_base, 0x100);
+    mips_emit_sw(reg_a1, reg_rv, 0x100);
   } else if (realsize == 1) {
-    mips_emit_sh(reg_a1, reg_base, 0x100);
+    mips_emit_sh(reg_a1, reg_rv, 0x100);
   }
 
+  // Convert and store in mirror memory
   palette_convert();
   mips_emit_sh(reg_temp, reg_rv, 0x500);
 
