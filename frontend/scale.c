@@ -334,9 +334,9 @@ static inline void gba_nofilter_noscale(uint16_t *dst, uint32_t dst_h, uint32_t 
   }
 }
 
-/* drowsnug's nofilter upscaler */
+/* drowsnug's nofilter upscaler, edited by eggs for smoothness */
 #define AVERAGE16(c1, c2) (((c1) + (c2) + (((c1) ^ (c2)) & 0x0821))>>1)  //More accurate
-static inline void gba_nofilter_upscale(uint16_t *dst, uint16_t *src, int h)
+static inline void gba_smooth_upscale(uint16_t *dst, uint16_t *src, int h)
 {
   int Eh = 0;
   int dh = 0;
@@ -364,8 +364,8 @@ static inline void gba_nofilter_upscale(uint16_t *dst, uint16_t *src, int h)
       }
 
       *dst++ = a;
-      *dst++ = (AVERAGE16(a,b) & 0b0000000000011111) | (b & 0b1111111111100000);
-      *dst++ = (b & 0b0000011111111111) | (AVERAGE16(b,c) & 0b1111100000000000);
+      *dst++ = AVERAGE16(AVERAGE16(a,b),b);
+      *dst++ = AVERAGE16(b,AVERAGE16(b,c));
       *dst++ = c;
       source+=3;
 
@@ -450,16 +450,16 @@ void video_scale(uint16_t *dst, uint32_t h, uint32_t pitch) {
   switch (scaling_mode)
   {
     case SCALING_ASPECT_SHARP:
-      gba_nofilter_upscale(dst, gba_screen_pixels_buf, 214);
-      break;
-    case SCALING_ASPECT_SMOOTH:
       gba_smooth_subpx_upscale(dst, gba_screen_pixels_buf, 214);
       break;
+    case SCALING_ASPECT_SMOOTH:
+      gba_smooth_upscale(dst, gba_screen_pixels_buf, 214);
+      break;
     case SCALING_FULL_SHARP:
-      gba_nofilter_upscale(dst, gba_screen_pixels_buf, 240);
+      gba_smooth_subpx_upscale(dst, gba_screen_pixels_buf, 240);
       break;
     case SCALING_FULL_SMOOTH:
-      gba_smooth_subpx_upscale(dst, gba_screen_pixels_buf, 240);
+      gba_smooth_upscale(dst, gba_screen_pixels_buf, 240);
       break;
     default:
       gba_nofilter_noscale(dst, h, pitch, gba_screen_pixels_buf);
