@@ -28,7 +28,9 @@ CFLAGS     += -I./ $(shell $(SYSROOT)/usr/bin/sdl-config --cflags)
 
 # expecting to have PATH set up to get correct sdl-config first
 
-LIBS       = -lc -lgcc -lSDL -lasound -lpng -lz -Wl,--as-needed -Wl,--gc-sections -flto -s
+LIBS       = -lc -lgcc -lSDL -lasound -lpng -lz -Wl,--gc-sections -flto -s
+# LIBS	  +=  -Wl,--as-needed
+LIBS	  +=  -lSDL_image -lSDL_ttf -ldl
 
 ifeq ($(PROFILE), YES)
 CFLAGS	+= -fprofile-generate=./profile

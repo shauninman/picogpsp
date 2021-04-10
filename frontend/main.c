@@ -7,6 +7,13 @@
 #include "frontend/plat.h"
 #include "frontend/libpicofe/plat.h"
 
+#include <dlfcn.h>
+#include <mmenu.h>
+#include <SDL/SDL.h>
+static void* mmenu = NULL;
+char rom_path[MAXPATHLEN];
+char save_template_path[MAXPATHLEN];
+
 /* Percentage of free space allowed in the audio buffer before
  * skipping frames. Lower numbers mean more skipping but smoother
  * audio, since the buffer will stay closer to filled. */
@@ -157,7 +164,35 @@ void handle_emu_action(emu_action action)
     case EACTION_MENU:
       toggle_fast_forward(1);
       update_backup();
-      menu_loop();
+	  if (mmenu) {
+	  	ShowMenu_t ShowMenu = (ShowMenu_t)dlsym(mmenu, "ShowMenu");
+		SDL_Surface *screen = SDL_GetVideoSurface();
+		MenuReturnStatus status = ShowMenu(rom_path, save_template_path, screen, kMenuEventKeyDown);
+
+	  	if (status==kStatusExitGame) {
+			should_quit = 1;
+	  	}
+	  	else if (status==kStatusOpenMenu) {
+	  		menu_loop();
+	  	}
+	  	else if (status>=kStatusLoadSlot) {
+	  		state_slot = status - kStatusLoadSlot;
+			load_state_file(state_slot);
+	  	}
+	  	else if (status>=kStatusSaveSlot) {
+	  		state_slot = status - kStatusSaveSlot;
+			save_state_file(state_slot);
+	  	}
+		
+		// release that menu key
+		SDL_Event sdlevent;
+		sdlevent.type = SDL_KEYUP;
+		sdlevent.key.keysym.sym = SDLK_ESCAPE;
+		SDL_PushEvent(&sdlevent);
+	  }
+	  else {
+	  	menu_loop();
+	  }
       break;
     default:
       break;
@@ -351,6 +386,9 @@ int main(int argc, char *argv[])
   if(!gba_screen_pixels)
     gba_screen_pixels = (uint16_t*)calloc(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT, sizeof(uint16_t));
 
+	mmenu = dlopen("libmmenu.so", RTLD_LAZY);
+	strcpy(rom_path, filename);
+	
   if (plat_init()) {
     return -1;
   };
@@ -360,6 +398,8 @@ int main(int argc, char *argv[])
     fprintf(stderr, "Could not load the game file.\n");
     return -1;
   }
+
+	gamepak_related_name(save_template_path, MAXPATHLEN, ".st%i");
 
   init_main();
   init_sound(1);
