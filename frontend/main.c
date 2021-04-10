@@ -171,6 +171,7 @@ void handle_emu_action(emu_action action)
 
 	  	if (status==kStatusExitGame) {
 			should_quit = 1;
+			plat_video_menu_leave();
 	  	}
 	  	else if (status==kStatusOpenMenu) {
 	  		menu_loop();
@@ -424,7 +425,7 @@ int main(int argc, char *argv[])
   reset_gba();
 
   do {
-    update_input();
+    update_input(); if (should_quit) break;
 
     synchronize();
 
