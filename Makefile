@@ -14,7 +14,7 @@ OBJS      = main.o cpu.o gba_memory.o video.o input.o sound.o gba_cc_lut.o \
             bios_data.o cheats.o arm/arm_stub.o cpu_threaded.o arm/video_blend.o \
             frontend/libpicofe/input.o frontend/libpicofe/in_sdl.o \
             frontend/libpicofe/linux/in_evdev.o frontend/libpicofe/linux/plat.o \
-            frontend/libpicofe/fonts.o frontend/libpicofe/readpng.o frontend/libpicofe/config_file.o \
+            frontend/libpicofe/fonts.o frontend/libpicofe/readpng.o frontend/config_file.o \
             frontend/config.o frontend/menu.o frontend/plat_trimui.o frontend/main.o frontend/scale.o
 
 BIN       = picogpsp

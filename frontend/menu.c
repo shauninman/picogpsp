@@ -52,7 +52,7 @@ me_bind_action emuctrl_actions[] =
   { "Toggle Frameskip ", 1 << EACTION_TOGGLE_FSKIP },
   { "Show/Hide FPS    ", 1 << EACTION_TOGGLE_FPS },
   { "Toggle FF        ", 1 << EACTION_TOGGLE_FF },
-  { "Enter Menu       ", 1 << EACTION_MENU },
+  // { "Enter Menu       ", 1 << EACTION_MENU }, // TRIMUI
   { NULL,                0 }
 };
 
