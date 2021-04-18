@@ -1,6 +1,7 @@
 #include <SDL/SDL.h>
 #include "common.h"
 
+#include "frontend/audio_hotplug.h"
 #include "frontend/main.h"
 #include "frontend/plat.h"
 #include "frontend/scale.h"
@@ -185,11 +186,18 @@ int plat_sound_init(void)
 
   if (SDL_OpenAudio(&spec, NULL) < 0) {
     plat_sound_finish();
+    fprintf(stderr, "SDL audio failed to open: %s\n", SDL_GetError());
     return -1;
   }
 
   SDL_PauseAudio(0);
   return 0;
+}
+
+static void plat_sound_reinit(bool has_usb_audio) {
+  plat_sound_finish();
+  audio_hotplug_set_device(has_usb_audio);
+  plat_sound_init();
 }
 
 float plat_sound_capacity(void)
@@ -205,6 +213,7 @@ float plat_sound_capacity(void)
 void plat_sound_write(void *data, int bytes)
 {
   short *sound_data = (short *)data;
+  audio_hotplug_check(plat_sound_reinit);
   SDL_LockAudio();
 
   while (bytes > 0) {
