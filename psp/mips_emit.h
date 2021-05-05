@@ -2422,6 +2422,24 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   generate_indirect_branch_cycle_update(dual);                                \
 }                                                                             \
 
+#ifdef TRACE_INSTRUCTIONS
+  void trace_instruction(u32 pc)
+  {
+    printf("Executed %x\n", pc);
+  }
+
+  #define emit_trace_instruction(pc)                                            \
+    emit_save_regs(false);                                                      \
+    generate_load_imm(reg_a0, pc);                                              \
+    genccall(&trace_instruction);                                               \
+    emit_restore_regs(false)
+  #define emit_trace_thumb_instruction(pc) emit_trace_instruction(pc)
+  #define emit_trace_arm_instruction(pc)   emit_trace_instruction(pc)
+#else
+  #define emit_trace_thumb_instruction(pc)
+  #define emit_trace_arm_instruction(pc)
+#endif
+
 #define thumb_swi()                                                           \
   generate_swi_hle_handler(opcode & 0xFF);                                    \
   generate_load_pc(reg_a0, (pc + 2));                                         \
@@ -2932,13 +2950,14 @@ static void emit_palette_hdl(
   }
   mips_emit_addu(reg_rv, reg_rv, reg_base);
 
-  // Store the data (delay slot from the SMC branch)
+  // Store the data in real palette memory
   if (realsize == 2) {
-    mips_emit_sw(reg_a1, reg_base, 0x100);
+    mips_emit_sw(reg_a1, reg_rv, 0x100);
   } else if (realsize == 1) {
-    mips_emit_sh(reg_a1, reg_base, 0x100);
+    mips_emit_sh(reg_a1, reg_rv, 0x100);
   }
 
+  // Convert and store in mirror memory
   palette_convert();
   mips_emit_sh(reg_temp, reg_rv, 0x500);
 
@@ -2965,24 +2984,23 @@ static void emit_ignorestore_stub(unsigned size, u8 **tr_ptr) {
   mips_emit_jr(mips_reg_ra);
   mips_emit_nop();
 
-  // Region 8-B
-  tmemst[size][ 8] = tmemst[size][ 9] = 
-  tmemst[size][10] = tmemst[size][11] = (u32)translation_ptr;
+  // Region 9-C
+  tmemst[size][ 9] = tmemst[size][10] =
+  tmemst[size][11] = tmemst[size][12] = (u32)translation_ptr;
 
-  mips_emit_srl(reg_temp, reg_a0, 26);               // Check 6 MSB to be 0x02
-  mips_emit_xori(reg_temp, reg_temp, 0x02);
+  mips_emit_srl(reg_temp, reg_a0, 24);
+  mips_emit_addiu(reg_temp, reg_temp, -9);
+  mips_emit_srl(reg_temp, reg_temp, 2);
   mips_emit_b(bne, reg_temp, reg_zero, st_phndlr_branch(size));
   mips_emit_nop();
   mips_emit_jr(mips_reg_ra);
   mips_emit_nop();
 
-  // Region C or F (or bigger!)
-  tmemst[size][12] = tmemst[size][15] = (u32)translation_ptr;
+  // Region F or higher
+  tmemst[size][15] = (u32)translation_ptr;
   mips_emit_srl(reg_temp, reg_a0, 24);
-  mips_emit_sltiu(reg_rv, reg_temp, 0x0F);
-  mips_emit_b(beq, reg_rv, reg_zero, 3);    // If 15 or bigger, ignore store
-  mips_emit_xori(reg_rv, reg_temp, 0x0C);
-  mips_emit_b(bne, reg_temp, reg_zero, st_phndlr_branch(size));
+  mips_emit_sltiu(reg_rv, reg_temp, 0x0F);  // Is < 15?
+  mips_emit_b(bne, reg_rv, reg_zero, st_phndlr_branch(size));
   mips_emit_nop();
   mips_emit_jr(mips_reg_ra);
   mips_emit_nop();
@@ -2990,7 +3008,7 @@ static void emit_ignorestore_stub(unsigned size, u8 **tr_ptr) {
   *tr_ptr = translation_ptr;
 }
 
-// Stubs for regions with EEPROM or flash/SRAM
+// Stubs for regions with EEPROM or flash/SRAM (also RTC)
 static void emit_saveaccess_stub(u8 **tr_ptr) {
   unsigned opt, i, strop;
   u8 *translation_ptr = *tr_ptr;
@@ -3039,6 +3057,21 @@ static void emit_saveaccess_stub(u8 **tr_ptr) {
     } else {
       mips_emit_nop();
       mips_emit_jr(mips_reg_ra);   // Does nothing in this case
+      mips_emit_nop();
+    }
+  }
+
+  // RTC writes, only for 16 bit accesses
+  for (strop = 0; strop <= 3; strop++) {
+    tmemst[strop][8] = (u32)translation_ptr;
+    mips_emit_srl(reg_temp, reg_a0, 24);
+    mips_emit_xori(reg_rv, reg_temp, 0x08);
+    mips_emit_b(bne, reg_rv, reg_zero, st_phndlr_branch(strop));
+    if (strop == 1) {
+      emit_mem_call(&write_rtc, 0xFF);  // Addr
+    } else {
+      mips_emit_nop();
+      mips_emit_jr(mips_reg_ra);   // Do nothing
       mips_emit_nop();
     }
   }
