@@ -225,7 +225,7 @@ void menu_set_defaults(void)
 {
   dynarec_enable = 1;
   frameskip_style = 1;
-  scaling_mode = 0;
+  scaling_mode = SCALING_ASPECT_SMOOTH;
   max_frameskip = 3;
   color_correct = 0;
   lcd_blend = 0;
