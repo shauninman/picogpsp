@@ -662,6 +662,7 @@ fnptrs:
 .global stub_arena
 .global rom_translation_cache
 .global ram_translation_cache
+.global bios_translation_cache
 
 stub_arena:
   .space STUB_ARENA_SIZE
@@ -669,6 +670,8 @@ rom_translation_cache:
   .space ROM_TRANSLATION_CACHE_SIZE
 ram_translation_cache:
   .space RAM_TRANSLATION_CACHE_SIZE
+bios_translation_cache:
+  .space BIOS_TRANSLATION_CACHE_SIZE
 
 #endif
 

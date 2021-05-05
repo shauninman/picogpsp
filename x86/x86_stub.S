@@ -558,6 +558,8 @@ defsymbl(rom_translation_cache)
   .space ROM_TRANSLATION_CACHE_SIZE
 defsymbl(ram_translation_cache)
   .space RAM_TRANSLATION_CACHE_SIZE
+defsymbl(bios_translation_cache)
+  .space BIOS_TRANSLATION_CACHE_SIZE
 
 #endif
 

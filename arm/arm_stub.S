@@ -411,6 +411,8 @@ defsymbl(execute_swi_##mode)                                                 ;\
   orr r0, r0, #0x13                       /* set to supervisor mode        */;\
   str r0, [reg_base, #REG_CPSR]           /* update cpsr                   */;\
                                                                              ;\
+  call_c_function(bios_region_read_allow)                                    ;\
+                                                                             ;\
   mov r0, #MODE_SUPERVISOR                                                   ;\
                                                                              ;\
   store_registers_##mode()                /* store regs for mode           */;\
@@ -865,6 +867,8 @@ defsymbl(rom_translation_cache)
   .space ROM_TRANSLATION_CACHE_SIZE
 defsymbl(ram_translation_cache)
   .space RAM_TRANSLATION_CACHE_SIZE
+defsymbl(bios_translation_cache)
+  .space BIOS_TRANSLATION_CACHE_SIZE
 
 #endif
 

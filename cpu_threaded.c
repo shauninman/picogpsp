@@ -29,26 +29,34 @@
 
 u8 *last_rom_translation_ptr = NULL;
 u8 *last_ram_translation_ptr = NULL;
+u8 *last_bios_translation_ptr = NULL;
 
 #if defined(HAVE_MMAP)
 u8* rom_translation_cache;
 u8* ram_translation_cache;
+u8* bios_translation_cache;
 u8 *rom_translation_ptr;
 u8 *ram_translation_ptr;
+u8 *bios_translation_ptr;
 #elif defined(VITA)
 u8* rom_translation_cache;
 u8* ram_translation_cache;
+u8* bios_translation_cache;
 u8 *rom_translation_ptr;
 u8 *ram_translation_ptr;
+u8 *bios_translation_ptr;
 int sceBlock;
 #elif defined(_3DS) 
 u8* rom_translation_cache_ptr;
 u8* ram_translation_cache_ptr;
+u8* bios_translation_cache_ptr;
 u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
+u8 *bios_translation_ptr = bios_translation_cache;
 #else
 u8 *rom_translation_ptr = rom_translation_cache;
 u8 *ram_translation_ptr = ram_translation_cache;
+u8 *bios_translation_ptr = bios_translation_cache;
 #endif
 /* Note, see stub files for more cache definitions */
 
@@ -243,6 +251,10 @@ void translate_icache_sync() {
     if (last_ram_translation_ptr < ram_translation_ptr) {
         platform_cache_sync(last_ram_translation_ptr, ram_translation_ptr);
         last_ram_translation_ptr = ram_translation_ptr;
+    }
+    if (last_bios_translation_ptr < bios_translation_ptr) {
+        platform_cache_sync(last_bios_translation_ptr, bios_translation_ptr);
+        last_bios_translation_ptr = bios_translation_ptr;
     }
 }
 
@@ -2666,6 +2678,9 @@ void translate_icache_sync() {
 u8 *ram_block_ptrs[1024 * 64];
 u32 ram_block_tag_top = 0x0101;
 
+u8 *bios_block_ptrs[1024 * 8];
+u32 bios_block_tag_top = 0x0101;
+
 // This function will return a pointer to a translated block of code. If it
 // doesn't exist it will translate it, if it does it will pass it back.
 
@@ -2695,6 +2710,7 @@ u32 ram_block_tag_top = 0x0101;
 
 #define ram_translation_region  TRANSLATION_REGION_RAM
 #define rom_translation_region  TRANSLATION_REGION_ROM
+#define bios_translation_region TRANSLATION_REGION_BIOS
 
 #define block_lookup_translate_arm(mem_type, smc_enable)                      \
   translation_result = translate_block_arm(pc, mem_type##_translation_region, \
@@ -2790,17 +2806,28 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
                                                                               \
   switch(pc >> 24)                                                            \
   {                                                                           \
+    case 0x0:                                                                 \
+      bios_region_read_allow();                                               \
+      location = (u16 *)(bios_rom + pc + 0x4000);                             \
+      block_lookup_translate(type, bios, 0);                                  \
+      if(translation_recursion_level == 0)                                    \
+        bios_region_read_allow();                                             \
+      break;                                                                  \
+                                                                              \
     case 0x2:                                                                 \
       location = (u16 *)(ewram + (pc & 0x3FFFF) + 0x40000);                   \
       block_lookup_translate(type, ram, 1);                                   \
+      if(translation_recursion_level == 0)                                    \
+        bios_region_read_protect();                                           \
       break;                                                                  \
                                                                               \
     case 0x3:                                                                 \
       location = (u16 *)(iwram + (pc & 0x7FFF));                              \
       block_lookup_translate(type, ram, 1);                                   \
+      if(translation_recursion_level == 0)                                    \
+        bios_region_read_protect();                                           \
       break;                                                                  \
                                                                               \
-    case 0x0:                                                                 \
     case 0x8 ... 0xD:                                                         \
     {                                                                         \
       u32 hash_target = ((pc * 2654435761U) >> 16) &                          \
@@ -2824,7 +2851,7 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
                                                                               \
         redo:                                                                 \
                                                                               \
-        translation_recursion_level++;                                        \
+        translation_recursion_level++;																				\
         ((u32 *)rom_translation_ptr)[0] = pc;                                 \
         ((u32 **)rom_translation_ptr)[1] = NULL;                              \
         *block_ptr_address = (u32 *)rom_translation_ptr;                      \
@@ -2846,6 +2873,8 @@ u8 function_cc *block_lookup_address_##type(u32 pc)                           \
         if(translation_recursion_level == 0)                                  \
           translate_icache_sync();                                            \
       }                                                                       \
+      if(translation_recursion_level == 0)                                    \
+        bios_region_read_protect();                                           \
       break;                                                                  \
     }                                                                         \
                                                                               \
@@ -3260,6 +3289,12 @@ s32 translate_block_arm(u32 pc, translation_region_type
        rom_translation_cache + ROM_TRANSLATION_CACHE_SIZE -
        TRANSLATION_CACHE_LIMIT_THRESHOLD;
       break;
+
+    case TRANSLATION_REGION_BIOS:
+      translation_ptr = bios_translation_ptr;
+      translation_cache_limit = bios_translation_cache +
+       BIOS_TRANSLATION_CACHE_SIZE;
+      break;
   }
 
   generate_block_prologue();
@@ -3321,6 +3356,10 @@ s32 translate_block_arm(u32 pc, translation_region_type
 
         case TRANSLATION_REGION_ROM:
           flush_translation_cache_rom();
+          break;
+
+        case TRANSLATION_REGION_BIOS:
+          flush_translation_cache_bios();
           break;
       }
       return -1;
@@ -3388,6 +3427,10 @@ s32 translate_block_arm(u32 pc, translation_region_type
 
     case TRANSLATION_REGION_ROM:
       rom_translation_ptr = translation_ptr;
+      break;
+
+    case TRANSLATION_REGION_BIOS:
+      bios_translation_ptr = translation_ptr;
       break;
   }
 
@@ -3461,6 +3504,12 @@ s32 translate_block_thumb(u32 pc, translation_region_type
        rom_translation_cache + ROM_TRANSLATION_CACHE_SIZE -
        TRANSLATION_CACHE_LIMIT_THRESHOLD;
       break;
+
+    case TRANSLATION_REGION_BIOS:
+      translation_ptr = bios_translation_ptr;
+      translation_cache_limit = bios_translation_cache +
+       BIOS_TRANSLATION_CACHE_SIZE;
+      break;
   }
 
   generate_block_prologue();
@@ -3520,6 +3569,10 @@ s32 translate_block_thumb(u32 pc, translation_region_type
 
         case TRANSLATION_REGION_ROM:
           flush_translation_cache_rom();
+          break;
+
+        case TRANSLATION_REGION_BIOS:
+          flush_translation_cache_bios();
           break;
       }
       return -1;
@@ -3588,6 +3641,10 @@ s32 translate_block_thumb(u32 pc, translation_region_type
     case TRANSLATION_REGION_ROM:
       rom_translation_ptr = translation_ptr;
       break;
+
+    case TRANSLATION_REGION_BIOS:
+      bios_translation_ptr = translation_ptr;
+      break;
   }
 
   for(i = 0; i < external_block_exit_position; i++)
@@ -3644,6 +3701,16 @@ void flush_translation_cache_rom(void)
   memset(rom_branch_hash, 0, sizeof(rom_branch_hash));
 }
 
+void flush_translation_cache_bios(void)
+{
+  bios_block_tag_top = 0x0101;
+
+  last_bios_translation_ptr = bios_translation_cache;
+  bios_translation_ptr = bios_translation_cache;
+
+  memset(bios_rom + 0x4000, 0, 0x4000);
+}
+
 void wipe_caches(void)
 {
   /* Ensure we wipe everything including the SMC mirrors */
@@ -3653,6 +3720,7 @@ void wipe_caches(void)
   iwram_code_min = 0;
   iwram_code_max = 0x7FFF;
   flush_translation_cache_ram();
+  flush_translation_cache_bios();
 }
 
 #define cache_dump_prefix ""
@@ -3667,6 +3735,11 @@ void dump_translation_cache(void)
   fd = fopen(cache_dump_prefix "rom_cache.bin", "wb");
   fwrite(rom_translation_cache, 1,
    rom_translation_ptr - rom_translation_cache, fd);
+  fclose(fd);
+
+  fd = fopen(cache_dump_prefix "bios_cache.bin", "wb");
+  fwrite(bios_translation_cache, 1,
+   bios_translation_ptr - bios_translation_cache, fd);
   fclose(fd);
 }
 
