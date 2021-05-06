@@ -143,7 +143,7 @@ static int menu_loop_options(int id, int keys)
   me_loop(e_menu_options, &sel);
 
   if (prev_dynarec_enable != dynarec_enable)
-    wipe_caches();
+    init_caches();
 
   return 0;
 }

@@ -67,9 +67,10 @@ void execute_store_u32_safe(u32 address, u32 source);
 #define reg_a1          ARMREG_R1
 #define reg_a2          ARMREG_R2
 
+/* scratch0 is shared with flags, be careful! */
 #define reg_s0          ARMREG_R9
-#define reg_base        ARMREG_SP
-#define reg_flags       ARMREG_R11
+#define reg_base        ARMREG_R11
+#define reg_flags       ARMREG_R9
 
 #define reg_cycles      ARMREG_R12
 
@@ -110,6 +111,7 @@ void execute_store_u32_safe(u32 address, u32 source);
 #define reg_x5         ARMREG_R8
 
 #define mem_reg        (~0U)
+#define save1_reg      21
 
 /*
 
@@ -1227,6 +1229,30 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   return 0;
 }
 
+#ifdef TRACE_INSTRUCTIONS
+  void trace_instruction(u32 pc)
+  {
+    printf("Executed %x\n", pc);
+  }
+
+  #define emit_trace_instruction(pc)               \
+    generate_save_flags();                         \
+    ARM_LDR_IMM(0, ARMREG_SP, reg_base, 34*4);     \
+    ARM_STMDB_WB(0, ARMREG_SP, 0x500C);            \
+    arm_load_imm_32bit(reg_a0, pc);                \
+    generate_function_call(trace_instruction);     \
+    ARM_LDMIA_WB(0, ARMREG_SP, 0x500C);            \
+    arm_load_imm_32bit(ARMREG_SP, (u32)reg);       \
+    generate_restore_flags();
+  #define emit_trace_thumb_instruction(pc)         \
+    emit_trace_instruction(pc)
+  #define emit_trace_arm_instruction(pc)           \
+    emit_trace_instruction(pc)
+#else
+  #define emit_trace_thumb_instruction(pc)
+  #define emit_trace_arm_instruction(pc)
+#endif
+
 #define arm_psr_load_new_reg()                                                \
   generate_load_reg(reg_a0, rm)                                               \
 
@@ -1391,7 +1417,6 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 #define arm_block_memory_adjust_pc_load()                                     \
   if(reg_list & 0x8000)                                                       \
   {                                                                           \
-    generate_mov(reg_a0, reg_rv);                                             \
     generate_indirect_branch_arm();                                           \
   }                                                                           \
 
@@ -1439,12 +1464,14 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   arm_block_memory_offset_##offset_type();                                    \
   arm_block_memory_writeback_##access_type(writeback_type);                   \
   ARM_BIC_REG_IMM(0, reg_s0, reg_s0, 0x03, 0);                                \
+  generate_store_reg(reg_s0, save1_reg);                                      \
                                                                               \
   for(i = 0; i < 16; i++)                                                     \
   {                                                                           \
     if((reg_list >> i) & 0x01)                                                \
     {                                                                         \
       cycle_count++;                                                          \
+      generate_load_reg(reg_s0, save1_reg);                                   \
       generate_add_reg_reg_imm(reg_a0, reg_s0, offset, 0);                    \
       if(reg_list & ~((2 << i) - 1))                                          \
       {                                                                       \
@@ -1469,12 +1496,12 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   generate_load_reg(reg_a0, rn);                                              \
   generate_function_call(execute_load_##type);                                \
   write32((pc + 8));                                                          \
-  generate_mov(reg_s0, reg_rv);                                               \
+  generate_mov(reg_a2, reg_rv);                                               \
   generate_load_reg(reg_a0, rn);                                              \
   generate_load_reg(reg_a1, rm);                                              \
+  generate_store_reg(reg_a2, rd);                                             \
   generate_function_call(execute_store_##type);                               \
   write32((pc + 4));                                                          \
-  generate_store_reg(reg_s0, rd);                                             \
 }                                                                             \
 
 
@@ -1705,13 +1732,14 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 #define thumb_block_memory_extra_down()                                       \
 
 #define thumb_block_memory_extra_pop_pc()                                     \
+  generate_load_reg(reg_s0, save1_reg);                                       \
   generate_add_reg_reg_imm(reg_a0, reg_s0, (bit_count[reg_list] * 4), 0);     \
   generate_function_call(execute_load_u32);                                   \
   write32((pc + 4));                                                          \
-  generate_mov(reg_a0, reg_rv);                                               \
   generate_indirect_branch_cycle_update(thumb)                                \
 
 #define thumb_block_memory_extra_push_lr(base_reg)                            \
+  generate_load_reg(reg_s0, save1_reg);                                       \
   generate_add_reg_reg_imm(reg_a0, reg_s0, (bit_count[reg_list] * 4), 0);     \
   generate_load_reg(reg_a1, REG_LR);                                          \
   generate_function_call(execute_store_u32_safe)                              \
@@ -1758,12 +1786,14 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   ARM_BIC_REG_IMM(0, reg_s0, reg_s0, 0x03, 0);                                \
   thumb_block_address_preadjust_##pre_op();                                   \
   thumb_block_address_postadjust_##post_op(base_reg);                         \
+  generate_store_reg(reg_s0, save1_reg);                                      \
                                                                               \
   for(i = 0; i < 8; i++)                                                      \
   {                                                                           \
     if((reg_list >> i) & 0x01)                                                \
     {                                                                         \
       cycle_count++;                                                          \
+      generate_load_reg(reg_s0, save1_reg);                                   \
       generate_add_reg_reg_imm(reg_a0, reg_s0, offset, 0);                    \
       if(reg_list & ~((2 << i) - 1))                                          \
       {                                                                       \

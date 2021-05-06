@@ -419,6 +419,8 @@ int main(int argc, char *argv[])
                                  PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
     ram_translation_cache = mmap(NULL, RAM_TRANSLATION_CACHE_SIZE,
                                  PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
+    bios_translation_cache = mmap(NULL, BIOS_TRANSLATION_CACHE_SIZE,
+                                 PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANON | MAP_PRIVATE, -1, 0);
 #endif
   }
   else
@@ -481,6 +483,7 @@ void quit()
 #if defined(HAVE_MMAP) && defined(HAVE_DYNAREC)
   munmap(rom_translation_cache, ROM_TRANSLATION_CACHE_SIZE);
   munmap(ram_translation_cache, RAM_TRANSLATION_CACHE_SIZE);
+  munmap(bios_translation_cache, BIOS_TRANSLATION_CACHE_SIZE);
 #endif
 
   menu_finish();
