@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#include "zip.h"
 
 /* Sound */
 #define gbc_sound_tone_control_low(channel, address)                          \
@@ -2381,10 +2382,15 @@ char gamepak_filename[512];
 
 u32 load_gamepak(const char *name)
 {
+   char *dot_position = strrchr(name, '.');
+   s32 file_size;
    char cheats_filename[256];
    char *p;
 
-   s32 file_size = load_gamepak_raw(name);
+   if(!strcmp(dot_position, ".zip"))
+      file_size = load_file_zip(name);
+   else
+      file_size = load_gamepak_raw(name);
 
    if(file_size == -1)
       return -1;
