@@ -388,13 +388,6 @@ int main(int argc, char *argv[])
   if(!gba_screen_pixels)
     gba_screen_pixels = (uint16_t*)calloc(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT, sizeof(uint16_t));
 
-	mmenu = dlopen("libmmenu.so", RTLD_LAZY);
-	if (mmenu) {
-		ResumeSlot_t ResumeSlot = (ResumeSlot_t)dlsym(mmenu, "ResumeSlot");
-		if (ResumeSlot) resume_slot = ResumeSlot();
-	}
-	strcpy(rom_path, filename);
-	
   if (plat_init()) {
     return -1;
   };
@@ -430,6 +423,13 @@ int main(int argc, char *argv[])
 #endif
 
   reset_gba();
+  
+	mmenu = dlopen("libmmenu.so", RTLD_LAZY);
+	if (mmenu) {
+		ResumeSlot_t ResumeSlot = (ResumeSlot_t)dlsym(mmenu, "ResumeSlot");
+		if (ResumeSlot) resume_slot = ResumeSlot();
+	}
+	strcpy(rom_path, filename);
   
   if (resume_slot!=-1) {
 	state_slot = resume_slot;
