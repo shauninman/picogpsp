@@ -872,7 +872,6 @@ bool retro_load_game(const struct retro_game_info* info)
       strcpy(filename_bios, main_path);
 
    bool bios_loaded = false;
-   printf("USE %d\n", (int)selected_bios);
    if (selected_bios == auto_detect || selected_bios == official_bios)
    {
      bios_loaded = true;

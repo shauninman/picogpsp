@@ -319,7 +319,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
 
 
 #define generate_load_pc(ireg, new_pc)                                        \
-  arm_load_imm_32bit(ireg, new_pc)                                            \
+  arm_load_imm_32bit(ireg, (new_pc))                                          \
 
 #define generate_load_imm(ireg, imm, imm_ror)                                 \
   ARM_MOV_REG_IMM(0, ireg, imm, imm_ror)                                      \
@@ -1657,6 +1657,10 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 }                                                                             \
 
 /* Operation types: imm, mem_reg, mem_imm */
+
+#define thumb_load_pc_pool_const(reg_rd, value)                               \
+  generate_load_pc(reg_a0, (value));                                          \
+  generate_store_reg(reg_a0, reg_rd)
 
 #define thumb_access_memory_load(mem_type, _rd)                               \
   cycle_count += 2;                                                           \

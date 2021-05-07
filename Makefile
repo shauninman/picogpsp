@@ -376,6 +376,7 @@ else ifeq ($(platform), mips32)
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC -DPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	CFLAGS += -fno-caller-saves
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 

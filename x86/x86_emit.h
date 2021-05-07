@@ -325,7 +325,7 @@ typedef enum
   x86_emit_mov_reg_mem(reg_##ireg, reg_base, reg_index * 4);                  \
 
 #define generate_load_pc(ireg, new_pc)                                        \
-  x86_emit_mov_reg_imm(reg_##ireg, new_pc)                                    \
+  x86_emit_mov_reg_imm(reg_##ireg, (new_pc))                                  \
 
 #define generate_load_imm(ireg, imm)                                          \
   x86_emit_mov_reg_imm(reg_##ireg, imm)                                       \
@@ -1893,6 +1893,10 @@ u32 function_cc execute_ror_imm_op(u32 value, u32 shift)
 }                                                                             \
 
 // Operation types: imm, mem_reg, mem_imm
+
+#define thumb_load_pc_pool_const(reg_rd, value)                               \
+  generate_load_pc(a0, (value));                                              \
+  generate_store_reg(a0, reg_rd)
 
 #define thumb_access_memory_load(mem_type, reg_rd)                            \
   cycle_count += 2;                                                           \

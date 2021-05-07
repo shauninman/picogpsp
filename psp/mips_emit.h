@@ -535,14 +535,14 @@ u32 arm_to_mips_reg[] =
 
 #define generate_load_pc(ireg, new_pc)                                        \
 {                                                                             \
-  s32 pc_delta = new_pc - stored_pc;                                          \
+  s32 pc_delta = (new_pc) - (stored_pc);                                      \
   if((pc_delta >= -32768) && (pc_delta <= 32767))                             \
   {                                                                           \
     mips_emit_addiu(ireg, reg_pc, pc_delta);                                  \
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    generate_load_imm(ireg, new_pc);                                          \
+    generate_load_imm(ireg, (new_pc));                                        \
   }                                                                           \
 }                                                                             \
 
@@ -1696,6 +1696,9 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   arm_decode_psr_##op_type(opcode);                                           \
   arm_psr_##transfer_type(op_type, psr_reg);                                  \
 }                                                                             \
+
+#define thumb_load_pc_pool_const(rd, value)                                   \
+  generate_load_imm(arm_to_mips_reg[rd], (value));                            \
 
 #define arm_access_memory_load(mem_type)                                      \
   cycle_count += 2;                                                           \
