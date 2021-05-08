@@ -343,6 +343,7 @@ int main(int argc, char *argv[])
     printf("Using built-in BIOS\n");
   }
 
+  getcwd(main_path, 512);
   plat_get_root_dir(save_path, 512);
 
   if (!gamepak_rom)
