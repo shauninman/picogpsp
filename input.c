@@ -19,10 +19,17 @@
 
 #include "common.h"
 
+bool libretro_supports_bitmasks    = false;
+bool libretro_supports_ff_override = false;
+bool libretro_ff_enabled           = false;
+bool libretro_ff_enabled_prev      = false;
+
 static u32 old_key = 0;
 static retro_input_state_t input_state_cb;
 
 void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
+
+extern void set_fastforward_override(bool fastforward);
 
 static void trigger_key(u32 key)
 {
@@ -53,14 +60,37 @@ u32 update_input(void)
    if (!input_state_cb)
       return 0;
 
-   for (i = 0; i < sizeof(btn_map) / sizeof(map); i++)
-      new_key |= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, btn_map[i].retropad) ? btn_map[i].gba : 0;
+   if (libretro_supports_bitmasks)
+   {
+      int16_t ret = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
+
+      for (i = 0; i < sizeof(btn_map) / sizeof(map); i++)
+         new_key |= (ret & (1 << btn_map[i].retropad)) ? btn_map[i].gba : 0;
+
+      libretro_ff_enabled = libretro_supports_ff_override &&
+            (ret & (1 << RETRO_DEVICE_ID_JOYPAD_R2));
+   }
+   else
+   {
+      for (i = 0; i < sizeof(btn_map) / sizeof(map); i++)
+         new_key |= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, btn_map[i].retropad) ? btn_map[i].gba : 0;
+
+       libretro_ff_enabled = libretro_supports_ff_override &&
+            input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
+   }
 
    if ((new_key | old_key) != old_key)
       trigger_key(new_key);
 
    old_key = new_key;
    io_registers[REG_P1] = (~old_key) & 0x3FF;
+
+   /* Handle fast forward button */
+   if (libretro_ff_enabled != libretro_ff_enabled_prev)
+   {
+      set_fastforward_override(libretro_ff_enabled);
+      libretro_ff_enabled_prev = libretro_ff_enabled;
+   }
 
    return 0;
 }

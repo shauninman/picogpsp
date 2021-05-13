@@ -56,6 +56,11 @@ static const map btn_map[] = {
    { RETRO_DEVICE_ID_JOYPAD_A,      BUTTON_A }
 };
 
+extern bool libretro_supports_bitmasks;
+extern bool libretro_supports_ff_override;
+extern bool libretro_ff_enabled;
+extern bool libretro_ff_enabled_prev;
+
 void init_input(void);
 u32 update_input(void);
 void input_write_savestate(void);
