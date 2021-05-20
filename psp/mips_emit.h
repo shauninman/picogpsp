@@ -558,9 +558,6 @@ u32 arm_to_mips_reg[] =
 #define generate_shift_right_arithmetic(ireg, imm)                            \
   mips_emit_sra(ireg, ireg, imm)                                              \
 
-#define generate_rotate_right(ireg, imm)                                      \
-  mips_emit_rotr(ireg, ireg, imm)                                             \
-
 #define generate_add(ireg_dest, ireg_src)                                     \
   mips_emit_addu(ireg_dest, ireg_dest, ireg_src)                              \
 

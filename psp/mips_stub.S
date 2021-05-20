@@ -34,7 +34,6 @@
 .global execute_lsl_flags_reg
 .global execute_lsr_flags_reg
 .global execute_asr_flags_reg
-.global execute_ror_flags_reg
 .global execute_arm_translate_internal
 .global icache_region_sync
 .global reg_check
@@ -283,7 +282,7 @@ return_to_main:
   lw $fp, 32($sp)
   lw $ra, 36($sp)
   jr $ra                          # Return to main
-  add $sp, $sp, 48                # Restore stack pointer (delay slot)
+  addiu $sp, $sp, 48              # Restore stack pointer (delay slot)
 
 
 # Perform an indirect branch.
@@ -513,11 +512,11 @@ lsl_shift_high:
   bne $1, $0, lsl_shift_done      # jump if shift == 32
   andi $22, $4, 1                 # c flag = value & 0x01 (delay)
 
-  add $22, $0, $0                 # c flag = 0 otherwise
+  addu $22, $0, $0                # c flag = 0 otherwise
 
 lsl_shift_done:
   jr $ra                          # return
-  add $4, $0, $0                  # value = 0 no matter what
+  addu $4, $0, $0                 # value = 0 no matter what
 
 
 execute_lsr_flags_reg:
@@ -538,11 +537,11 @@ lsr_shift_high:
   bne $1, $0, lsr_shift_done      # jump if shift == 32
   srl $22, $4, 31                 # c flag = value >> 31 (delay)
 
-  add $22, $0, $0                 # c flag = 0 otherwise
+  addu $22, $0, $0                # c flag = 0 otherwise
 
 lsr_shift_done:
   jr $ra                          # return
-  add $4, $0, $0                  # value = 0 no matter what
+  addu $4, $0, $0                 # value = 0 no matter what
 
 
 execute_asr_flags_reg:
@@ -564,22 +563,11 @@ asr_shift_high:
   andi $22, $4, 1                 # c flag = value & 0x01
 
 
-execute_ror_flags_reg:
-  beq $5, $0, ror_zero_shift      # is the shift zero?
-  addiu $1, $5, -1                # $1 = (shift - 1) (delay)
-
-  srav $1, $4, $1                 # $1 = (value >> (shift - 1))
-  andi $22, $1, 1                 # c flag = $1 & 1
-
-ror_zero_shift:
-  jr $ra                          # return
-  rotrv $4, $4, $5                # return (value ror shift) delay
-
 # $4: cycle counter argument
 # $5: pointer to reg
 
 execute_arm_translate_internal:
-  add $sp, $sp, -48               # Store the main thread context
+  addiu $sp, $sp, -48             # Store the main thread context
   sw $s0,  0($sp)
   sw $s1,  4($sp)
   sw $s2,  8($sp)
