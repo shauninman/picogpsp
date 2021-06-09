@@ -321,9 +321,6 @@ u32 gamepak_size;
 
 dma_transfer_type dma[4];
 
-u8 *memory_regions[16];
-u32 memory_limits[16];
-
 typedef struct
 {
   u32 page_timestamp;
@@ -3195,38 +3192,6 @@ void init_gamepak_buffer(void)
 void init_memory(void)
 {
   u32 map_offset = 0;
-
-  memory_regions[0x00] = (u8 *)bios_rom;
-  memory_regions[0x01] = (u8 *)bios_rom;
-  memory_regions[0x02] = (u8 *)ewram;
-  memory_regions[0x03] = (u8 *)iwram + 0x8000;
-  memory_regions[0x04] = (u8 *)io_registers;
-  memory_regions[0x05] = (u8 *)palette_ram;
-  memory_regions[0x06] = (u8 *)vram;
-  memory_regions[0x07] = (u8 *)oam_ram;
-  memory_regions[0x08] = (u8 *)gamepak_rom;
-  memory_regions[0x09] = (u8 *)(gamepak_rom + 0xFFFFFF);
-  memory_regions[0x0A] = (u8 *)gamepak_rom;
-  memory_regions[0x0B] = (u8 *)(gamepak_rom + 0xFFFFFF);
-  memory_regions[0x0C] = (u8 *)gamepak_rom;
-  memory_regions[0x0D] = (u8 *)(gamepak_rom + 0xFFFFFF);
-  memory_regions[0x0E] = (u8 *)gamepak_backup;
-
-  memory_limits[0x00] = 0x3FFF;
-  memory_limits[0x01] = 0x3FFF;
-  memory_limits[0x02] = 0x3FFFF;
-  memory_limits[0x03] = 0x7FFF;
-  memory_limits[0x04] = 0x7FFF;
-  memory_limits[0x05] = 0x3FF;
-  memory_limits[0x06] = 0x17FFF;
-  memory_limits[0x07] = 0x3FF;
-  memory_limits[0x08] = 0x1FFFFFF;
-  memory_limits[0x09] = 0x1FFFFFF;
-  memory_limits[0x0A] = 0x1FFFFFF;
-  memory_limits[0x0B] = 0x1FFFFFF;
-  memory_limits[0x0C] = 0x1FFFFFF;
-  memory_limits[0x0D] = 0x1FFFFFF;
-  memory_limits[0x0E] = 0xFFFF;
 
   // Fill memory map regions, areas marked as NULL must be checked directly
   map_region(read, 0x0000000, 0x1000000, 1, bios_rom);

@@ -684,14 +684,6 @@ void print_register_usage(void)
   reg[REG_CPSR] = (n_flag << 31) | (z_flag << 30) | (c_flag << 29) |          \
    (v_flag << 28) | (reg[REG_CPSR] & 0xFF)                                    \
 
-#define memory_region(r_dest, l_dest, address)                                \
-  r_dest = memory_regions[address >> 24];                                     \
-  l_dest = memory_limits[address >> 24]                                       \
-
-
-#define pc_region()                                                           \
-  memory_region(pc_region, pc_limit, pc)                                      \
-
 #define check_pc_region()                                                     \
   new_pc_region = (pc >> 15);                                                 \
   if(new_pc_region != pc_region)                                              \
