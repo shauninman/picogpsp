@@ -201,18 +201,18 @@ typedef enum
 
 #define mips_emit_reg(opcode, rs, rt, rd, shift, function)                    \
   *((u32 *)translation_ptr) = (mips_opcode_##opcode << 26) |                  \
-  (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) | function;             \
+  (rs << 21) | (rt << 16) | (rd << 11) | ((shift) << 6) | function;           \
   translation_ptr += 4                                                        \
 
 #define mips_emit_special(function, rs, rt, rd, shift)                        \
   *((u32 *)translation_ptr) = (mips_opcode_special << 26) |                   \
-   (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) |                      \
+   (rs << 21) | (rt << 16) | (rd << 11) | ((shift) << 6) |                    \
    mips_special_##function;                                                   \
   translation_ptr += 4                                                        \
 
 #define mips_emit_special2(function, rs, rt, rd, shift)                       \
   *((u32 *)translation_ptr) = (mips_opcode_special2 << 26) |                  \
-   (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) |                      \
+   (rs << 21) | (rt << 16) | (rd << 11) | ((shift) << 6) |                    \
    mips_special2_##function;                                                  \
   translation_ptr += 4                                                        \
 
@@ -2570,12 +2570,12 @@ u8 swi_hle_handle[256] =
   emit_save_regs(true);                                                       \
   genccall(fnptr);                                                            \
   mips_emit_andi(reg_a0, reg_a0, (mask));                                     \
-  emit_restore_regs(true);                                                    \
   mips_emit_lw(mips_reg_ra, reg_base, ReOff_SaveR1);                          \
-  mips_emit_jr(mips_reg_ra);
+  emit_restore_regs(true);
 
 #define emit_mem_call(fnptr, mask)      \
   emit_mem_call_ds(fnptr, mask)         \
+  mips_emit_jr(mips_reg_ra);            \
   mips_emit_nop();
 
 // Pointer table to stubs, indexed by type and region
@@ -2756,9 +2756,8 @@ static void emit_pmemld_stub(
       mips_emit_seb(reg_rv, reg_rv);
     } else if (size == 2) {
       mips_emit_rotr(reg_rv, reg_rv, 8 * alignment);
-    } else {
-      mips_emit_nop();
     }
+    generate_function_return_swap_delay();
     *tr_ptr = translation_ptr;
     return;
   } else {
