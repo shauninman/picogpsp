@@ -58,8 +58,6 @@ u32 execute_lsr_flags_reg(u32 value, u32 shift);
 u32 execute_asr_flags_reg(u32 value, u32 shift);
 u32 execute_ror_flags_reg(u32 value, u32 shift);
 
-void reg_check();
-
 typedef enum
 {
   mips_reg_zero,
@@ -2581,6 +2579,7 @@ u8 swi_hle_handle[256] =
 // Pointer table to stubs, indexed by type and region
 extern u32 tmemld[11][16];
 extern u32 tmemst[ 4][16];
+extern u32 thnjal[15*16];
 void mips_lookup_pc();
 void smc_write();
 cpu_alert_type write_io_register8 (u32 address, u32 value);
@@ -3183,14 +3182,14 @@ static void emit_phand(
 
   mips_emit_srl(reg_temp, reg_a0, 24);
   #ifdef PSP
-  mips_emit_addiu(reg_rv, reg_zero, 15*4);  // Table limit (max)
-  mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
-  mips_emit_min(reg_temp, reg_temp, reg_rv);// Do not overflow table
+    mips_emit_addiu(reg_rv, reg_zero, 15*4);  // Table limit (max)
+    mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
+    mips_emit_min(reg_temp, reg_temp, reg_rv);// Do not overflow table
   #else
-  mips_emit_sltiu(reg_rv, reg_temp, 0x0F);  // Check for addr 0x1XXX.. 0xFXXX
-  mips_emit_b(bne, reg_zero, reg_rv, 2);    // Skip two insts (well, cant skip ds)
-  mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
-  mips_emit_addiu(reg_temp, reg_zero, 15*4);// Simulate ld/st to 0x0FXXX (open/ignore)
+    mips_emit_sltiu(reg_rv, reg_temp, 0x0F);  // Check for addr 0x1XXX.. 0xFXXX
+    mips_emit_b(bne, reg_zero, reg_rv, 2);    // Skip two insts (well, cant skip ds)
+    mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
+    mips_emit_addiu(reg_temp, reg_zero, 15*4);// Simulate ld/st to 0x0FXXX (open/ignore)
   #endif
 
   // Stores or byte-accesses do not care about alignment
@@ -3200,23 +3199,23 @@ static void emit_phand(
   }
 
   unsigned tbloff = 256 + 3*1024 + 220 + 4 * toff;  // Skip regs and RAMs
-  mips_emit_addu(reg_rv, reg_temp, reg_base); // Add to the base_reg the table offset
-  mips_emit_lw(reg_rv, reg_rv, tbloff);       // Read addr from table
-  mips_emit_sll(reg_temp, reg_rv, 4);         // 26 bit immediate to the MSB
-  mips_emit_ori(reg_temp, reg_temp, 0x3);     // JAL opcode
-  mips_emit_rotr(reg_temp, reg_temp, 6);      // Swap opcode and immediate
-  mips_emit_sw(reg_temp, mips_reg_ra, -8);    // Patch instruction!
+  unsigned tbloff2 = tbloff + 960;              // JAL opcode table
+  mips_emit_addu(reg_temp, reg_temp, reg_base); // Add to the base_reg the table offset
+  mips_emit_lw(reg_rv,   reg_temp, tbloff);     // Get func addr from 1st table
+  mips_emit_lw(reg_temp, reg_temp, tbloff2);    // Get opcode from 2nd table
+  mips_emit_sw(reg_temp, mips_reg_ra, -8);      // Patch instruction!
 
   #ifdef PSP
-  mips_emit_cache(0x1A, mips_reg_ra, -8);
-  mips_emit_jr(reg_rv);                       // Jump directly to target for speed
-  mips_emit_cache(0x08, mips_reg_ra, -8);
+    mips_emit_cache(0x1A, mips_reg_ra, -8);
+    mips_emit_jr(reg_rv);                       // Jump directly to target for speed
+    mips_emit_cache(0x08, mips_reg_ra, -8);
   #else
-  mips_emit_jr(reg_rv);
-  mips_emit_synci(mips_reg_ra, -8);
+    mips_emit_jr(reg_rv);
+    mips_emit_synci(mips_reg_ra, -8);
   #endif
 
-  // Round up handlers to 16 instructions for easy addressing :)
+  // Round up handlers to 16 instructions for easy addressing
+  // PSP/MIPS32r2 uses up to 12 insts
   while (translation_ptr - *tr_ptr < 64) {
     mips_emit_nop();
   }
@@ -3329,6 +3328,11 @@ void init_emitter() {
     handler(2, &stinfo[i], 2, false, &translation_ptr);  // st u32
     handler(3, &stinfo[i], 2, true,  &translation_ptr);  // st aligned 32
   }
+
+  // Generate JAL tables
+  u32 *tmemptr = &tmemld[0][0];
+  for (i = 0; i < 15*16; i++)
+    thnjal[i] = ((tmemptr[i] >> 2) & 0x3FFFFFF) | (mips_opcode_jal << 26);
 }
 
 u32 execute_arm_translate_internal(u32 cycles, void *regptr);

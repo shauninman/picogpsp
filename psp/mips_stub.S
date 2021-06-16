@@ -35,12 +35,9 @@
 .global execute_lsr_flags_reg
 .global execute_asr_flags_reg
 .global execute_arm_translate_internal
-.global icache_region_sync
-.global reg_check
 .global palette_ram
 .global palette_ram_converted
 .global oam_ram
-.global init_emitter
 .global mips_lookup_pc
 .global smc_write
 .global mips_cheat_hook
@@ -49,7 +46,7 @@
 .global memory_map_read
 .global tmemld
 .global tmemst
-.global tmemst
+.global thnjal
 .global reg
 .global spsr
 .global reg_mode
@@ -126,7 +123,7 @@
 .equ SUPERVISOR_SPSR,     (3 * 4 + SPSR_BASE)
 .equ SUPERVISOR_LR,       ((3 * (7 * 4)) + (6 * 4) + REGMODE_BASE)
 .equ FNPTRS_MEMOPS,       (REGMODE_BASE + 196)
-.equ FNPTRS_BASE,         (FNPTRS_MEMOPS + 960)
+.equ FNPTRS_BASE,         (FNPTRS_MEMOPS + 960*2)
 
 .set noat
 .set noreorder
@@ -640,6 +637,8 @@ tmemld:
   .space 704
 tmemst:
   .space 256
+thnjal:
+  .space 960
 fnptrs:
   .long update_gba                     # 0
   .long block_lookup_address_arm       # 1
