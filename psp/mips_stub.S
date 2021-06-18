@@ -130,9 +130,25 @@
 
 # make sure $16 has the register base for these macros
 
-.macro collapse_flag flag_reg, shift
-  ins $2, $\flag_reg, \shift, 1    # insert flag into CPSR
-.endm
+#ifdef MIPS_HAS_R2_INSTS
+  .macro collapse_flag flag_reg, shift
+    ins $2, $\flag_reg, \shift, 1    # insert flag into CPSR
+  .endm
+
+  .macro extract_flag shift, flag_reg
+    ext $\flag_reg, $1, \shift, 1   # extract flag from CPSR
+  .endm
+#else
+  .macro collapse_flag flag_reg, shift
+    sll $1, $\flag_reg, \shift
+    or  $2, $2, $1
+  .endm
+
+  .macro extract_flag shift, flag_reg
+    srl $\flag_reg, $1, \shift
+    andi $\flag_reg, $\flag_reg, 1
+  .endm
+#endif
 
 .macro collapse_flags
   lw $2, REG_CPSR($16)            # load CPSR
@@ -142,10 +158,6 @@
   collapse_flag 22, 29
   collapse_flag 23, 28
   sw $2, REG_CPSR($16)            # store CPSR
-.endm
-
-.macro extract_flag shift, flag_reg
-  ext $\flag_reg, $1, \shift, 1   # extract flag from CPSR
 .endm
 
 .macro extract_flags_body         # extract flags from $1
@@ -403,7 +415,8 @@ execute_swi:
   sw $4, SUPERVISOR_LR($16)       # store next PC in the supervisor's LR
   collapse_flags                  # get cpsr in $2
   sw $2, SUPERVISOR_SPSR($16)     # save cpsr in SUPERVISOR_CPSR
-  ins $2, $0, 0, 6                # zero out bottom 6 bits of CPSR
+  srl $2, $2, 6                   # zero out bottom 6 bits of CPSR
+  sll $2, $2, 6
   ori $2, 0x13                    # set mode to supervisor
   sw $2, REG_CPSR($16)            # write back CPSR
   save_registers
