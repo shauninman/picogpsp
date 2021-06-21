@@ -18,7 +18,19 @@
 
 #include "../gpsp_config.h"
 
-.set mips32r2
+// This is also defined in sys/asm.h but doesn't seem portable?
+#ifdef __mips64
+  .set mips64
+  #define SZREG 8
+  #define REG_L ld
+  #define REG_S sd
+#else
+  .set mips32r2
+  #define SZREG 4
+  #define REG_L lw
+  #define REG_S sw
+#endif
+
 .align 4
 
 .global mips_update_gba
@@ -117,6 +129,7 @@
 .equ COMPLETED_FRAME,     (32 * 4)
 .equ OAM_UPDATED,         (33 * 4)
 .equ GP_SAVE,             (34 * 4)
+.equ GP_SAVE_HI,          (35 * 4)
 
 .equ SPSR_BASE,           (0x100 + 0x400 * 3)
 .equ REGMODE_BASE,        (SPSR_BASE + 24)
@@ -190,7 +203,7 @@
   sw $28, REG_R13($16)
   sw $30, REG_R14($16)
 
-  lw $28, GP_SAVE($16)
+  REG_L $28, GP_SAVE($16)
 .endm
 
 .macro restore_registers
@@ -279,20 +292,19 @@ mips_cheat_hook:
 # Loads the main context and returns to it.
 # ARM regs must be saved before branching here
 return_to_main:
-  lw $28, GP_SAVE($16)            # Restore previous state
-  lw $s0,  0($sp)
-  lw $s1,  4($sp)
-  lw $s2,  8($sp)
-  lw $s3, 12($sp)
-  lw $s4, 16($sp)
-  lw $s5, 20($sp)
-  lw $s6, 24($sp)
-  lw $s7, 28($sp)
-  lw $fp, 32($sp)
-  lw $ra, 36($sp)
+  REG_L $28, GP_SAVE($16)            # Restore previous state
+  REG_L $s0, 0*SZREG($sp)
+  REG_L $s1, 1*SZREG($sp)
+  REG_L $s2, 2*SZREG($sp)
+  REG_L $s3, 3*SZREG($sp)
+  REG_L $s4, 4*SZREG($sp)
+  REG_L $s5, 5*SZREG($sp)
+  REG_L $s6, 6*SZREG($sp)
+  REG_L $s7, 7*SZREG($sp)
+  REG_L $fp, 8*SZREG($sp)
+  REG_L $ra, 9*SZREG($sp)
   jr $ra                          # Return to main
-  addiu $sp, $sp, 48              # Restore stack pointer (delay slot)
-
+  addiu $sp, $sp, 80              # Restore stack pointer (delay slot)
 
 # Perform an indirect branch.
 
@@ -577,20 +589,21 @@ asr_shift_high:
 # $5: pointer to reg
 
 execute_arm_translate_internal:
-  addiu $sp, $sp, -48             # Store the main thread context
-  sw $s0,  0($sp)
-  sw $s1,  4($sp)
-  sw $s2,  8($sp)
-  sw $s3, 12($sp)
-  sw $s4, 16($sp)
-  sw $s5, 20($sp)
-  sw $s6, 24($sp)
-  sw $s7, 28($sp)
-  sw $fp, 32($sp)
-  sw $ra, 36($sp)
+
+  addiu $sp, $sp, -80             # Store the main thread context
+  REG_S $s0, 0*SZREG($sp)
+  REG_S $s1, 1*SZREG($sp)
+  REG_S $s2, 2*SZREG($sp)
+  REG_S $s3, 3*SZREG($sp)
+  REG_S $s4, 4*SZREG($sp)
+  REG_S $s5, 5*SZREG($sp)
+  REG_S $s6, 6*SZREG($sp)
+  REG_S $s7, 7*SZREG($sp)
+  REG_S $fp, 8*SZREG($sp)
+  REG_S $ra, 9*SZREG($sp)
 
   move $16, $5
-  sw $28, GP_SAVE($16)
+  REG_S $28, GP_SAVE($16)
 
   addu $17, $4, $0                # load cycle counter register
 

@@ -379,6 +379,16 @@ else ifeq ($(platform), mips32)
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 
+# MIPS64
+else ifeq ($(platform), mips64n32)
+	TARGET := $(TARGET_NAME)_libretro.so
+	SHARED := -shared -nostdlib -Wl,--version-script=link.T
+	fpic := -fPIC -DPIC
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips64 -mabi=n32 -mhard-float
+	CFLAGS += -fno-caller-saves
+	HAVE_DYNAREC := 1
+	CPU_ARCH := mips
+
 # emscripten
 else ifeq ($(platform), emscripten)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).bc
