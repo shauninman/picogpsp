@@ -200,7 +200,7 @@ else ifeq ($(platform), psp1)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).a
 	CC = psp-gcc$(EXE_EXT)
 	AR = psp-ar$(EXE_EXT)
-	CFLAGS += -DPSP -G0 -DUSE_BGR_FORMAT
+	CFLAGS += -DPSP -G0 -DUSE_BGR_FORMAT -DMIPS_HAS_R2_INSTS
 	CFLAGS += -I$(shell psp-config --pspsdk-path)/include
 	CFLAGS += -march=allegrex -mfp32 -mgp32 -mlong32 -mabi=eabi
 	CFLAGS += -fomit-frame-pointer -ffast-math
@@ -375,7 +375,16 @@ else ifeq ($(platform), mips32)
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC -DPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
-	CFLAGS += -fno-caller-saves
+	CFLAGS += -DMIPS_HAS_R2_INSTS
+	HAVE_DYNAREC := 1
+	CPU_ARCH := mips
+
+# MIPS64
+else ifeq ($(platform), mips64n32)
+	TARGET := $(TARGET_NAME)_libretro.so
+	SHARED := -shared -nostdlib -Wl,--version-script=link.T
+	fpic := -fPIC -DPIC
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips64 -mabi=n32 -mhard-float
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 
@@ -384,7 +393,7 @@ else ifeq ($(platform), emscripten)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).bc
 	STATIC_LINKING = 1
 
-# GCW0
+# GCW0 (OD and OD Beta)
 else ifeq ($(platform), gcw0)
 	TARGET := $(TARGET_NAME)_libretro.so
 	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
@@ -393,22 +402,7 @@ else ifeq ($(platform), gcw0)
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC -DPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
-	HAVE_DYNAREC := 1
-	CPU_ARCH := mips
-
-# GCW0 (OpenDingux Beta)
-else ifeq ($(platform), gcw0-odbeta)
-	TARGET := $(TARGET_NAME)_libretro.so
-	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
-	CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
-	AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
-	SHARED := -shared -nostdlib -Wl,--version-script=link.T
-	fpic := -fPIC -DPIC
-	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
-	# The ASM code and/or MIPS dynarec of GPSP does not respect
-	# MIPS calling conventions, so we must use '-fno-caller-saves'
-	# for the OpenDingux Beta build
-	CFLAGS += -fno-caller-saves
+	CFLAGS += -DMIPS_HAS_R2_INSTS
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 
