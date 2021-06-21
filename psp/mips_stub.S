@@ -293,18 +293,18 @@ mips_cheat_hook:
 # ARM regs must be saved before branching here
 return_to_main:
   REG_L $28, GP_SAVE($16)            # Restore previous state
-  REG_L $s0, 0*SZREG($sp)
-  REG_L $s1, 1*SZREG($sp)
-  REG_L $s2, 2*SZREG($sp)
-  REG_L $s3, 3*SZREG($sp)
-  REG_L $s4, 4*SZREG($sp)
-  REG_L $s5, 5*SZREG($sp)
-  REG_L $s6, 6*SZREG($sp)
-  REG_L $s7, 7*SZREG($sp)
-  REG_L $fp, 8*SZREG($sp)
-  REG_L $ra, 9*SZREG($sp)
+  REG_L $s0,  4*SZREG($sp)
+  REG_L $s1,  5*SZREG($sp)
+  REG_L $s2,  6*SZREG($sp)
+  REG_L $s3,  7*SZREG($sp)
+  REG_L $s4,  8*SZREG($sp)
+  REG_L $s5,  9*SZREG($sp)
+  REG_L $s6, 10*SZREG($sp)
+  REG_L $s7, 11*SZREG($sp)
+  REG_L $fp, 12*SZREG($sp)
+  REG_L $ra, 13*SZREG($sp)
   jr $ra                          # Return to main
-  addiu $sp, $sp, 80              # Restore stack pointer (delay slot)
+  addiu $sp, $sp, 112             # Restore stack pointer (delay slot)
 
 # Perform an indirect branch.
 
@@ -590,17 +590,17 @@ asr_shift_high:
 
 execute_arm_translate_internal:
 
-  addiu $sp, $sp, -80             # Store the main thread context
-  REG_S $s0, 0*SZREG($sp)
-  REG_S $s1, 1*SZREG($sp)
-  REG_S $s2, 2*SZREG($sp)
-  REG_S $s3, 3*SZREG($sp)
-  REG_S $s4, 4*SZREG($sp)
-  REG_S $s5, 5*SZREG($sp)
-  REG_S $s6, 6*SZREG($sp)
-  REG_S $s7, 7*SZREG($sp)
-  REG_S $fp, 8*SZREG($sp)
-  REG_S $ra, 9*SZREG($sp)
+  addiu $sp, $sp, -112            # Store the main thread context
+  REG_S $s0,  4*SZREG($sp)
+  REG_S $s1,  5*SZREG($sp)
+  REG_S $s2,  6*SZREG($sp)
+  REG_S $s3,  7*SZREG($sp)
+  REG_S $s4,  8*SZREG($sp)
+  REG_S $s5,  9*SZREG($sp)
+  REG_S $s6, 10*SZREG($sp)
+  REG_S $s7, 11*SZREG($sp)
+  REG_S $fp, 12*SZREG($sp)
+  REG_S $ra, 13*SZREG($sp)
 
   move $16, $5
   REG_S $28, GP_SAVE($16)
