@@ -31,22 +31,8 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
  u32 enable_flags, u32 dispcnt, u32 bldcnt, const bitmap_layer_render_struct
  *layer_renderers);
 
-#define no_op                                                                 \
-
-// This old version is not necessary if the palette is either being converted
-// transparently or the ABGR 1555 format is being used natively. The direct
-// version (without conversion) is much faster.
-
-#define tile_lookup_palette_full(palette, source)                             \
-  current_pixel = palette[source];                                            \
-  convert_palette(current_pixel)                                              \
-
-#define tile_lookup_palette(palette, source)                                  \
-  current_pixel = palette[source];                                            \
-
-
 #define tile_expand_base_normal(index)                                        \
-  tile_lookup_palette(palette, current_pixel);                                \
+  current_pixel = palette[current_pixel];                                     \
   dest_ptr[index] = current_pixel                                             \
 
 #define tile_expand_transparent_normal(index)                                 \
@@ -68,14 +54,14 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 
 
 #define color_combine_mask_a(layer)                                           \
-  ((io_registers[REG_BLDCNT] >> layer) & 0x01)                                \
+  ((read_ioreg(REG_BLDCNT) >> layer) & 0x01)                                  \
 
 // For color blending operations, will create a mask that has in bit
 // 10 if the layer is target B, and bit 9 if the layer is target A.
 
 #define color_combine_mask(layer)                                             \
   (color_combine_mask_a(layer) |                                              \
-   ((io_registers[REG_BLDCNT] >> (layer + 7)) & 0x02)) << 9                   \
+   ((read_ioreg(REG_BLDCNT) >> (layer + 7)) & 0x02)) << 9                     \
 
 // For alpha blending renderers, draw the palette index (9bpp) and
 // layer bits rather than the raw RGB. For the base this should write to
@@ -183,7 +169,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 // Get the current tile from the map in 8bpp mode
 
 #define get_tile_8bpp()                                                       \
-  current_tile = *map_ptr;                                                    \
+  current_tile = eswap16(*map_ptr);                                           \
   tile_ptr = tile_base + ((current_tile & 0x3FF) * 64)                        \
 
 
@@ -243,16 +229,16 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define partial_tile_right_noflip_8bpp(combine_op, alpha_op)                  \
   if(partial_tile_offset >= 4)                                                \
   {                                                                           \
-    current_pixels = *((u32 *)(tile_ptr + 4)) >>                              \
+    current_pixels = eswap32(*((u32 *)(tile_ptr + 4))) >>                     \
      ((partial_tile_offset - 4) * 8);                                         \
     partial_tile_8bpp(combine_op, alpha_op);                                  \
   }                                                                           \
   else                                                                        \
   {                                                                           \
     partial_tile_run -= 4;                                                    \
-    current_pixels = *((u32 *)tile_ptr) >> (partial_tile_offset * 8);         \
+    current_pixels = eswap32(*((u32 *)tile_ptr)) >> (partial_tile_offset * 8);\
     partial_tile_8bpp(combine_op, alpha_op);                                  \
-    current_pixels = *((u32 *)(tile_ptr + 4));                                \
+    current_pixels = eswap32(*((u32 *)(tile_ptr + 4)));                       \
     tile_8bpp_draw_four_##combine_op(0, alpha_op, noflip);                    \
     advance_dest_ptr_##combine_op(4);                                         \
   }                                                                           \
@@ -264,19 +250,19 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define partial_tile_mid_noflip_8bpp(combine_op, alpha_op)                    \
   if(partial_tile_offset >= 4)                                                \
   {                                                                           \
-    current_pixels = *((u32 *)(tile_ptr + 4)) >>                              \
+    current_pixels = eswap32(*((u32 *)(tile_ptr + 4))) >>                     \
      ((partial_tile_offset - 4) * 8);                                         \
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    current_pixels = *((u32 *)tile_ptr) >> (partial_tile_offset * 8);         \
+    current_pixels = eswap32(*((u32 *)tile_ptr)) >> (partial_tile_offset * 8);\
     if((partial_tile_offset + partial_tile_run) > 4)                          \
     {                                                                         \
       u32 old_run = partial_tile_run;                                         \
       partial_tile_run = 4 - partial_tile_offset;                             \
       partial_tile_8bpp(combine_op, alpha_op);                                \
       partial_tile_run = old_run - partial_tile_run;                          \
-      current_pixels = *((u32 *)(tile_ptr + 4));                              \
+      current_pixels = eswap32(*((u32 *)(tile_ptr + 4)));                     \
     }                                                                         \
   }                                                                           \
   partial_tile_8bpp(combine_op, alpha_op);                                    \
@@ -288,23 +274,23 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define partial_tile_left_noflip_8bpp(combine_op, alpha_op)                   \
   if(partial_tile_run >= 4)                                                   \
   {                                                                           \
-    current_pixels = *((u32 *)tile_ptr);                                      \
+    current_pixels = eswap32(*((u32 *)tile_ptr));                             \
     tile_8bpp_draw_four_##combine_op(0, alpha_op, noflip);                    \
     advance_dest_ptr_##combine_op(4);                                         \
     tile_ptr += 4;                                                            \
     partial_tile_run -= 4;                                                    \
   }                                                                           \
                                                                               \
-  current_pixels = *((u32 *)(tile_ptr));                                      \
+  current_pixels = eswap32(*((u32 *)(tile_ptr)));                             \
   partial_tile_8bpp(combine_op, alpha_op)                                     \
 
 
 // Draws a non-clipped (complete) 8bpp tile.
 
 #define tile_noflip_8bpp(combine_op, alpha_op)                                \
-  current_pixels = *((u32 *)tile_ptr);                                        \
+  current_pixels = eswap32(*((u32 *)tile_ptr));                               \
   tile_8bpp_draw_four_##combine_op(0, alpha_op, noflip);                      \
-  current_pixels = *((u32 *)(tile_ptr + 4));                                  \
+  current_pixels = eswap32(*((u32 *)(tile_ptr + 4)));                         \
   tile_8bpp_draw_four_##combine_op(4, alpha_op, noflip)                       \
 
 
@@ -321,26 +307,28 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define partial_tile_right_flip_8bpp(combine_op, alpha_op)                    \
   if(partial_tile_offset >= 4)                                                \
   {                                                                           \
-    current_pixels = *((u32 *)tile_ptr) << ((partial_tile_offset - 4) * 8);   \
+    current_pixels = eswap32(*((u32 *)tile_ptr)) <<                           \
+                              ((partial_tile_offset - 4) * 8);                \
     partial_tile_flip_8bpp(combine_op, alpha_op);                             \
   }                                                                           \
   else                                                                        \
   {                                                                           \
     partial_tile_run -= 4;                                                    \
-    current_pixels = *((u32 *)(tile_ptr + 4)) <<                              \
+    current_pixels = eswap32(*((u32 *)(tile_ptr + 4))) <<                     \
      ((partial_tile_offset - 4) * 8);                                         \
     partial_tile_flip_8bpp(combine_op, alpha_op);                             \
-    current_pixels = *((u32 *)tile_ptr);                                      \
+    current_pixels = eswap32(*((u32 *)tile_ptr));                             \
     tile_8bpp_draw_four_##combine_op(0, alpha_op, flip);                      \
     advance_dest_ptr_##combine_op(4);                                         \
   }                                                                           \
 
 #define partial_tile_mid_flip_8bpp(combine_op, alpha_op)                      \
   if(partial_tile_offset >= 4)                                                \
-    current_pixels = *((u32 *)tile_ptr) << ((partial_tile_offset - 4) * 8);   \
+    current_pixels = eswap32(*((u32 *)tile_ptr)) <<                           \
+                              ((partial_tile_offset - 4) * 8);                \
   else                                                                        \
   {                                                                           \
-    current_pixels = *((u32 *)(tile_ptr + 4)) <<                              \
+    current_pixels = eswap32(*((u32 *)(tile_ptr + 4))) <<                     \
      ((partial_tile_offset - 4) * 8);                                         \
                                                                               \
     if((partial_tile_offset + partial_tile_run) > 4)                          \
@@ -349,7 +337,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
       partial_tile_run = 4 - partial_tile_offset;                             \
       partial_tile_flip_8bpp(combine_op, alpha_op);                           \
       partial_tile_run = old_run - partial_tile_run;                          \
-      current_pixels = *((u32 *)(tile_ptr));                                  \
+      current_pixels = eswap32(*((u32 *)(tile_ptr)));                         \
     }                                                                         \
   }                                                                           \
   partial_tile_flip_8bpp(combine_op, alpha_op);                               \
@@ -357,20 +345,20 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define partial_tile_left_flip_8bpp(combine_op, alpha_op)                     \
   if(partial_tile_run >= 4)                                                   \
   {                                                                           \
-    current_pixels = *((u32 *)(tile_ptr + 4));                                \
+    current_pixels = eswap32(*((u32 *)(tile_ptr + 4)));                       \
     tile_8bpp_draw_four_##combine_op(0, alpha_op, flip);                      \
     advance_dest_ptr_##combine_op(4);                                         \
     tile_ptr -= 4;                                                            \
     partial_tile_run -= 4;                                                    \
   }                                                                           \
                                                                               \
-  current_pixels = *((u32 *)(tile_ptr + 4));                                  \
+  current_pixels = eswap32(*((u32 *)(tile_ptr + 4)));                         \
   partial_tile_flip_8bpp(combine_op, alpha_op)                                \
 
 #define tile_flip_8bpp(combine_op, alpha_op)                                  \
-  current_pixels = *((u32 *)(tile_ptr + 4));                                  \
+  current_pixels = eswap32(*((u32 *)(tile_ptr + 4)));                         \
   tile_8bpp_draw_four_##combine_op(0, alpha_op, flip);                        \
-  current_pixels = *((u32 *)tile_ptr);                                        \
+  current_pixels = eswap32(*((u32 *)tile_ptr));                               \
   tile_8bpp_draw_four_##combine_op(4, alpha_op, flip)                         \
 
 
@@ -536,7 +524,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 // the pixel block.
 
 #define get_tile_4bpp()                                                       \
-  current_tile = *map_ptr;                                                    \
+  current_tile = eswap16(*map_ptr);                                           \
   current_palette = (current_tile >> 12) << 4;                                \
   tile_ptr = tile_base + ((current_tile & 0x3FF) * 32);                       \
 
@@ -557,7 +545,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 // how many to draw.
 
 #define partial_tile_right_noflip_4bpp(combine_op, alpha_op)                  \
-  current_pixels = *((u32 *)tile_ptr) >> (partial_tile_offset * 4);           \
+  current_pixels = eswap32(*((u32 *)tile_ptr)) >> (partial_tile_offset * 4);  \
   partial_tile_4bpp(combine_op, alpha_op)                                     \
 
 
@@ -571,13 +559,13 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 // partial_tile_offset is how many to draw.
 
 #define partial_tile_left_noflip_4bpp(combine_op, alpha_op)                   \
-  current_pixels = *((u32 *)tile_ptr);                                        \
+  current_pixels = eswap32(*((u32 *)tile_ptr));                               \
   partial_tile_4bpp(combine_op, alpha_op)                                     \
 
 
 // Draws a complete 4bpp tile row (not clipped)
 #define tile_noflip_4bpp(combine_op, alpha_op)                                \
-  current_pixels = *((u32 *)tile_ptr);                                        \
+  current_pixels = eswap32(*((u32 *)tile_ptr));                               \
   tile_4bpp_draw_eight_##combine_op(alpha_op, noflip)                         \
 
 
@@ -592,18 +580,18 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
   }                                                                           \
 
 #define partial_tile_right_flip_4bpp(combine_op, alpha_op)                    \
-  current_pixels = *((u32 *)tile_ptr) << (partial_tile_offset * 4);           \
+  current_pixels = eswap32(*((u32 *)tile_ptr)) << (partial_tile_offset * 4);  \
   partial_tile_flip_4bpp(combine_op, alpha_op)                                \
 
 #define partial_tile_mid_flip_4bpp(combine_op, alpha_op)                      \
   partial_tile_right_flip_4bpp(combine_op, alpha_op)                          \
 
 #define partial_tile_left_flip_4bpp(combine_op, alpha_op)                     \
-  current_pixels = *((u32 *)tile_ptr);                                        \
+  current_pixels = eswap32(*((u32 *)tile_ptr));                               \
   partial_tile_flip_4bpp(combine_op, alpha_op)                                \
 
 #define tile_flip_4bpp(combine_op, alpha_op)                                  \
-  current_pixels = *((u32 *)tile_ptr);                                        \
+  current_pixels = eswap32(*((u32 *)tile_ptr));                               \
   tile_4bpp_draw_eight_##combine_op(alpha_op, flip)                           \
 
 
@@ -868,13 +856,13 @@ static void render_scanline_text_base_normal(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_base_normal(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -1055,13 +1043,13 @@ static void render_scanline_text_transparent_normal(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_transparent_normal(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -1241,13 +1229,13 @@ static void render_scanline_text_base_color16(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_base_color16(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -1426,13 +1414,13 @@ static void render_scanline_text_transparent_color16(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_transparent_color16(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -1611,13 +1599,13 @@ static void render_scanline_text_base_color32(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_base_color32(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -1796,13 +1784,13 @@ static void render_scanline_text_transparent_color32(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_transparent_color32(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -1983,13 +1971,13 @@ static void render_scanline_text_base_alpha(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_base_alpha(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -2166,13 +2154,13 @@ static void render_scanline_text_transparent_alpha(u32 layer,
  u32 start, u32 end, void *scanline)
 {
   render_scanline_extra_variables_transparent_alpha(text);
-  u32 bg_control = io_registers[REG_BG0CNT + layer];
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);
   u32 map_size = (bg_control >> 14) & 0x03;
   u32 map_width = map_widths[map_size];
   u32 horizontal_offset =
-   (io_registers[REG_BG0HOFS + (layer * 2)] + start) % 512;
-  u32 vertical_offset = (io_registers[REG_VCOUNT] +
-   io_registers[REG_BG0VOFS + (layer * 2)]) % 512;
+   (read_ioreg(REG_BG0HOFS + (layer * 2)) + start) % 512;
+  u32 vertical_offset = (read_ioreg(REG_VCOUNT) +
+   read_ioreg(REG_BG0VOFS + (layer * 2))) % 512;
   u32 current_pixel;
   u32 current_pixels;
   u32 partial_tile_run = 0;
@@ -2522,7 +2510,7 @@ void render_scanline_affine_##combine_op##_##alpha_op(u32 layer,              \
  u32 start, u32 end, void *scanline)                                          \
 {                                                                             \
   render_scanline_extra_variables_##combine_op##_##alpha_op(affine);          \
-  u32 bg_control = io_registers[REG_BG0CNT + layer];                          \
+  u32 bg_control = read_ioreg(REG_BG0CNT + layer);                            \
   u32 current_pixel;                                                          \
   s32 source_x, source_y;                                                     \
   u32 pixel_x, pixel_y;                                                       \
@@ -2539,8 +2527,8 @@ void render_scanline_affine_##combine_op##_##alpha_op(u32 layer,              \
   render_scanline_dest_##alpha_op *dest_ptr =                                 \
    ((render_scanline_dest_##alpha_op *)scanline) + start;                     \
                                                                               \
-  dx = (s16)io_registers[REG_BG2PA + layer_offset];                           \
-  dy = (s16)io_registers[REG_BG2PC + layer_offset];                           \
+  dx = (s16)read_ioreg(REG_BG2PA + layer_offset);                             \
+  dy = (s16)read_ioreg(REG_BG2PC + layer_offset);                             \
   source_x = affine_reference_x[layer - 2] + (start * dx);                    \
   source_y = affine_reference_y[layer - 2] + (start * dy);                    \
                                                                               \
@@ -2609,7 +2597,7 @@ render_scanline_affine_builder(transparent, alpha);
                                                                               \
       for(i = 0; (s32)i < (s32)end; i++)                                      \
       {                                                                       \
-        current_pixel = *src_ptr;                                             \
+        current_pixel = srcread_##type(*src_ptr);                             \
         bitmap_render_pixel_##type(alpha_op);                                 \
         src_ptr++;                                                            \
         dest_ptr++;                                                           \
@@ -2637,7 +2625,7 @@ render_scanline_affine_builder(transparent, alpha);
           if((u32)pixel_x >= (u32)width)                                      \
             break;                                                            \
                                                                               \
-          current_pixel = src_ptr[pixel_x];                                   \
+          current_pixel = srcread_##type(src_ptr[pixel_x]);                   \
           bitmap_render_pixel_##type(alpha_op);                               \
                                                                               \
           source_x += dx;                                                     \
@@ -2669,7 +2657,7 @@ render_scanline_affine_builder(transparent, alpha);
     if(((u32)pixel_x >= (u32)width) || ((u32)pixel_y >= (u32)height))         \
       break;                                                                  \
                                                                               \
-    current_pixel = src_ptr[pixel_x + (pixel_y * width)];                     \
+    current_pixel = srcread_##type(src_ptr[pixel_x + (pixel_y * width)]);     \
      bitmap_render_pixel_##type(alpha_op);                                    \
                                                                               \
     source_x += dx;                                                           \
@@ -2683,16 +2671,19 @@ render_scanline_affine_builder(transparent, alpha);
 
 #define render_scanline_vram_setup_mode5()                                    \
   u16 *src_ptr = (u16 *)vram;                                                 \
-  if(io_registers[REG_DISPCNT] & 0x10)                                        \
+  if(read_ioreg(REG_DISPCNT) & 0x10)                                          \
     src_ptr = (u16 *)(vram + 0xA000);                                         \
 
 
 #define render_scanline_vram_setup_mode4()                                    \
   u16 *palette = palette_ram_converted;                                       \
   u8 *src_ptr = vram;                                                         \
-  if(io_registers[REG_DISPCNT] & 0x10)                                        \
+  if(read_ioreg(REG_DISPCNT) & 0x10)                                          \
     src_ptr = vram + 0xA000;                                                  \
 
+#define srcread_mode3(v) eswap16(v)
+#define srcread_mode5(v) eswap16(v)
+#define srcread_mode4(v) (v)
 
 
 // Build bitmap scanline rendering functions.
@@ -2705,8 +2696,8 @@ static void render_scanline_bitmap_##type##_##alpha_op(u32 start, u32 end,    \
   s32 source_x, source_y;                                                     \
   s32 pixel_x, pixel_y;                                                       \
                                                                               \
-  s32 dx = (s16)io_registers[REG_BG2PA];                                      \
-  s32 dy = (s16)io_registers[REG_BG2PC];                                      \
+  s32 dx = (s16)read_ioreg(REG_BG2PA);                                        \
+  s32 dy = (s16)read_ioreg(REG_BG2PC);                                        \
                                                                               \
   u32 i;                                                                      \
                                                                               \
@@ -3058,11 +3049,11 @@ static const bitmap_layer_render_struct bitmap_mode_renderers[3] =
 
 #define obj_render_affine(combine_op, color_depth, alpha_op, map_space)       \
 {                                                                             \
-  s16 *params = (s16 *)oam_ram + (((obj_attribute_1 >> 9) & 0x1F) * 16);      \
-  s32 dx = params[3];                                                         \
-  s32 dmx = params[7];                                                        \
-  s32 dy = params[11];                                                        \
-  s32 dmy = params[15];                                                       \
+  u16 *params = (u16 *)oam_ram + (((obj_attribute_1 >> 9) & 0x1F) * 16);      \
+  s32 dx = (s16)eswap16(params[3]);                                           \
+  s32 dmx = (s16)eswap16(params[7]);                                          \
+  s32 dy = (s16)eswap16(params[11]);                                          \
+  s32 dmy = (s16)eswap16(params[15]);                                         \
   s32 source_x, source_y;                                                     \
   s32 tile_x, tile_y;                                                         \
   u32 tile_map_offset;                                                        \
@@ -3163,9 +3154,9 @@ static u32 obj_alpha_count[160];
   u32 dest                                                                    \
 
 #define render_scanline_obj_extra_variables_copy(type)                        \
-  u32 bldcnt = io_registers[REG_BLDCNT];                                      \
-  u32 dispcnt = io_registers[REG_DISPCNT];                                    \
-  u32 obj_enable = io_registers[REG_WINOUT] >> 8;                             \
+  u32 bldcnt = read_ioreg(REG_BLDCNT);                                        \
+  u32 dispcnt = read_ioreg(REG_DISPCNT);                                      \
+  u32 obj_enable = read_ioreg(REG_WINOUT) >> 8;                               \
   render_scanline_layer_functions_##type();                                   \
   u32 copy_start, copy_end;                                                   \
   u16 copy_buffer[240];                                                       \
@@ -3278,7 +3269,7 @@ static void render_scanline_obj_##alpha_op##_##map_space(u32 priority,        \
   s32 obj_size;                                                               \
   s32 obj_width, obj_height;                                                  \
   u32 obj_attribute_0, obj_attribute_1, obj_attribute_2;                      \
-  s32 vcount = io_registers[REG_VCOUNT];                                      \
+  s32 vcount = read_ioreg(REG_VCOUNT);                                        \
   u32 tile_run;                                                               \
   u32 current_pixels;                                                         \
   u32 current_pixel;                                                          \
@@ -3296,9 +3287,9 @@ static void render_scanline_obj_##alpha_op##_##map_space(u32 priority,        \
   for(obj_num = 0; obj_num < obj_count; obj_num++)                            \
   {                                                                           \
     oam_ptr = oam_ram + (obj_list[obj_num] * 4);                              \
-    obj_attribute_0 = oam_ptr[0];                                             \
-    obj_attribute_1 = oam_ptr[1];                                             \
-    obj_attribute_2 = oam_ptr[2];                                             \
+    obj_attribute_0 = eswap16(oam_ptr[0]);                                    \
+    obj_attribute_1 = eswap16(oam_ptr[1]);                                    \
+    obj_attribute_2 = eswap16(oam_ptr[2]);                                    \
     obj_size = ((obj_attribute_0 >> 12) & 0x0C) | (obj_attribute_1 >> 14);    \
                                                                               \
     obj_x = (s32)(obj_attribute_1 << 23) >> 23;                               \
@@ -3355,8 +3346,8 @@ static void order_obj(u32 video_mode)
 
   for(obj_num = 127; obj_num >= 0; obj_num--, oam_ptr -= 4)
   {
-    obj_attribute_0 = oam_ptr[0];
-    obj_attribute_2 = oam_ptr[2];
+    obj_attribute_0 = eswap16(oam_ptr[0]);
+    obj_attribute_2 = eswap16(oam_ptr[2]);
     obj_size = obj_attribute_0 & 0xC000;
     obj_priority = (obj_attribute_2 >> 10) & 0x03;
     obj_mode = (obj_attribute_0 >> 10) & 0x03;
@@ -3369,7 +3360,7 @@ static void order_obj(u32 video_mode)
       if(obj_y > 160)
         obj_y -= 256;
 
-      obj_attribute_1 = oam_ptr[1];
+      obj_attribute_1 = eswap16(oam_ptr[1]);
       obj_size = ((obj_size >> 12) & 0x0C) | (obj_attribute_1 >> 14);
       obj_height = obj_height_table[obj_size];
       obj_width = obj_width_table[obj_size];
@@ -3436,14 +3427,14 @@ static void order_layers(u32 layer_flags)
     for(layer_number = 3; layer_number >= 0; layer_number--)
     {
       if(((layer_flags >> layer_number) & 1) &&
-       ((io_registers[REG_BG0CNT + layer_number] & 0x03) == priority))
+       ((read_ioreg(REG_BG0CNT + layer_number) & 0x03) == priority))
       {
         layer_order[layer_count] = layer_number;
         layer_count++;
       }
     }
 
-    if((obj_priority_count[priority][io_registers[REG_VCOUNT]] > 0)
+    if((obj_priority_count[priority][read_ioreg(REG_VCOUNT)] > 0)
      && (layer_flags & 0x10))
     {
       layer_order[layer_count] = priority | 0x04;
@@ -3614,7 +3605,7 @@ void expand_blend(u32 *screen_src_ptr, u16 *screen_dest_ptr,
 {
   u32 pixel_pair;
   u32 pixel_top, pixel_bottom;
-  u32 bldalpha = io_registers[REG_BLDALPHA];
+  u32 bldalpha = read_ioreg(REG_BLDALPHA);
   u32 blend_a = bldalpha & 0x1F;
   u32 blend_b = (bldalpha >> 8) & 0x1F;
   u32 i;
@@ -3645,7 +3636,7 @@ static void expand_darken(u16 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
   u32 pixel_top;
-  s32 blend = 16 - (io_registers[REG_BLDY] & 0x1F);
+  s32 blend = 16 - (read_ioreg(REG_BLDY) & 0x1F);
   u32 i;
 
   if(blend < 0)
@@ -3661,7 +3652,7 @@ static void expand_brighten(u16 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
   u32 pixel_top;
-  u32 blend = io_registers[REG_BLDY] & 0x1F;
+  u32 blend = read_ioreg(REG_BLDY) & 0x1F;
   u32 upper;
   u32 i;
 
@@ -3682,10 +3673,10 @@ static void expand_brighten(u16 *screen_src_ptr, u16 *screen_dest_ptr,
 static void expand_darken_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
-  s32 blend = 16 - (io_registers[REG_BLDY] & 0x1F);
+  s32 blend = 16 - (read_ioreg(REG_BLDY) & 0x1F);
   u32 pixel_pair;
   u32 pixel_top, pixel_bottom;
-  u32 bldalpha = io_registers[REG_BLDALPHA];
+  u32 bldalpha = read_ioreg(REG_BLDALPHA);
   u32 blend_a = bldalpha & 0x1F;
   u32 blend_b = (bldalpha >> 8) & 0x1F;
   u32 i;
@@ -3706,10 +3697,10 @@ static void expand_darken_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_pt
 static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_ptr,
  u32 start, u32 end)
 {
-  s32 blend = io_registers[REG_BLDY] & 0x1F;
+  s32 blend = read_ioreg(REG_BLDY) & 0x1F;
   u32 pixel_pair;
   u32 pixel_top, pixel_bottom;
-  u32 bldalpha = io_registers[REG_BLDALPHA];
+  u32 bldalpha = read_ioreg(REG_BLDALPHA);
   u32 blend_a = bldalpha & 0x1F;
   u32 blend_b = (bldalpha >> 8) & 0x1F;
   u32 upper;
@@ -3784,20 +3775,20 @@ static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_
 }                                                                             \
 
 #define render_condition_alpha                                                \
-  (((io_registers[REG_BLDALPHA] & 0x1F1F) != 0x001F) &&                       \
-   ((io_registers[REG_BLDCNT] & 0x3F) != 0) &&                                \
-   ((io_registers[REG_BLDCNT] & 0x3F00) != 0))                                \
+  (((read_ioreg(REG_BLDALPHA) & 0x1F1F) != 0x001F) &&                         \
+   ((read_ioreg(REG_BLDCNT) & 0x3F) != 0) &&                                  \
+   ((read_ioreg(REG_BLDCNT) & 0x3F00) != 0))                                  \
 
 #define render_condition_fade                                                 \
-  (((io_registers[REG_BLDY] & 0x1F) != 0) &&                                  \
-   ((io_registers[REG_BLDCNT] & 0x3F) != 0))                                  \
+  (((read_ioreg(REG_BLDY) & 0x1F) != 0) &&                                    \
+   ((read_ioreg(REG_BLDCNT) & 0x3F) != 0))                                    \
 
 #define render_layers_color_effect(renderer, layer_condition,                 \
  alpha_condition, fade_condition, _start, _end)                               \
 {                                                                             \
   if(layer_condition)                                                         \
   {                                                                           \
-    if(obj_alpha_count[io_registers[REG_VCOUNT]] > 0)                         \
+    if(obj_alpha_count[read_ioreg(REG_VCOUNT)] > 0)                           \
     {                                                                         \
       /* Render based on special effects mode. */                             \
       u32 screen_buffer[240];                                                 \
@@ -3902,7 +3893,7 @@ static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_
       {                                                                       \
         if(color_combine_mask_a(5))                                           \
         {                                                                     \
-          u32 blend = io_registers[REG_BLDY] & 0x1F;                          \
+          u32 blend = read_ioreg(REG_BLDY) & 0x1F;                            \
           u32 upper;                                                          \
                                                                               \
           if(blend > 16)                                                      \
@@ -3921,7 +3912,7 @@ static void expand_brighten_partial_alpha(u32 *screen_src_ptr, u16 *screen_dest_
       {                                                                       \
         if(color_combine_mask_a(5))                                           \
         {                                                                     \
-          s32 blend = 16 - (io_registers[REG_BLDY] & 0x1F);                   \
+          s32 blend = 16 - (read_ioreg(REG_BLDY) & 0x1F);                     \
                                                                               \
           if(blend < 0)                                                       \
             blend = 0;                                                        \
@@ -3942,7 +3933,7 @@ static void render_scanline_tile(u16 *scanline, u32 dispcnt)
 {
   u32 current_layer;
   u32 layer_order_pos;
-  u32 bldcnt = io_registers[REG_BLDCNT];
+  u32 bldcnt = read_ioreg(REG_BLDCNT);
   render_scanline_layer_functions_tile();
 
   render_layers_color_effect(render_layers, layer_count,
@@ -4116,9 +4107,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 
 #define window_x_coords(window_number)                                        \
   window_##window_number##_x1 =                                               \
-   io_registers[REG_WIN##window_number##H] >> 8;                              \
+   read_ioreg(REG_WIN##window_number##H) >> 8;                                \
   window_##window_number##_x2 =                                               \
-   io_registers[REG_WIN##window_number##H] & 0xFF;                            \
+   read_ioreg(REG_WIN##window_number##H) & 0xFF;                              \
   window_##window_number##_enable =                                           \
    (winin >> (window_number * 8)) & 0x3F;                                     \
                                                                               \
@@ -4133,9 +4124,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
   u32 window_##window_number##_y1, window_##window_number##_y2;               \
   u32 window_##window_number##_enable = 0;                                    \
   window_##window_number##_y1 =                                               \
-   io_registers[REG_WIN##window_number##V] >> 8;                              \
+   read_ioreg(REG_WIN##window_number##V) >> 8;                                \
   window_##window_number##_y2 =                                               \
-   io_registers[REG_WIN##window_number##V] & 0xFF;                            \
+   read_ioreg(REG_WIN##window_number##V) & 0xFF;                              \
                                                                               \
   if(window_##window_number##_y1 > window_##window_number##_y2)               \
   {                                                                           \
@@ -4306,7 +4297,7 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 
 
 #define render_window_single(type, window_number)                             \
-  u32 winin = io_registers[REG_WININ];                                        \
+  u32 winin = read_ioreg(REG_WININ);                                          \
   window_coords(window_number);                                               \
   if(window_##window_number##_x1 > window_##window_number##_x2)               \
   {                                                                           \
@@ -4344,9 +4335,9 @@ static void render_scanline_conditional_bitmap(u32 start, u32 end, u16 *scanline
 #define render_scanline_window_builder(type)                                  \
 static void render_scanline_window_##type(u16 *scanline, u32 dispcnt)         \
 {                                                                             \
-  u32 vcount = io_registers[REG_VCOUNT];                                      \
-  u32 winout = io_registers[REG_WINOUT];                                      \
-  u32 bldcnt = io_registers[REG_BLDCNT];                                      \
+  u32 vcount = read_ioreg(REG_VCOUNT);                                        \
+  u32 winout = read_ioreg(REG_WINOUT);                                        \
+  u32 bldcnt = read_ioreg(REG_BLDCNT);                                        \
   u32 window_out_enable = winout & 0x3F;                                      \
                                                                               \
   render_scanline_layer_functions_##type();                                   \
@@ -4370,7 +4361,7 @@ static void render_scanline_window_##type(u16 *scanline, u32 dispcnt)         \
     /* Windows 1 and 2 */                                                     \
     case 0x03:                                                                \
     {                                                                         \
-      u32 winin = io_registers[REG_WININ];                                    \
+      u32 winin = read_ioreg(REG_WININ);                                      \
       window_coords(0);                                                       \
       window_coords(1);                                                       \
       render_window_multi(type, 0, 1);                                        \
@@ -4387,7 +4378,7 @@ static void render_scanline_window_##type(u16 *scanline, u32 dispcnt)         \
     /* Window 0 and OBJ window */                                             \
     case 0x05:                                                                \
     {                                                                         \
-      u32 winin = io_registers[REG_WININ];                                    \
+      u32 winin = read_ioreg(REG_WININ);                                      \
       window_coords(0);                                                       \
       render_window_multi(type, 0, obj);                                      \
       break;                                                                  \
@@ -4396,7 +4387,7 @@ static void render_scanline_window_##type(u16 *scanline, u32 dispcnt)         \
     /* Window 1 and OBJ window */                                             \
     case 0x06:                                                                \
     {                                                                         \
-      u32 winin = io_registers[REG_WININ];                                    \
+      u32 winin = read_ioreg(REG_WININ);                                      \
       window_coords(1);                                                       \
       render_window_multi(type, 1, obj);                                      \
       break;                                                                  \
@@ -4405,7 +4396,7 @@ static void render_scanline_window_##type(u16 *scanline, u32 dispcnt)         \
     /* Window 0, 1, and OBJ window */                                         \
     case 0x07:                                                                \
     {                                                                         \
-      u32 winin = io_registers[REG_WININ];                                    \
+      u32 winin = read_ioreg(REG_WININ);                                      \
       window_coords(0);                                                       \
       window_coords(1);                                                       \
       render_window_multi(type, 0, 1_obj);                                    \
@@ -4422,8 +4413,8 @@ static const u32 active_layers[6] = { 0x1F, 0x17, 0x1C, 0x14, 0x14, 0x14 };
 void update_scanline(void)
 {
   u32 pitch = get_screen_pitch();
-  u32 dispcnt = io_registers[REG_DISPCNT];
-  u32 vcount = io_registers[REG_VCOUNT];
+  u32 dispcnt = read_ioreg(REG_DISPCNT);
+  u32 vcount = read_ioreg(REG_VCOUNT);
   u16 *screen_offset = get_screen_pixels() + (vcount * pitch);
   u32 video_mode = dispcnt & 0x07;
 
@@ -4467,10 +4458,10 @@ void update_scanline(void)
     }
   }
 
-  affine_reference_x[0] += (s16)io_registers[REG_BG2PB];
-  affine_reference_y[0] += (s16)io_registers[REG_BG2PD];
-  affine_reference_x[1] += (s16)io_registers[REG_BG3PB];
-  affine_reference_y[1] += (s16)io_registers[REG_BG3PD];
+  affine_reference_x[0] += (s16)read_ioreg(REG_BG2PB);
+  affine_reference_y[0] += (s16)read_ioreg(REG_BG2PD);
+  affine_reference_x[1] += (s16)read_ioreg(REG_BG3PB);
+  affine_reference_y[1] += (s16)read_ioreg(REG_BG3PD);
 }
 
 #define video_savestate_builder(type)           \

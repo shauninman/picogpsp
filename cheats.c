@@ -190,7 +190,7 @@ void process_cheats(void)
       if(!cheats[i].cheat_active)
          continue;
 
-      process_cheat_codebreaker(&cheats[i], 0x3ff ^ io_registers[REG_P1]);
+      process_cheat_codebreaker(&cheats[i], 0x3ff ^ read_ioreg(REG_P1));
    }
 }
 

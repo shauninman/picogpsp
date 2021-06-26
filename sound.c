@@ -437,7 +437,7 @@ void update_gbc_sound(u32 cpu_ticks)
   s32 volume_left, volume_right;
   u32 envelope_volume;
   s32 current_sample;
-  u32 sound_status = address16(io_registers, 0x84) & 0xFFF0;
+  u16 sound_status = read_ioreg(REG_SOUNDCNT_X) & 0xFFF0;
   s8 *sample_data;
   s8 *wave_bank;
   u8 *wave_ram = ((u8 *)io_registers) + 0x90;
@@ -521,7 +521,7 @@ void update_gbc_sound(u32 cpu_ticks)
     }
   }
 
-  address16(io_registers, 0x84) = sound_status;
+  write_ioreg(REG_SOUNDCNT_X, sound_status);
 
   gbc_sound_last_cpu_ticks = cpu_ticks;
   gbc_sound_buffer_index =
