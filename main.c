@@ -63,7 +63,7 @@ static void update_timers(irq_type *irq_raised)
       {
          timer[i].count -= execute_cycles;
          /* io_registers accessors range: REG_TM0D, REG_TM1D, REG_TM2D, REG_TM3D */
-         io_registers[128 + (i * 2)] = -(timer[i].count > timer[i].prescale);
+         write_ioreg(REG_TM0D + (i * 2), -(timer[i].count > timer[i].prescale));
       }
 
       if(timer[i].count > 0)
@@ -76,7 +76,7 @@ static void update_timers(irq_type *irq_raised)
       if((i != 3) && (timer[i + 1].status == TIMER_CASCADE))
       {
          timer[i + 1].count--;
-         io_registers[REG_TM0D + (i + 1) * 2] = -(timer[i + 1].count);
+         write_ioreg(REG_TM0D + (i + 1) * 2, -timer[i+1].count);
       }
 
       if(i < 2)
@@ -146,8 +146,8 @@ u32 update_gba(void)
 
     if(video_count <= 0)
     {
-      u32 vcount = io_registers[REG_VCOUNT];
-      u32 dispstat = io_registers[REG_DISPSTAT];
+      u32 vcount = read_ioreg(REG_VCOUNT);
+      u32 dispstat = read_ioreg(REG_DISPSTAT);
 
       if((dispstat & 0x02) == 0)
       {
@@ -162,7 +162,7 @@ u32 update_gba(void)
             oam_update_count++;
 
           if(no_alpha)
-            io_registers[REG_BLDCNT] = 0;
+            write_ioreg(REG_BLDCNT, 0);
           update_scanline();
 
           // If in visible area also fire HDMA
@@ -196,13 +196,13 @@ u32 update_gba(void)
           }
 
           affine_reference_x[0] =
-           (s32)(address32(io_registers, 0x28) << 4) >> 4;
+           (s32)(readaddress32(io_registers, 0x28) << 4) >> 4;
           affine_reference_y[0] =
-           (s32)(address32(io_registers, 0x2C) << 4) >> 4;
+           (s32)(readaddress32(io_registers, 0x2C) << 4) >> 4;
           affine_reference_x[1] =
-           (s32)(address32(io_registers, 0x38) << 4) >> 4;
+           (s32)(readaddress32(io_registers, 0x38) << 4) >> 4;
           affine_reference_y[1] =
-           (s32)(address32(io_registers, 0x3C) << 4) >> 4;
+           (s32)(readaddress32(io_registers, 0x3C) << 4) >> 4;
 
           for(i = 0; i < 4; i++)
           {
@@ -251,9 +251,9 @@ u32 update_gba(void)
         else
           dispstat &= ~0x04;
 
-        io_registers[REG_VCOUNT] = vcount;
+        write_ioreg(REG_VCOUNT, vcount);
       }
-      io_registers[REG_DISPSTAT] = dispstat;
+      write_ioreg(REG_DISPSTAT, dispstat);
     }
 
     if(irq_raised)

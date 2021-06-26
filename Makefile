@@ -195,6 +195,14 @@ else ifeq ($(platform), switch)
         include $(LIBTRANSISTOR_HOME)/libtransistor.mk
         STATIC_LINKING=1
 
+# Nintendo Game Cube / Wii / WiiU
+else ifneq (,$(filter $(platform), ngc wii wiiu))
+	TARGET := $(TARGET_NAME)_libretro_$(platform).a
+	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
+	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
+	CFLAGS += -DGEKKO -mcpu=750 -meabi -mhard-float -DHAVE_STRTOF_L
+	STATIC_LINKING = 1
+
 # PSP
 else ifeq ($(platform), psp1)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).a

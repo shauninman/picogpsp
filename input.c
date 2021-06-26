@@ -38,7 +38,7 @@ extern void set_fastforward_override(bool fastforward);
 
 static void trigger_key(u32 key)
 {
-  u32 p1_cnt = io_registers[REG_P1CNT];
+  u32 p1_cnt = read_ioreg(REG_P1CNT);
 
   if((p1_cnt >> 14) & 0x01)
   {
@@ -121,7 +121,7 @@ u32 update_input(void)
       trigger_key(new_key);
 
    old_key = new_key;
-   io_registers[REG_P1] = (~old_key) & 0x3FF;
+   write_ioreg(REG_P1, (~old_key) & 0x3FF);
 
    /* Handle fast forward button */
    if (libretro_ff_enabled != libretro_ff_enabled_prev)

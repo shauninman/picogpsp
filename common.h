@@ -124,6 +124,22 @@ typedef u32 fixed8_24;
 #define address32(base, offset)                                               \
   *((u32 *)((u8 *)base + (offset)))                                           \
 
+#define eswap8(value)  (value)
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+  #define eswap16(value) __builtin_bswap16(value)
+  #define eswap32(value) __builtin_bswap32(value)
+#else
+  #define eswap16(value) (value)
+  #define eswap32(value) (value)
+#endif
+
+#define  readaddress8(base, offset) eswap8( address8( base, offset))
+#define readaddress16(base, offset) eswap16(address16(base, offset))
+#define readaddress32(base, offset) eswap32(address32(base, offset))
+
+#define read_ioreg(regnum) (eswap16(io_registers[(regnum)]))
+#define write_ioreg(regnum, val) io_registers[(regnum)] = eswap16(val)
+
 #include <unistd.h>
 #include <time.h>
 #include <stdlib.h>

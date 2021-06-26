@@ -721,8 +721,8 @@ u32 high_frequency_branch_targets = 0;
 // probably not worth optimizing for.
 
 #define check_for_interrupts()                                                \
-  if((io_registers[REG_IE] & io_registers[REG_IF]) &&                         \
-   io_registers[REG_IME] && ((reg[REG_CPSR] & 0x80) == 0))                    \
+  if((read_ioreg(REG_IE) & read_ioreg(REG_IF)) &&                             \
+   read_ioreg(REG_IME) && ((reg[REG_CPSR] & 0x80) == 0))                      \
   {                                                                           \
     reg_mode[MODE_IRQ][6] = reg[REG_PC] + 4;                                  \
     spsr[MODE_IRQ] = reg[REG_CPSR];                                           \
@@ -945,10 +945,10 @@ const u32 psr_masks[16] =
 #define aligned_address_mask16 0xF0000001
 #define aligned_address_mask32 0xF0000003
 
-#define fast_read_memory(size, type, address, dest)                           \
+#define fast_read_memory(size, type, addr, dest)                              \
 {                                                                             \
   u8 *map;                                                                    \
-  u32 _address = address;                                                     \
+  u32 _address = addr;                                                        \
                                                                               \
   if(_address < 0x10000000)                                                   \
   {                                                                           \
@@ -964,7 +964,7 @@ const u32 psr_masks[16] =
   if(((_address & aligned_address_mask##size) == 0) &&                        \
    (map = memory_map_read[_address >> 15]))                                   \
   {                                                                           \
-    dest = *((type *)((u8 *)map + (_address & 0x7FFF)));                      \
+    dest = (type)readaddress##size(map, (_address & 0x7FFF));                 \
   }                                                                           \
   else                                                                        \
   {                                                                           \
@@ -984,7 +984,7 @@ const u32 psr_masks[16] =
   if(((_address & aligned_address_mask16) == 0) &&                            \
    (map = memory_map_read[_address >> 15]))                                   \
   {                                                                           \
-    dest = *((s16 *)((u8 *)map + (_address & 0x7FFF)));                       \
+    dest = (s16)readaddress16(map, (_address & 0x7FFF));                      \
   }                                                                           \
   else                                                                        \
   {                                                                           \
@@ -1018,7 +1018,7 @@ const u32 psr_masks[16] =
   }                                                                           \
   if(_address < 0x10000000 && map)                                            \
   {                                                                           \
-    dest = address32(map, _address & 0x7FFF);                                 \
+    dest = readaddress32(map, _address & 0x7FFF);                             \
   }                                                                           \
   else                                                                        \
   {                                                                           \
@@ -1123,10 +1123,10 @@ const u32 psr_masks[16] =
 #define arm_block_writeback_no(access_type)                                   \
 
 #define load_block_memory(address, dest)                                      \
-  dest = address32(address_region, (address + offset) & 0x7FFF)               \
+  dest = readaddress32(address_region, (address + offset) & 0x7FFF)           \
 
 #define store_block_memory(address, dest)                                     \
-  address32(address_region, (address + offset) & 0x7FFF) = dest               \
+  address32(address_region, (address + offset) & 0x7FFF) = eswap32(dest)      \
 
 #define arm_block_memory_offset_down_a()                                      \
   (base - (word_bit_count(reg_list) * 4) + 4)                                 \
@@ -1601,9 +1601,9 @@ void raise_interrupt(irq_type irq_raised)
 {
   // The specific IRQ must be enabled in IE, master IRQ enable must be on,
   // and it must be on in the flags.
-  io_registers[REG_IF] |= irq_raised;
+  write_ioreg(REG_IF, read_ioreg(REG_IF) | irq_raised);
 
-  if((io_registers[REG_IE] & irq_raised) && io_registers[REG_IME] &&
+  if((read_ioreg(REG_IE) & irq_raised) && read_ioreg(REG_IME) &&
    ((reg[REG_CPSR] & 0x80) == 0))
   {
     bios_read_protect = 0xe55ec002;
@@ -1681,7 +1681,7 @@ arm_loop:
        using_instruction(arm);
        check_pc_region();
        pc &= ~0x03;
-       opcode = address32(pc_address_block, (pc & 0x7FFF));
+       opcode = readaddress32(pc_address_block, (pc & 0x7FFF));
        condition = opcode >> 28;
 
        switch(condition)
@@ -3256,7 +3256,7 @@ thumb_loop:
        using_instruction(thumb);
        check_pc_region();
        pc &= ~0x01;
-       opcode = address16(pc_address_block, (pc & 0x7FFF));
+       opcode = readaddress16(pc_address_block, (pc & 0x7FFF));
 
        switch((opcode >> 8) & 0xFF)
        {
