@@ -85,9 +85,9 @@ void sound_timer(fixed8_24 frequency_step, u32 channel)
   u32 buffer_index = ds->buffer_index;
   s16 current_sample, next_sample;
 
-  current_sample = ds->fifo[ds->fifo_base] << 4;
+  current_sample = ds->fifo[ds->fifo_base] * 16;
   ds->fifo_base = (ds->fifo_base + 1) % 32;
-  next_sample = ds->fifo[ds->fifo_base] << 4;
+  next_sample = ds->fifo[ds->fifo_base] * 16;
 
   if(sound_on == 1)
   {
@@ -655,7 +655,7 @@ void render_audio(void)
             current_sample = 2047;
          if(current_sample < -2048)
             current_sample = -2048;
-         stream_base[i] = current_sample << 4;
+         stream_base[i] = current_sample * 16;
          source[i] = 0;
       }
       audio_batch_cb(stream_base, 256);

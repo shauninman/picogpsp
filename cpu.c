@@ -266,7 +266,7 @@ void print_register_usage(void)
   using_register_list(arm, reg_list, 16)                                      \
 
 #define arm_decode_branch()                                                   \
-  s32 offset = ((s32)(opcode & 0xFFFFFF) << 8) >> 6                           \
+  s32 offset = ((s32)((u32)(opcode << 8))) >> 6                               \
 
 
 #define thumb_decode_shift()                                                  \
