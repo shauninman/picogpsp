@@ -2969,19 +2969,33 @@ static void emit_pmemst_stub(
   *tr_ptr = translation_ptr;
 }
 
+// Palette conversion functions. a1 contains the palette value (16 LSB)
+// Places the result in reg_temp, can use a0 as temporary register
 #ifdef USE_BGR_FORMAT
-  /* 0BGR to BGR565, for PSP */
+  /* 0BGR to BGR565, only for PSP (uses ins) */
   #define palette_convert()                       \
     mips_emit_sll(reg_temp, reg_a1, 1);           \
     mips_emit_andi(reg_temp, reg_temp, 0xFFC0);   \
     mips_emit_ins(reg_temp, reg_a1, 0, 5);
 #else
-  /* 0BGR to RGB565 (clobbers a0!) */
-  #define palette_convert()                       \
-    mips_emit_ext(reg_temp, reg_a1, 10, 5);       \
-    mips_emit_ins(reg_temp, reg_a1, 11, 5);       \
-    mips_emit_ext(reg_a0, reg_a1, 5, 5);          \
-    mips_emit_ins(reg_temp, reg_a0, 6, 5);
+  /* 0BGR to RGB565 (clobbers a0) */
+  #ifdef MIPS_HAS_R2_INSTS
+    #define palette_convert()                       \
+      mips_emit_ext(reg_temp, reg_a1, 10, 5);       \
+      mips_emit_ins(reg_temp, reg_a1, 11, 5);       \
+      mips_emit_ext(reg_a0, reg_a1, 5, 5);          \
+      mips_emit_ins(reg_temp, reg_a0, 6, 5);
+  #else
+    #define palette_convert()                       \
+      mips_emit_srl(reg_a0, reg_a1, 10);            \
+      mips_emit_andi(reg_temp, reg_a0, 0x1F);       \
+      mips_emit_sll(reg_a0, reg_a1, 1);             \
+      mips_emit_andi(reg_a0, reg_a0, 0x7C0);        \
+      mips_emit_or(reg_temp, reg_temp, reg_a0);     \
+      mips_emit_andi(reg_a0, reg_a1, 0x1F);         \
+      mips_emit_sll(reg_a0, reg_a0, 11);            \
+      mips_emit_or(reg_temp, reg_temp, reg_a0);
+  #endif
 #endif
 
 // Palette is accessed differently and stored in a decoded manner
