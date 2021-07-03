@@ -44,6 +44,7 @@ void mips_indirect_branch_dual(u32 address);
 u32 execute_read_cpsr();
 u32 execute_read_spsr();
 void execute_swi(u32 pc);
+void mips_cheat_hook(void);
 
 u32 execute_spsr_restore(u32 address);
 void execute_store_cpsr(u32 new_cpsr, u32 store_mask);
@@ -56,8 +57,6 @@ u32 execute_lsl_flags_reg(u32 value, u32 shift);
 u32 execute_lsr_flags_reg(u32 value, u32 shift);
 u32 execute_asr_flags_reg(u32 value, u32 shift);
 u32 execute_ror_flags_reg(u32 value, u32 shift);
-
-void reg_check();
 
 typedef enum
 {
@@ -200,18 +199,18 @@ typedef enum
 
 #define mips_emit_reg(opcode, rs, rt, rd, shift, function)                    \
   *((u32 *)translation_ptr) = (mips_opcode_##opcode << 26) |                  \
-  (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) | function;             \
+  (rs << 21) | (rt << 16) | (rd << 11) | ((shift) << 6) | function;           \
   translation_ptr += 4                                                        \
 
 #define mips_emit_special(function, rs, rt, rd, shift)                        \
   *((u32 *)translation_ptr) = (mips_opcode_special << 26) |                   \
-   (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) |                      \
+   (rs << 21) | (rt << 16) | (rd << 11) | ((shift) << 6) |                    \
    mips_special_##function;                                                   \
   translation_ptr += 4                                                        \
 
 #define mips_emit_special2(function, rs, rt, rd, shift)                       \
   *((u32 *)translation_ptr) = (mips_opcode_special2 << 26) |                  \
-   (rs << 21) | (rt << 16) | (rd << 11) | (shift << 6) |                      \
+   (rs << 21) | (rt << 16) | (rd << 11) | ((shift) << 6) |                    \
    mips_special2_##function;                                                  \
   translation_ptr += 4                                                        \
 
@@ -534,14 +533,14 @@ u32 arm_to_mips_reg[] =
 
 #define generate_load_pc(ireg, new_pc)                                        \
 {                                                                             \
-  s32 pc_delta = new_pc - stored_pc;                                          \
+  s32 pc_delta = (new_pc) - (stored_pc);                                      \
   if((pc_delta >= -32768) && (pc_delta <= 32767))                             \
   {                                                                           \
     mips_emit_addiu(ireg, reg_pc, pc_delta);                                  \
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    generate_load_imm(ireg, new_pc);                                          \
+    generate_load_imm(ireg, (new_pc));                                        \
   }                                                                           \
 }                                                                             \
 
@@ -556,9 +555,6 @@ u32 arm_to_mips_reg[] =
 
 #define generate_shift_right_arithmetic(ireg, imm)                            \
   mips_emit_sra(ireg, ireg, imm)                                              \
-
-#define generate_rotate_right(ireg, imm)                                      \
-  mips_emit_rotr(ireg, ireg, imm)                                             \
 
 #define generate_add(ireg_dest, ireg_src)                                     \
   mips_emit_addu(ireg_dest, ireg_dest, ireg_src)                              \
@@ -795,12 +791,13 @@ u32 arm_to_mips_reg[] =
   check_load_reg_pc(arm_reg, _rm, 8);                                         \
   if(_shift != 0)                                                             \
   {                                                                           \
-    mips_emit_rotr(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm], _shift);   \
+    rotate_right(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm],              \
+                 reg_temp, _shift);                                           \
   }                                                                           \
   else                                                                        \
-  {                                                                           \
+  { /* Special case: RRX (no carry update) */                                 \
     mips_emit_srl(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm], 1);         \
-    mips_emit_ins(arm_to_mips_reg[arm_reg], reg_c_cache, 31, 1);              \
+    insert_bits(arm_to_mips_reg[arm_reg], reg_c_cache, reg_temp, 31, 1);      \
   }                                                                           \
   _rm = arm_reg                                                               \
 
@@ -808,7 +805,7 @@ u32 arm_to_mips_reg[] =
   check_load_reg_pc(arm_reg, _rm, 8);                                         \
   if(_shift != 0)                                                             \
   {                                                                           \
-    mips_emit_ext(reg_c_cache, arm_to_mips_reg[_rm], (32 - _shift), 1);       \
+    extract_bits(reg_c_cache, arm_to_mips_reg[_rm], (32 - _shift), 1);        \
     mips_emit_sll(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm], _shift);    \
     _rm = arm_reg;                                                            \
   }                                                                           \
@@ -817,7 +814,7 @@ u32 arm_to_mips_reg[] =
   check_load_reg_pc(arm_reg, _rm, 8);                                         \
   if(_shift != 0)                                                             \
   {                                                                           \
-    mips_emit_ext(reg_c_cache, arm_to_mips_reg[_rm], (_shift - 1), 1);        \
+    extract_bits(reg_c_cache, arm_to_mips_reg[_rm], (_shift - 1), 1);         \
     mips_emit_srl(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm], _shift);    \
   }                                                                           \
   else                                                                        \
@@ -831,7 +828,7 @@ u32 arm_to_mips_reg[] =
   check_load_reg_pc(arm_reg, _rm, 8);                                         \
   if(_shift != 0)                                                             \
   {                                                                           \
-    mips_emit_ext(reg_c_cache, arm_to_mips_reg[_rm], (_shift - 1), 1);        \
+    extract_bits(reg_c_cache, arm_to_mips_reg[_rm], (_shift - 1), 1);         \
     mips_emit_sra(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm], _shift);    \
   }                                                                           \
   else                                                                        \
@@ -845,15 +842,16 @@ u32 arm_to_mips_reg[] =
   check_load_reg_pc(arm_reg, _rm, 8);                                         \
   if(_shift != 0)                                                             \
   {                                                                           \
-    mips_emit_ext(reg_c_cache, arm_to_mips_reg[_rm], (_shift - 1), 1);        \
-    mips_emit_rotr(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm], _shift);   \
+    extract_bits(reg_c_cache, arm_to_mips_reg[_rm], (_shift - 1), 1);         \
+    rotate_right(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm],              \
+                 reg_temp, _shift);                                           \
   }                                                                           \
   else                                                                        \
-  {                                                                           \
-    mips_emit_andi(reg_temp, arm_to_mips_reg[_rm], 1);                        \
+  { /* Special case: RRX (carry update) */                                    \
+    mips_emit_sll(reg_temp, reg_c_cache, 31);                                 \
+    mips_emit_andi(reg_c_cache, arm_to_mips_reg[_rm], 1);                     \
     mips_emit_srl(arm_to_mips_reg[arm_reg], arm_to_mips_reg[_rm], 1);         \
-    mips_emit_ins(arm_to_mips_reg[arm_reg], reg_c_cache, 31, 1);              \
-    mips_emit_addu(reg_c_cache, reg_temp, reg_zero);                          \
+    mips_emit_or(arm_to_mips_reg[arm_reg], arm_to_mips_reg[arm_reg],reg_temp);\
   }                                                                           \
   _rm = arm_reg                                                               \
 
@@ -874,7 +872,8 @@ u32 arm_to_mips_reg[] =
   mips_emit_sra(reg_a0, reg_a0, 31)                                           \
 
 #define generate_shift_reg_ror_no_flags(_rm, _rs)                             \
-  mips_emit_rotrv(reg_a0, arm_to_mips_reg[_rm], arm_to_mips_reg[_rs])         \
+  rotate_right_var(reg_a0, arm_to_mips_reg[_rm],                              \
+                   reg_temp, arm_to_mips_reg[_rs])                            \
 
 #define generate_shift_reg_lsl_flags(_rm, _rs)                                \
   generate_load_reg_pc(reg_a0, _rm, 12);                                      \
@@ -896,7 +895,8 @@ u32 arm_to_mips_reg[] =
   mips_emit_addiu(reg_temp, arm_to_mips_reg[_rs], -1);                        \
   mips_emit_srlv(reg_temp, arm_to_mips_reg[_rm], reg_temp);                   \
   mips_emit_andi(reg_c_cache, reg_temp, 1);                                   \
-  mips_emit_rotrv(reg_a0, arm_to_mips_reg[_rm], arm_to_mips_reg[_rs])         \
+  rotate_right_var(reg_a0, arm_to_mips_reg[_rm],                              \
+                   reg_temp, arm_to_mips_reg[_rs])                            \
 
 #define generate_shift_imm(arm_reg, name, flags_op)                           \
   u32 shift = (opcode >> 7) & 0x1F;                                           \
@@ -1696,6 +1696,9 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   arm_psr_##transfer_type(op_type, psr_reg);                                  \
 }                                                                             \
 
+#define thumb_load_pc_pool_const(rd, value)                                   \
+  generate_load_imm(arm_to_mips_reg[rd], (value));                            \
+
 #define arm_access_memory_load(mem_type)                                      \
   cycle_count += 2;                                                           \
   mips_emit_jal(mips_absolute_offset(execute_load_##mem_type));               \
@@ -1895,7 +1898,7 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    mips_emit_ins(reg_a2, reg_zero, 0, 2);                                    \
+    emit_align_reg(reg_a2, 2);                                                \
                                                                               \
     for(i = 0; i < 16; i++)                                                   \
     {                                                                         \
@@ -2070,20 +2073,6 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
    arm_to_mips_reg[rs]);                                                      \
   check_store_reg_pc_thumb(dest_rd);                                          \
 }                                                                             \
-
-/*
-
-#define thumb_data_proc_hi(name)                                              \
-{                                                                             \
-  thumb_decode_hireg_op();                                                    \
-  check_load_reg_pc(arm_reg_a0, rs, 4);                                       \
-  check_load_reg_pc(arm_reg_a1, rd, 4);                                       \
-  generate_op_##name##_reg(arm_to_mips_reg[rd], arm_to_mips_reg[rd],          \
-   arm_to_mips_reg[rs]);                                                      \
-  check_store_reg_pc_thumb(rd);                                               \
-}                                                                             \
-
-*/
 
 #define thumb_data_proc_test_hi(name)                                         \
 {                                                                             \
@@ -2332,7 +2321,7 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   }                                                                           \
   else                                                                        \
   {                                                                           \
-    mips_emit_ins(reg_a2, reg_zero, 0, 2);                                    \
+    emit_align_reg(reg_a2, 2);                                                \
                                                                               \
     for(i = 0; i < 8; i++)                                                    \
     {                                                                         \
@@ -2421,6 +2410,12 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   /*generate_load_pc(reg_a2, pc);*/                                           \
   generate_indirect_branch_cycle_update(dual);                                \
 }                                                                             \
+
+#define thumb_process_cheats()                                                \
+  generate_function_call(mips_cheat_hook);
+
+#define arm_process_cheats()                                                  \
+  generate_function_call(mips_cheat_hook);
 
 #ifdef TRACE_INSTRUCTIONS
   void trace_instruction(u32 pc)
@@ -2523,6 +2518,71 @@ u8 swi_hle_handle[256] =
   generate_load_pc(reg_a0, pc);                                               \
   mips_emit_sw(reg_a0, reg_base, (REG_PC * 4))                                \
 
+// Some macros to wrap device-specific instructions
+
+/* MIPS32R2 and PSP support ins, ext, seb, rotr */
+#ifdef MIPS_HAS_R2_INSTS
+  // Inserts LSB bits into another register
+  #define insert_bits(rdest, rsrc, rtemp, pos, size) \
+    mips_emit_ins(rdest, rsrc, pos, size);
+  // Doubles a byte into a halfword
+  #define double_byte(reg, rtmp) \
+    mips_emit_ins(reg, reg, 8, 8);
+  // Clears numbits at LSB position (to align an address)
+  #define emit_align_reg(reg, numbits) \
+    mips_emit_ins(reg, reg_zero, 0, numbits)
+  // Extract a bitfield (pos, size) to a register
+  #define extract_bits(rt, rs, pos, size) \
+    mips_emit_ext(rt, rs, pos, size)
+  // Extends signed byte to u32
+  #define extend_byte_signed(rt, rs) \
+    mips_emit_seb(rt, rs)
+  // Rotates a word using a temp reg if necessary
+  #define rotate_right(rdest, rsrc, rtemp, amount) \
+    mips_emit_rotr(rdest, rsrc, amount);
+  // Same but variable amount rotation (register)
+  #define rotate_right_var(rdest, rsrc, rtemp, ramount) \
+    mips_emit_rotrv(rdest, rsrc, ramount);
+#else
+  // Inserts LSB bits into another register
+  // *assumes dest bits are cleared*!
+  #define insert_bits(rdest, rsrc, rtemp, pos, size) \
+    mips_emit_sll(rtemp, rsrc, 32 - size);           \
+    mips_emit_srl(rtemp, rtemp, 32 - size - pos);    \
+    mips_emit_or(rdest, rdest, rtemp);
+  // Doubles a byte into a halfword
+  #define double_byte(reg, rtmp)    \
+    mips_emit_sll(rtmp, reg, 8);    \
+    mips_emit_andi(reg, reg, 0xff); \
+    mips_emit_or(reg, reg, rtmp);
+  // Clears numbits at LSB position (to align an address)
+  #define emit_align_reg(reg, numbits) \
+    mips_emit_srl(reg, reg, numbits); \
+    mips_emit_sll(reg, reg, numbits)
+  // Extract a bitfield (pos, size) to a register
+  #define extract_bits(rt, rs, pos, size) \
+    mips_emit_sll(rt, rs, 32 - ((pos) + (size))); \
+    mips_emit_srl(rt, rt, 32 - (size))
+  // Extends signed byte to u32
+  #define extend_byte_signed(rt, rs) \
+    mips_emit_sll(rt, rs, 24); \
+    mips_emit_sra(rt, rt, 24)
+  // Rotates a word (uses temp reg)
+  #define rotate_right(rdest, rsrc, rtemp, amount) \
+    mips_emit_sll(rtemp, rsrc, 32 - (amount));     \
+    mips_emit_srl(rdest, rsrc, (amount));          \
+    mips_emit_or(rdest, rdest, rtemp)
+  // Variable rotation using temp reg (dst != src)
+  #define rotate_right_var(rdest, rsrc, rtemp, ramount) \
+    mips_emit_andi(rtemp, ramount, 0x1F);               \
+    mips_emit_srlv(rdest, rsrc, rtemp);                 \
+    mips_emit_subu(rtemp, reg_zero, rtemp);             \
+    mips_emit_addiu(rtemp, rtemp, 32);                  \
+    mips_emit_sllv(rtemp, rsrc, rtemp);                 \
+    mips_emit_or(rdest, rdest, rtemp)
+
+#endif
+
 
 // Register save layout as follows:
 #define ReOff_RegPC    (15*4) // REG_PC
@@ -2563,17 +2623,18 @@ u8 swi_hle_handle[256] =
   emit_save_regs(true);                                                       \
   genccall(fnptr);                                                            \
   mips_emit_andi(reg_a0, reg_a0, (mask));                                     \
-  emit_restore_regs(true);                                                    \
   mips_emit_lw(mips_reg_ra, reg_base, ReOff_SaveR1);                          \
-  mips_emit_jr(mips_reg_ra);
+  emit_restore_regs(true);
 
 #define emit_mem_call(fnptr, mask)      \
   emit_mem_call_ds(fnptr, mask)         \
+  mips_emit_jr(mips_reg_ra);            \
   mips_emit_nop();
 
 // Pointer table to stubs, indexed by type and region
 extern u32 tmemld[11][16];
 extern u32 tmemst[ 4][16];
+extern u32 thnjal[15*16];
 void mips_lookup_pc();
 void smc_write();
 cpu_alert_type write_io_register8 (u32 address, u32 value);
@@ -2692,7 +2753,7 @@ static void emit_pmemld_stub(
   // Address checking: jumps to handler if bad region/alignment
   mips_emit_srl(reg_temp, reg_a0, (32 - regionbits));
   if (!aligned && size != 0) {  // u8 or aligned u32 dont need to check alignment bits
-    mips_emit_ins(reg_temp, reg_a0, regionbits, size);  // Add 1 or 2 bits of alignment
+    insert_bits(reg_temp, reg_a0, reg_rv, regionbits, size);  // Add 1 or 2 bits of alignment
   }
   if (regioncheck || alignment) {  // If region and alignment are zero, can skip
     mips_emit_xori(reg_temp, reg_temp, regioncheck | (alignment << regionbits));
@@ -2729,7 +2790,7 @@ static void emit_pmemld_stub(
     // This code call the C routine to map the relevant ROM page
     emit_save_regs(aligned);
     mips_emit_sw(mips_reg_ra, reg_base, ReOff_SaveR3);
-    mips_emit_ext(reg_a0, reg_a0, 15, 10);    // a0 = (addr >> 15) & 0x3ff
+    extract_bits(reg_a0, reg_a0, 15, 10);    // a0 = (addr >> 15) & 0x3ff
     genccall(&load_gamepak_page);
     mips_emit_sw(reg_temp, reg_base, ReOff_SaveR1);
 
@@ -2744,14 +2805,13 @@ static void emit_pmemld_stub(
     // Read from flash, is a bit special, fn call
     emit_mem_call_ds(&read_backup, 0xFFFF);
     if (!size && signext) {
-      mips_emit_seb(reg_rv, reg_rv);
+      extend_byte_signed(reg_rv, reg_rv);
     } else if (size == 1 && alignment) {
-      mips_emit_seb(reg_rv, reg_rv);
+      extend_byte_signed(reg_rv, reg_rv);
     } else if (size == 2) {
-      mips_emit_rotr(reg_rv, reg_rv, 8 * alignment);
-    } else {
-      mips_emit_nop();
+      rotate_right(reg_rv, reg_rv, reg_temp, 8 * alignment);
     }
+    generate_function_return_swap_delay();
     *tr_ptr = translation_ptr;
     return;
   } else {
@@ -2765,21 +2825,22 @@ static void emit_pmemld_stub(
 
     if (region == 2) {
       // Can't do EWRAM with an `andi` instruction (18 bits mask)
-      mips_emit_ext(reg_a0, reg_a0, 0, 18);      // &= 0x3ffff
+      extract_bits(reg_a0, reg_a0, 0, 18);       // &= 0x3ffff
       if (!aligned && alignment != 0) {
-        mips_emit_ins(reg_a0, reg_zero, 0, size);// addr & ~1/2 (align to size)
+        emit_align_reg(reg_a0, size);            // addr & ~1/2 (align to size)
       }
       // Need to insert a zero in the addr (due to how it's mapped)
       mips_emit_addu(reg_rv, reg_rv, reg_a0);    // Adds to the base addr
     } else if (region == 6) {
       // VRAM is mirrored every 128KB but the last 32KB is mapped to the previous
-      mips_emit_ext(reg_temp, reg_a0, 15, 2);    // Extract bits 15 and 16
+      extract_bits(reg_temp, reg_a0, 15, 2);     // Extract bits 15 and 16
       mips_emit_addiu(reg_temp, reg_temp, -3);   // Check for 3 (last block)
       if (!aligned && alignment != 0) {
-        mips_emit_ins(reg_a0, reg_zero, 0, size);// addr & ~1/2 (align to size)
+        emit_align_reg(reg_a0, size);            // addr & ~1/2 (align to size)
       }
-      mips_emit_b(bne, reg_zero, reg_temp, 2);   // Skip unless last block
-      mips_emit_ext(reg_a0, reg_a0, 0, 17);      // addr & 0x1FFFF [delay]
+      extract_bits(reg_a0, reg_a0, 0, 17);       // addr & 0x1FFFF [delay]
+      mips_emit_b(bne, reg_zero, reg_temp, 1);   // Skip unless last block
+      generate_swap_delay();
       mips_emit_addiu(reg_a0, reg_a0, 0x8000);   // addr - 0x8000 (mirror last block)
       mips_emit_addu(reg_rv, reg_rv, reg_a0);    // addr = base + adjusted offset
     } else {
@@ -2790,16 +2851,13 @@ static void emit_pmemld_stub(
     }
   }
 
-  // Aligned accesses (or the weird s16u1 case) are just one inst
-  if (alignment == 0 || (size == 1 && signext)) {
-    emit_mem_access_loadop(translation_ptr, base_addr, size, alignment, signext);  // Delay slot
-    translation_ptr += 4;
-  }
-  else {
-    // Unaligned accesses (require rotation) need two insts
-    emit_mem_access_loadop(translation_ptr, base_addr, size, alignment, signext);
-    translation_ptr += 4;
-    mips_emit_rotr(reg_rv, reg_rv, alignment * 8);  // Delay slot
+  // Emit load operation
+  emit_mem_access_loadop(translation_ptr, base_addr, size, alignment, signext);
+  translation_ptr += 4;
+
+  if (!(alignment == 0 || (size == 1 && signext))) {
+    // Unaligned accesses require rotation, except for size=1 & signext
+    rotate_right(reg_rv, reg_rv, reg_temp, alignment * 8);
   }
 
   generate_function_return_swap_delay();   // Return. Move prev inst to delay slot
@@ -2837,26 +2895,27 @@ static void emit_pmemst_stub(
   mips_emit_lui(reg_rv, ((base_addr + 0x8000) >> 16));
 
   if (doubleaccess) {
-    mips_emit_ins(reg_a1, reg_a1, 8, 8);   // value = value | (value << 8)
+    double_byte(reg_a1, reg_temp);        // value = value | (value << 8)
   }
 
   if (region == 2) {
     // Can't do EWRAM with an `andi` instruction (18 bits mask)
-    mips_emit_ext(reg_a0, reg_a0, 0, 18);      // &= 0x3ffff
+    extract_bits(reg_a0, reg_a0, 0, 18);       // &= 0x3ffff
     if (!aligned && realsize != 0) {
-      mips_emit_ins(reg_a0, reg_zero, 0, size);// addr & ~1/2 (align to size)
+      emit_align_reg(reg_a0, size);            // addr & ~1/2 (align to size)
     }
     // Need to insert a zero in the addr (due to how it's mapped)
     mips_emit_addu(reg_rv, reg_rv, reg_a0);    // Adds to the base addr
   } else if (region == 6) {
     // VRAM is mirrored every 128KB but the last 32KB is mapped to the previous
-    mips_emit_ext(reg_temp, reg_a0, 15, 2);    // Extract bits 15 and 16
+    extract_bits(reg_temp, reg_a0, 15, 2);     // Extract bits 15 and 16
     mips_emit_addiu(reg_temp, reg_temp, -3);   // Check for 3 (last block)
     if (!aligned && realsize != 0) {
-      mips_emit_ins(reg_a0, reg_zero, 0, realsize);// addr & ~1/2 (align to size)
+      emit_align_reg(reg_a0, realsize);        // addr & ~1/2 (align to size)
     }
-    mips_emit_b(bne, reg_zero, reg_temp, 2);   // Skip unless last block
-    mips_emit_ext(reg_a0, reg_a0, 0, 17);      // addr & 0x1FFFF [delay]
+    extract_bits(reg_a0, reg_a0, 0, 17);       // addr & 0x1FFFF [delay]
+    mips_emit_b(bne, reg_zero, reg_temp, 1);   // Skip next inst unless last block
+    generate_swap_delay();
     mips_emit_addiu(reg_a0, reg_a0, 0x8000);   // addr - 0x8000 (mirror last block)
     mips_emit_addu(reg_rv, reg_rv, reg_a0);    // addr = base + adjusted offset
   } else {
@@ -2910,19 +2969,33 @@ static void emit_pmemst_stub(
   *tr_ptr = translation_ptr;
 }
 
+// Palette conversion functions. a1 contains the palette value (16 LSB)
+// Places the result in reg_temp, can use a0 as temporary register
 #ifdef USE_BGR_FORMAT
-  /* 0BGR to BGR565, for PSP */
+  /* 0BGR to BGR565, only for PSP (uses ins) */
   #define palette_convert()                       \
     mips_emit_sll(reg_temp, reg_a1, 1);           \
     mips_emit_andi(reg_temp, reg_temp, 0xFFC0);   \
     mips_emit_ins(reg_temp, reg_a1, 0, 5);
 #else
-  /* 0BGR to RGB565 (clobbers a0!) */
-  #define palette_convert()                       \
-    mips_emit_ext(reg_temp, reg_a1, 10, 5);       \
-    mips_emit_ins(reg_temp, reg_a1, 11, 5);       \
-    mips_emit_ext(reg_a0, reg_a1, 5, 5);          \
-    mips_emit_ins(reg_temp, reg_a0, 6, 5);
+  /* 0BGR to RGB565 (clobbers a0) */
+  #ifdef MIPS_HAS_R2_INSTS
+    #define palette_convert()                       \
+      mips_emit_ext(reg_temp, reg_a1, 10, 5);       \
+      mips_emit_ins(reg_temp, reg_a1, 11, 5);       \
+      mips_emit_ext(reg_a0, reg_a1, 5, 5);          \
+      mips_emit_ins(reg_temp, reg_a0, 6, 5);
+  #else
+    #define palette_convert()                       \
+      mips_emit_srl(reg_a0, reg_a1, 10);            \
+      mips_emit_andi(reg_temp, reg_a0, 0x1F);       \
+      mips_emit_sll(reg_a0, reg_a1, 1);             \
+      mips_emit_andi(reg_a0, reg_a0, 0x7C0);        \
+      mips_emit_or(reg_temp, reg_temp, reg_a0);     \
+      mips_emit_andi(reg_a0, reg_a1, 0x1F);         \
+      mips_emit_sll(reg_a0, reg_a0, 11);            \
+      mips_emit_or(reg_temp, reg_temp, reg_a0);
+  #endif
 #endif
 
 // Palette is accessed differently and stored in a decoded manner
@@ -2946,7 +3019,7 @@ static void emit_palette_hdl(
   mips_emit_b(bne, reg_zero, reg_temp, st_phndlr_branch(memop_number));
   mips_emit_andi(reg_rv, reg_a0, memmask);   // Clear upper bits (mirroring)
   if (size == 0) {
-    mips_emit_ins(reg_a1, reg_a1, 8, 8);   // value = value | (value << 8)
+    double_byte(reg_a1, reg_temp);    // value = value | (value << 8)
   }
   mips_emit_addu(reg_rv, reg_rv, reg_base);
 
@@ -3177,40 +3250,41 @@ static void emit_phand(
 
   mips_emit_srl(reg_temp, reg_a0, 24);
   #ifdef PSP
-  mips_emit_addiu(reg_rv, reg_zero, 15*4);  // Table limit (max)
-  mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
-  mips_emit_min(reg_temp, reg_temp, reg_rv);// Do not overflow table
+    mips_emit_addiu(reg_rv, reg_zero, 15*4);  // Table limit (max)
+    mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
+    mips_emit_min(reg_temp, reg_temp, reg_rv);// Do not overflow table
   #else
-  mips_emit_sltiu(reg_rv, reg_temp, 0x0F);  // Check for addr 0x1XXX.. 0xFXXX
-  mips_emit_b(bne, reg_zero, reg_rv, 2);    // Skip two insts (well, cant skip ds)
-  mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
-  mips_emit_addiu(reg_temp, reg_zero, 15*4);// Simulate ld/st to 0x0FXXX (open/ignore)
+    mips_emit_sltiu(reg_rv, reg_temp, 0x0F);  // Check for addr 0x1XXX.. 0xFXXX
+    mips_emit_sll(reg_temp, reg_temp, 2);     // Table is word indexed
+    mips_emit_b(bne, reg_zero, reg_rv, 1);    // Skip next inst if region is good
+    generate_swap_delay();
+    mips_emit_addiu(reg_temp, reg_zero, 15*4);// Simulate ld/st to 0x0FXXX (open/ignore)
   #endif
 
   // Stores or byte-accesses do not care about alignment
   if (check_alignment) {
-    // Move alignment bits for the table lookup
-    mips_emit_ins(reg_temp, reg_a0, 6, size); // Alignment bits (1 or 2, to bits 6 (and 7)
+    // Move alignment bits for the table lookup (1 or 2, to bits 6 and 7)
+    insert_bits(reg_temp, reg_a0, reg_rv, 6, size);
   }
 
   unsigned tbloff = 256 + 3*1024 + 220 + 4 * toff;  // Skip regs and RAMs
-  mips_emit_addu(reg_rv, reg_temp, reg_base); // Add to the base_reg the table offset
-  mips_emit_lw(reg_rv, reg_rv, tbloff);       // Read addr from table
-  mips_emit_sll(reg_temp, reg_rv, 4);         // 26 bit immediate to the MSB
-  mips_emit_ori(reg_temp, reg_temp, 0x3);     // JAL opcode
-  mips_emit_rotr(reg_temp, reg_temp, 6);      // Swap opcode and immediate
-  mips_emit_sw(reg_temp, mips_reg_ra, -8);    // Patch instruction!
+  unsigned tbloff2 = tbloff + 960;              // JAL opcode table
+  mips_emit_addu(reg_temp, reg_temp, reg_base); // Add to the base_reg the table offset
+  mips_emit_lw(reg_rv,   reg_temp, tbloff);     // Get func addr from 1st table
+  mips_emit_lw(reg_temp, reg_temp, tbloff2);    // Get opcode from 2nd table
+  mips_emit_sw(reg_temp, mips_reg_ra, -8);      // Patch instruction!
 
   #ifdef PSP
-  mips_emit_cache(0x1A, mips_reg_ra, -8);
-  mips_emit_jr(reg_rv);                       // Jump directly to target for speed
-  mips_emit_cache(0x08, mips_reg_ra, -8);
+    mips_emit_cache(0x1A, mips_reg_ra, -8);
+    mips_emit_jr(reg_rv);                       // Jump directly to target for speed
+    mips_emit_cache(0x08, mips_reg_ra, -8);
   #else
-  mips_emit_jr(reg_rv);
-  mips_emit_synci(mips_reg_ra, -8);
+    mips_emit_jr(reg_rv);
+    mips_emit_synci(mips_reg_ra, -8);
   #endif
 
-  // Round up handlers to 16 instructions for easy addressing :)
+  // Round up handlers to 16 instructions for easy addressing
+  // PSP/MIPS32r2 uses up to 12 insts
   while (translation_ptr - *tr_ptr < 64) {
     mips_emit_nop();
   }
@@ -3323,6 +3397,11 @@ void init_emitter() {
     handler(2, &stinfo[i], 2, false, &translation_ptr);  // st u32
     handler(3, &stinfo[i], 2, true,  &translation_ptr);  // st aligned 32
   }
+
+  // Generate JAL tables
+  u32 *tmemptr = &tmemld[0][0];
+  for (i = 0; i < 15*16; i++)
+    thnjal[i] = ((tmemptr[i] >> 2) & 0x3FFFFFF) | (mips_opcode_jal << 26);
 }
 
 u32 execute_arm_translate_internal(u32 cycles, void *regptr);

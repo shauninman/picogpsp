@@ -18,7 +18,19 @@
 
 #include "../gpsp_config.h"
 
-.set mips32r2
+// This is also defined in sys/asm.h but doesn't seem portable?
+#ifdef __mips64
+  .set mips64
+  #define SZREG 8
+  #define REG_L ld
+  #define REG_S sd
+#else
+  .set mips32r2
+  #define SZREG 4
+  #define REG_L lw
+  #define REG_S sw
+#endif
+
 .align 4
 
 .global mips_update_gba
@@ -34,22 +46,19 @@
 .global execute_lsl_flags_reg
 .global execute_lsr_flags_reg
 .global execute_asr_flags_reg
-.global execute_ror_flags_reg
 .global execute_arm_translate_internal
-.global icache_region_sync
-.global reg_check
 .global palette_ram
 .global palette_ram_converted
 .global oam_ram
-.global init_emitter
 .global mips_lookup_pc
 .global smc_write
+.global mips_cheat_hook
 
 .global write_io_epilogue
 .global memory_map_read
 .global tmemld
 .global tmemst
-.global tmemst
+.global thnjal
 .global reg
 .global spsr
 .global reg_mode
@@ -120,22 +129,39 @@
 .equ COMPLETED_FRAME,     (32 * 4)
 .equ OAM_UPDATED,         (33 * 4)
 .equ GP_SAVE,             (34 * 4)
+.equ GP_SAVE_HI,          (35 * 4)
 
 .equ SPSR_BASE,           (0x100 + 0x400 * 3)
 .equ REGMODE_BASE,        (SPSR_BASE + 24)
 .equ SUPERVISOR_SPSR,     (3 * 4 + SPSR_BASE)
 .equ SUPERVISOR_LR,       ((3 * (7 * 4)) + (6 * 4) + REGMODE_BASE)
 .equ FNPTRS_MEMOPS,       (REGMODE_BASE + 196)
-.equ FNPTRS_BASE,         (FNPTRS_MEMOPS + 960)
+.equ FNPTRS_BASE,         (FNPTRS_MEMOPS + 960*2)
 
 .set noat
 .set noreorder
 
 # make sure $16 has the register base for these macros
 
-.macro collapse_flag flag_reg, shift
-  ins $2, $\flag_reg, \shift, 1    # insert flag into CPSR
-.endm
+#ifdef MIPS_HAS_R2_INSTS
+  .macro collapse_flag flag_reg, shift
+    ins $2, $\flag_reg, \shift, 1    # insert flag into CPSR
+  .endm
+
+  .macro extract_flag shift, flag_reg
+    ext $\flag_reg, $1, \shift, 1   # extract flag from CPSR
+  .endm
+#else
+  .macro collapse_flag flag_reg, shift
+    sll $1, $\flag_reg, \shift
+    or  $2, $2, $1
+  .endm
+
+  .macro extract_flag shift, flag_reg
+    srl $\flag_reg, $1, \shift
+    andi $\flag_reg, $\flag_reg, 1
+  .endm
+#endif
 
 .macro collapse_flags
   lw $2, REG_CPSR($16)            # load CPSR
@@ -145,10 +171,6 @@
   collapse_flag 22, 29
   collapse_flag 23, 28
   sw $2, REG_CPSR($16)            # store CPSR
-.endm
-
-.macro extract_flag shift, flag_reg
-  ext $\flag_reg, $1, \shift, 1   # extract flag from CPSR
 .endm
 
 .macro extract_flags_body         # extract flags from $1
@@ -181,7 +203,7 @@
   sw $28, REG_R13($16)
   sw $30, REG_R14($16)
 
-  lw $28, GP_SAVE($16)
+  REG_L $28, GP_SAVE($16)
 .endm
 
 .macro restore_registers
@@ -256,23 +278,33 @@ mips_update_gba:
   nop
 
 
+# Processes cheats whenever we hit the master PC
+mips_cheat_hook:
+  sw $ra, REG_SAVE2($16)
+  save_registers
+  cfncall process_cheats, 8
+  lw $ra, REG_SAVE2($16)
+  restore_registers
+  jr $ra
+  nop
+
+
 # Loads the main context and returns to it.
 # ARM regs must be saved before branching here
 return_to_main:
-  lw $28, GP_SAVE($16)            # Restore previous state
-  lw $s0,  0($sp)
-  lw $s1,  4($sp)
-  lw $s2,  8($sp)
-  lw $s3, 12($sp)
-  lw $s4, 16($sp)
-  lw $s5, 20($sp)
-  lw $s6, 24($sp)
-  lw $s7, 28($sp)
-  lw $fp, 32($sp)
-  lw $ra, 36($sp)
+  REG_L $28, GP_SAVE($16)            # Restore previous state
+  REG_L $s0,  4*SZREG($sp)
+  REG_L $s1,  5*SZREG($sp)
+  REG_L $s2,  6*SZREG($sp)
+  REG_L $s3,  7*SZREG($sp)
+  REG_L $s4,  8*SZREG($sp)
+  REG_L $s5,  9*SZREG($sp)
+  REG_L $s6, 10*SZREG($sp)
+  REG_L $s7, 11*SZREG($sp)
+  REG_L $fp, 12*SZREG($sp)
+  REG_L $ra, 13*SZREG($sp)
   jr $ra                          # Return to main
-  add $sp, $sp, 48                # Restore stack pointer (delay slot)
-
+  addiu $sp, $sp, 112             # Restore stack pointer (delay slot)
 
 # Perform an indirect branch.
 
@@ -395,7 +427,8 @@ execute_swi:
   sw $4, SUPERVISOR_LR($16)       # store next PC in the supervisor's LR
   collapse_flags                  # get cpsr in $2
   sw $2, SUPERVISOR_SPSR($16)     # save cpsr in SUPERVISOR_CPSR
-  ins $2, $0, 0, 6                # zero out bottom 6 bits of CPSR
+  srl $2, $2, 6                   # zero out bottom 6 bits of CPSR
+  sll $2, $2, 6
   ori $2, 0x13                    # set mode to supervisor
   sw $2, REG_CPSR($16)            # write back CPSR
   save_registers
@@ -501,11 +534,11 @@ lsl_shift_high:
   bne $1, $0, lsl_shift_done      # jump if shift == 32
   andi $22, $4, 1                 # c flag = value & 0x01 (delay)
 
-  add $22, $0, $0                 # c flag = 0 otherwise
+  addu $22, $0, $0                # c flag = 0 otherwise
 
 lsl_shift_done:
   jr $ra                          # return
-  add $4, $0, $0                  # value = 0 no matter what
+  addu $4, $0, $0                 # value = 0 no matter what
 
 
 execute_lsr_flags_reg:
@@ -526,11 +559,11 @@ lsr_shift_high:
   bne $1, $0, lsr_shift_done      # jump if shift == 32
   srl $22, $4, 31                 # c flag = value >> 31 (delay)
 
-  add $22, $0, $0                 # c flag = 0 otherwise
+  addu $22, $0, $0                # c flag = 0 otherwise
 
 lsr_shift_done:
   jr $ra                          # return
-  add $4, $0, $0                  # value = 0 no matter what
+  addu $4, $0, $0                 # value = 0 no matter what
 
 
 execute_asr_flags_reg:
@@ -552,35 +585,25 @@ asr_shift_high:
   andi $22, $4, 1                 # c flag = value & 0x01
 
 
-execute_ror_flags_reg:
-  beq $5, $0, ror_zero_shift      # is the shift zero?
-  addiu $1, $5, -1                # $1 = (shift - 1) (delay)
-
-  srav $1, $4, $1                 # $1 = (value >> (shift - 1))
-  andi $22, $1, 1                 # c flag = $1 & 1
-
-ror_zero_shift:
-  jr $ra                          # return
-  rotrv $4, $4, $5                # return (value ror shift) delay
-
 # $4: cycle counter argument
 # $5: pointer to reg
 
 execute_arm_translate_internal:
-  add $sp, $sp, -48               # Store the main thread context
-  sw $s0,  0($sp)
-  sw $s1,  4($sp)
-  sw $s2,  8($sp)
-  sw $s3, 12($sp)
-  sw $s4, 16($sp)
-  sw $s5, 20($sp)
-  sw $s6, 24($sp)
-  sw $s7, 28($sp)
-  sw $fp, 32($sp)
-  sw $ra, 36($sp)
+
+  addiu $sp, $sp, -112            # Store the main thread context
+  REG_S $s0,  4*SZREG($sp)
+  REG_S $s1,  5*SZREG($sp)
+  REG_S $s2,  6*SZREG($sp)
+  REG_S $s3,  7*SZREG($sp)
+  REG_S $s4,  8*SZREG($sp)
+  REG_S $s5,  9*SZREG($sp)
+  REG_S $s6, 10*SZREG($sp)
+  REG_S $s7, 11*SZREG($sp)
+  REG_S $fp, 12*SZREG($sp)
+  REG_S $ra, 13*SZREG($sp)
 
   move $16, $5
-  sw $28, GP_SAVE($16)
+  REG_S $28, GP_SAVE($16)
 
   addu $17, $4, $0                # load cycle counter register
 
@@ -640,6 +663,8 @@ tmemld:
   .space 704
 tmemst:
   .space 256
+thnjal:
+  .space 960
 fnptrs:
   .long update_gba                     # 0
   .long block_lookup_address_arm       # 1
@@ -649,6 +674,7 @@ fnptrs:
   .long set_cpu_mode                   # 5
   .long execute_spsr_restore_body      # 6
   .long execute_store_cpsr_body        # 7
+  .long process_cheats                 # 8
 
 #if !defined(HAVE_MMAP)
 

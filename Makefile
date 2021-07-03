@@ -1,5 +1,4 @@
 DEBUG=0
-HAVE_GRIFFIN=0
 FRONTEND_SUPPORTS_RGB565=1
 FORCE_32BIT_ARCH=0
 HAVE_MMAP=0
@@ -74,7 +73,7 @@ ifeq ($(platform), unix)
 		LIBM :=
 	endif
 	CFLAGS += $(FORCE_32BIT)
-	LDFLAGS := -Wl,--no-undefined
+	LDFLAGS += -Wl,--no-undefined
 	ifeq ($(HAVE_DYNAREC),1)
 		HAVE_MMAP = 1
 	endif
@@ -196,12 +195,20 @@ else ifeq ($(platform), switch)
         include $(LIBTRANSISTOR_HOME)/libtransistor.mk
         STATIC_LINKING=1
 
+# Nintendo Game Cube / Wii / WiiU
+else ifneq (,$(filter $(platform), ngc wii wiiu))
+	TARGET := $(TARGET_NAME)_libretro_$(platform).a
+	CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
+	AR = $(DEVKITPPC)/bin/powerpc-eabi-ar$(EXE_EXT)
+	CFLAGS += -DGEKKO -mcpu=750 -meabi -mhard-float -DHAVE_STRTOF_L
+	STATIC_LINKING = 1
+
 # PSP
 else ifeq ($(platform), psp1)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).a
 	CC = psp-gcc$(EXE_EXT)
 	AR = psp-ar$(EXE_EXT)
-	CFLAGS += -DPSP -G0 -DUSE_BGR_FORMAT
+	CFLAGS += -DPSP -G0 -DUSE_BGR_FORMAT -DMIPS_HAS_R2_INSTS
 	CFLAGS += -I$(shell psp-config --pspsdk-path)/include
 	CFLAGS += -march=allegrex -mfp32 -mgp32 -mlong32 -mabi=eabi
 	CFLAGS += -fomit-frame-pointer -ffast-math
@@ -368,7 +375,7 @@ else ifneq (,$(findstring armv,$(platform)))
 	ifeq (,$(findstring no-dynarec,$(platform)))
 		HAVE_DYNAREC := 1
 	endif
-	LDFLAGS := -Wl,--no-undefined	
+	LDFLAGS += -Wl,--no-undefined
 
 # MIPS
 else ifeq ($(platform), mips32)
@@ -376,6 +383,16 @@ else ifeq ($(platform), mips32)
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC -DPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
+	CFLAGS += -DMIPS_HAS_R2_INSTS
+	HAVE_DYNAREC := 1
+	CPU_ARCH := mips
+
+# MIPS64
+else ifeq ($(platform), mips64n32)
+	TARGET := $(TARGET_NAME)_libretro.so
+	SHARED := -shared -nostdlib -Wl,--version-script=link.T
+	fpic := -fPIC -DPIC
+	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips64 -mabi=n32 -mhard-float
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 
@@ -384,7 +401,7 @@ else ifeq ($(platform), emscripten)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).bc
 	STATIC_LINKING = 1
 
-# GCW0
+# GCW0 (OD and OD Beta)
 else ifeq ($(platform), gcw0)
 	TARGET := $(TARGET_NAME)_libretro.so
 	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
@@ -393,22 +410,7 @@ else ifeq ($(platform), gcw0)
 	SHARED := -shared -nostdlib -Wl,--version-script=link.T
 	fpic := -fPIC -DPIC
 	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
-	HAVE_DYNAREC := 1
-	CPU_ARCH := mips
-
-# GCW0 (OpenDingux Beta)
-else ifeq ($(platform), gcw0-odbeta)
-	TARGET := $(TARGET_NAME)_libretro.so
-	CC = /opt/gcw0-toolchain/usr/bin/mipsel-linux-gcc
-	CXX = /opt/gcw0-toolchain/usr/bin/mipsel-linux-g++
-	AR = /opt/gcw0-toolchain/usr/bin/mipsel-linux-ar
-	SHARED := -shared -nostdlib -Wl,--version-script=link.T
-	fpic := -fPIC -DPIC
-	CFLAGS += -fomit-frame-pointer -ffast-math -march=mips32 -mtune=mips32r2 -mhard-float
-	# The ASM code and/or MIPS dynarec of GPSP does not respect
-	# MIPS calling conventions, so we must use '-fno-caller-saves'
-	# for the OpenDingux Beta build
-	CFLAGS += -fno-caller-saves
+	CFLAGS += -DMIPS_HAS_R2_INSTS
 	HAVE_DYNAREC := 1
 	CPU_ARCH := mips
 
@@ -443,11 +445,6 @@ else
 	OPTIMIZE      := -O3 -DNDEBUG
 endif
 
-
-include Makefile.common
-
-OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
-
 DEFINES := -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline -Wall
 
 ifeq ($(HAVE_DYNAREC), 1)
@@ -462,6 +459,9 @@ else ifeq ($(CPU_ARCH), x86_32)
 DEFINES += -DX86_ARCH
 endif
 
+include Makefile.common
+
+OBJECTS := $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o)
 
 WARNINGS_DEFINES =
 CODE_DEFINES =

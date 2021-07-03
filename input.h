@@ -56,6 +56,23 @@ static const map btn_map[] = {
    { RETRO_DEVICE_ID_JOYPAD_A,      BUTTON_A }
 };
 
+extern bool libretro_supports_bitmasks;
+extern bool libretro_supports_ff_override;
+extern bool libretro_ff_enabled;
+extern bool libretro_ff_enabled_prev;
+
+/* Minimum (and default) turbo pulse train
+ * is 2 frames ON, 2 frames OFF */
+#define TURBO_PERIOD_MIN      4
+#define TURBO_PERIOD_MAX      120
+#define TURBO_PULSE_WIDTH_MIN 2
+#define TURBO_PULSE_WIDTH_MAX 15
+
+extern unsigned turbo_period;
+extern unsigned turbo_pulse_width;
+extern unsigned turbo_a_counter;
+extern unsigned turbo_b_counter;
+
 void init_input(void);
 u32 update_input(void);
 void input_write_savestate(void);
