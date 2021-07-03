@@ -67,8 +67,14 @@ _##symbol:
 #define MODE_SUPERVISOR   3
 
 
-#define extract_u16(rd, rs) \
-  uxth rd, rs
+#if __ARM_ARCH >= 6
+  #define extract_u16(rd, rs) \
+    uxth rd, rs
+#else
+  #define extract_u16(rd, rs) \
+    bic  rd, rs, #0xff000000 ;\
+    bic  rd, rd, #0x00ff0000
+#endif
 
 @ Will load the register set from memory into the appropriate cached registers.
 @ See arm_emit.h for listing explanation.
@@ -772,11 +778,22 @@ lookup_pc:
 #define sign_extend_u16(reg)
 #define sign_extend_u32(reg)
 
-#define sign_extend_s8(reg)                                                  ;\
-  sxtb reg, reg
+#if __ARM_ARCH >= 6
+	#define sign_extend_s8(reg)                                                  ;\
+    sxtb reg, reg
 
-#define sign_extend_s16(reg)                                                 ;\
-  sxth reg, reg
+	#define sign_extend_s16(reg)                                                 ;\
+    sxth reg, reg
+#else
+  #define sign_extend_s8(reg)                                                  ;\
+    mov reg, reg, lsl #24                   /* shift reg into upper 8bits    */;\
+    mov reg, reg, asr #24                   /* shift down, sign extending    */;\
+
+  #define sign_extend_s16(reg)                                                 ;\
+    mov reg, reg, lsl #16                   /* shift reg into upper 16bits   */;\
+    mov reg, reg, asr #16                   /* shift down, sign extending    */;\
+
+#endif
 
 #define execute_load_op_u8(load_op)                                          ;\
   mov r0, r0, lsl #17                                                        ;\
