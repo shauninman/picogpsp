@@ -122,6 +122,19 @@ typedef enum
   REG_BLDCNT = 0x28,
   REG_BLDALPHA = 0x29,
   REG_BLDY = 0x2A,
+  REG_SOUND1CNT_L = 0x30,
+  REG_SOUND1CNT_H = 0x31,
+  REG_SOUND3CNT_L = 0x38,
+  REG_SOUND3CNT_H = 0x39,
+  REG_SOUND3CNT_X = 0x3A,
+  REG_SOUND4CNT_H = 0x3E,
+  REG_SOUNDCNT_L = 0x40,
+  REG_SOUNDCNT_H = 0x41,
+  REG_SOUNDCNT_X = 0x42,
+  REG_DMA0SAD = 0x58,
+  REG_DMA0DAD = 0x5A,
+  REG_DMA0CNT_L = 0x5C,
+  REG_DMA0CNT_H = 0x5D,
   REG_TM0D = 0x80,
   REG_TM0CNT = 0x81,
   REG_TM1D = 0x82,
@@ -170,9 +183,6 @@ void function_cc write_eeprom(u32 address, u32 value);
 u8 read_backup(u32 address);
 void function_cc write_backup(u32 address, u32 value);
 void function_cc write_rtc(u32 address, u32 value);
-
-extern u8 *memory_regions[16];
-extern u32 memory_limits[16];
 
 /* EDIT: Shouldn't this be extern ?! */
 extern u32 waitstate_cycles_sequential[16][3];

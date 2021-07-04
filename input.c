@@ -23,14 +23,26 @@
 #include "frontend/libpicofe/input.h"
 #endif
 
+bool libretro_supports_bitmasks    = false;
+bool libretro_supports_ff_override = false;
+bool libretro_ff_enabled           = false;
+bool libretro_ff_enabled_prev      = false;
+
+unsigned turbo_period      = TURBO_PERIOD_MIN;
+unsigned turbo_pulse_width = TURBO_PULSE_WIDTH_MIN;
+unsigned turbo_a_counter   = 0;
+unsigned turbo_b_counter   = 0;
+
 static u32 old_key = 0;
 static retro_input_state_t input_state_cb;
 
 void retro_set_input_state(retro_input_state_t cb) { input_state_cb = cb; }
 
+extern void set_fastforward_override(bool fastforward);
+
 static void trigger_key(u32 key)
 {
-  u32 p1_cnt = io_registers[REG_P1CNT];
+  u32 p1_cnt = read_ioreg(REG_P1CNT);
 
   if((p1_cnt >> 14) & 0x01)
   {
@@ -54,18 +66,74 @@ u32 update_input(void)
 {
    unsigned i;
    uint32_t new_key = 0;
+   bool turbo_a     = false;
+   bool turbo_b     = false;
 
    if (!input_state_cb)
       return 0;
 
-   for (i = 0; i < sizeof(btn_map) / sizeof(map); i++)
-      new_key |= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, btn_map[i].retropad) ? btn_map[i].gba : 0;
+   if (libretro_supports_bitmasks)
+   {
+      int16_t ret = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
+
+      for (i = 0; i < sizeof(btn_map) / sizeof(map); i++)
+         new_key |= (ret & (1 << btn_map[i].retropad)) ? btn_map[i].gba : 0;
+
+      libretro_ff_enabled = libretro_supports_ff_override &&
+            (ret & (1 << RETRO_DEVICE_ID_JOYPAD_R2));
+
+      turbo_a = (ret & (1 << RETRO_DEVICE_ID_JOYPAD_X));
+      turbo_b = (ret & (1 << RETRO_DEVICE_ID_JOYPAD_Y));
+   }
+   else
+   {
+      for (i = 0; i < sizeof(btn_map) / sizeof(map); i++)
+         new_key |= input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, btn_map[i].retropad) ? btn_map[i].gba : 0;
+
+       libretro_ff_enabled = libretro_supports_ff_override &&
+            input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2);
+
+      turbo_a = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X);
+      turbo_b = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y);
+   }
+
+   /* Handle turbo buttons */
+   if (turbo_a)
+   {
+      new_key |= (turbo_a_counter < turbo_pulse_width) ?
+            BUTTON_A : 0;
+
+      turbo_a_counter++;
+      if (turbo_a_counter >= turbo_period)
+         turbo_a_counter = 0;
+   }
+   else
+      turbo_a_counter = 0;
+
+   if (turbo_b)
+   {
+      new_key |= (turbo_b_counter < turbo_pulse_width) ?
+            BUTTON_B : 0;
+
+      turbo_b_counter++;
+      if (turbo_b_counter >= turbo_period)
+         turbo_b_counter = 0;
+   }
+   else
+      turbo_b_counter = 0;
 
    if ((new_key | old_key) != old_key)
       trigger_key(new_key);
 
    old_key = new_key;
-   io_registers[REG_P1] = (~old_key) & 0x3FF;
+   write_ioreg(REG_P1, (~old_key) & 0x3FF);
+
+   /* Handle fast forward button */
+   if (libretro_ff_enabled != libretro_ff_enabled_prev)
+   {
+      set_fastforward_override(libretro_ff_enabled);
+      libretro_ff_enabled_prev = libretro_ff_enabled;
+   }
 
    return 0;
 }

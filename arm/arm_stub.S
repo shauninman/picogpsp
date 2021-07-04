@@ -67,7 +67,7 @@ _##symbol:
 #define MODE_SUPERVISOR   3
 
 
-#ifdef __ARM_ARCH_7A__
+#if __ARM_ARCH >= 6
   #define extract_u16(rd, rs) \
     uxth rd, rs
 #else
@@ -287,6 +287,22 @@ arm_update_gba_builder(thumb, thumb, straight)
 arm_update_gba_builder(idle_arm, arm, add)
 arm_update_gba_builder(idle_thumb, thumb, add)
 
+
+@ Cheat hooks for master function
+@ This is called whenever PC == cheats-master-function
+@ Just calls the C function to process cheats
+
+#define cheat_hook_builder(mode)                                             ;\
+defsymbl(mode##_cheat_hook)                                                  ;\
+  save_flags()                                                               ;\
+  store_registers_##mode()                                                   ;\
+  call_c_function(process_cheats)                                            ;\
+  load_registers_##mode()                                                    ;\
+  restore_flags()                                                            ;\
+  bx lr                                                                      ;\
+
+cheat_hook_builder(arm)
+cheat_hook_builder(thumb)
 
 
 @ These are b stubs for performing indirect branches. They are not
@@ -762,13 +778,22 @@ lookup_pc:
 #define sign_extend_u16(reg)
 #define sign_extend_u32(reg)
 
-#define sign_extend_s8(reg)                                                  ;\
-  mov reg, reg, lsl #24                   /* shift reg into upper 8bits    */;\
-  mov reg, reg, asr #24                   /* shift down, sign extending    */;\
+#if __ARM_ARCH >= 6
+	#define sign_extend_s8(reg)                                                  ;\
+    sxtb reg, reg
 
-#define sign_extend_s16(reg)                                                 ;\
-  mov reg, reg, lsl #16                   /* shift reg into upper 16bits   */;\
-  mov reg, reg, asr #16                   /* shift down, sign extending    */;\
+	#define sign_extend_s16(reg)                                                 ;\
+    sxth reg, reg
+#else
+  #define sign_extend_s8(reg)                                                  ;\
+    mov reg, reg, lsl #24                   /* shift reg into upper 8bits    */;\
+    mov reg, reg, asr #24                   /* shift down, sign extending    */;\
+
+  #define sign_extend_s16(reg)                                                 ;\
+    mov reg, reg, lsl #16                   /* shift reg into upper 16bits   */;\
+    mov reg, reg, asr #16                   /* shift down, sign extending    */;\
+
+#endif
 
 #define execute_load_op_u8(load_op)                                          ;\
   mov r0, r0, lsl #17                                                        ;\
@@ -822,11 +847,11 @@ ext_load_##load_type:                                                        ;\
 
 .pool
 
-execute_load_builder(u8, 8, ldrneb, #0xF0000000)
-execute_load_builder(s8, 8, ldrnesb, #0xF0000000)
-execute_load_builder(u16, 16, ldrneh, #0xF0000001)
-execute_load_builder(s16, 16_signed, ldrnesh, #0xF0000001)
-execute_load_builder(u32, 32, ldrne, #0xF0000000)
+execute_load_builder(u8, 8, ldrb, #0xF0000000)
+execute_load_builder(s8, 8, ldrsb, #0xF0000000)
+execute_load_builder(u16, 16, ldrh, #0xF0000001)
+execute_load_builder(s16, 16_signed, ldrsh, #0xF0000001)
+execute_load_builder(u32, 32, ldr, #0xF0000003)
 
 .data
 

@@ -340,6 +340,31 @@ static void init_post_processing(void)
 
 /* Video post processing END */
 
+/* Fast forward override */
+void set_fastforward_override(bool fastforward)
+{
+   struct retro_fastforwarding_override ff_override;
+
+   if (!libretro_supports_ff_override)
+      return;
+
+   ff_override.ratio        = -1.0f;
+   ff_override.notification = true;
+
+   if (fastforward)
+   {
+      ff_override.fastforward    = true;
+      ff_override.inhibit_toggle = true;
+   }
+   else
+   {
+      ff_override.fastforward    = false;
+      ff_override.inhibit_toggle = false;
+   }
+
+   environ_cb(RETRO_ENVIRONMENT_SET_FASTFORWARDING_OVERRIDE, &ff_override);
+}
+
 static void video_run(void)
 {
    u16 *gba_screen_pixels_buf = gba_screen_pixels;
@@ -506,6 +531,14 @@ void retro_init(void)
       gba_screen_pixels = (uint16_t*)malloc(GBA_SCREEN_PITCH * GBA_SCREEN_HEIGHT * sizeof(uint16_t));
 #endif
 
+   libretro_supports_bitmasks = false;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL))
+      libretro_supports_bitmasks = true;
+
+   libretro_supports_ff_override = false;
+   if (environ_cb(RETRO_ENVIRONMENT_SET_FASTFORWARDING_OVERRIDE, NULL))
+      libretro_supports_ff_override = true;
+
    current_frameskip_type = no_frameskip;
    frameskip_threshold    = 0;
    frameskip_interval     = 0;
@@ -654,8 +687,32 @@ bool retro_unserialize(const void* data, size_t size)
 
 void retro_cheat_reset(void)
 {
+   cheat_clear();
 }
-void retro_cheat_set(unsigned index, bool enabled, const char* code) {}
+
+void retro_cheat_set(unsigned index, bool enabled, const char* code)
+{
+   if (!enabled)
+      return;
+
+   switch (cheat_parse(index, code))
+   {
+   case CheatErrorTooMany:
+      show_warning_message("Too many active cheats!", 2500);
+      break;
+   case CheatErrorTooBig:
+      show_warning_message("Cheats are too big!", 2500);
+      break;
+   case CheatErrorEncrypted:
+      show_warning_message("Encrypted cheats are not supported!", 2500);
+      break;
+   case CheatErrorNotSupported:
+      show_warning_message("Cheat type is not supported!", 2500);
+      break;
+   case CheatNoError:
+      break;
+   };
+}
 
 static void extract_directory(char* buf, const char* path, size_t size)
 {
@@ -799,25 +856,69 @@ static void check_variables(int started_from_load)
             use_libretro_save_method = 0;
       }
    }
+
+   var.key           = "gpsp_turbo_period";
+   var.value         = NULL;
+   turbo_period      = TURBO_PERIOD_MIN;
+   turbo_pulse_width = TURBO_PULSE_WIDTH_MIN;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      turbo_period = atoi(var.value);
+      turbo_period = (turbo_period < TURBO_PERIOD_MIN) ?
+            TURBO_PERIOD_MIN : turbo_period;
+      turbo_period = (turbo_period > TURBO_PERIOD_MAX) ?
+            TURBO_PERIOD_MAX : turbo_period;
+
+      turbo_pulse_width = turbo_period >> 1;
+      turbo_pulse_width = (turbo_pulse_width < TURBO_PULSE_WIDTH_MIN) ?
+            TURBO_PULSE_WIDTH_MIN : turbo_pulse_width;
+      turbo_pulse_width = (turbo_pulse_width > TURBO_PULSE_WIDTH_MAX) ?
+            TURBO_PULSE_WIDTH_MAX : turbo_pulse_width;
+
+      turbo_a_counter = 0;
+      turbo_b_counter = 0;
+   }
 }
 
 static void set_input_descriptors()
 {
    struct retro_input_descriptor descriptors[] = {
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,  "D-Pad Left" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,    "D-Pad Up" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,  "D-Pad Down" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,     "B" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,     "A" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,   "Select" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,    "Start" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "L" },
-      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "R" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "D-Pad Left" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "D-Pad Up" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "D-Pad Down" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "D-Pad Right" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "B" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "A" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Turbo B" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Turbo A" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Start" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,      "L" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "R" },
       { 0 },
    };
 
-   environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, descriptors);
+   struct retro_input_descriptor descriptors_ff[] = {
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT,   "D-Pad Left" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP,     "D-Pad Up" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN,   "D-Pad Down" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT,  "D-Pad Right" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B,      "B" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A,      "A" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y,      "Turbo B" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X,      "Turbo A" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,  "Start" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L,      "L" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R,      "R" },
+      { 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R2,     "Fast Forward" },
+      { 0 },
+   };
+
+   if (libretro_supports_ff_override)
+      environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, descriptors_ff);
+   else
+      environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, descriptors);
 }
 
 static void set_memory_descriptors(void)
@@ -863,7 +964,6 @@ bool retro_load_game(const struct retro_game_info* info)
       strcpy(filename_bios, main_path);
 
    bool bios_loaded = false;
-   printf("USE %d\n", (int)selected_bios);
    if (selected_bios == auto_detect || selected_bios == official_bios)
    {
      bios_loaded = true;
@@ -913,6 +1013,19 @@ bool retro_load_game_special(unsigned game_type,
 void retro_unload_game(void)
 {
    update_backup();
+
+   if (libretro_ff_enabled)
+      set_fastforward_override(false);
+
+   libretro_supports_bitmasks    = false;
+   libretro_supports_ff_override = false;
+   libretro_ff_enabled           = false;
+   libretro_ff_enabled_prev      = false;
+
+   turbo_period      = TURBO_PERIOD_MIN;
+   turbo_pulse_width = TURBO_PULSE_WIDTH_MIN;
+   turbo_a_counter   = 0;
+   turbo_b_counter   = 0;
 }
 
 unsigned retro_get_region(void)
@@ -985,9 +1098,8 @@ void retro_run(void)
 {
    bool updated = false;
 
-   update_input();
-
    input_poll_cb();
+   update_input();
 
    /* Check whether current frame should
     * be skipped */

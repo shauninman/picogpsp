@@ -31,6 +31,8 @@ u32 prepare_store_reg(u32 scratch_reg, u32 reg_index);
 void generate_load_reg(u32 ireg, u32 reg_index);
 void complete_store_reg(u32 scratch_reg, u32 reg_index);
 void complete_store_reg_pc_no_flags(u32 scratch_reg, u32 reg_index);
+void thumb_cheat_hook(void);
+void arm_cheat_hook(void);
 
 u32 arm_update_gba_arm(u32 pc);
 u32 arm_update_gba_thumb(u32 pc);
@@ -317,7 +319,7 @@ u32 arm_disect_imm_32bit(u32 imm, u32 *stores, u32 *rotations)
 
 
 #define generate_load_pc(ireg, new_pc)                                        \
-  arm_load_imm_32bit(ireg, new_pc)                                            \
+  arm_load_imm_32bit(ireg, (new_pc))                                          \
 
 #define generate_load_imm(ireg, imm, imm_ror)                                 \
   ARM_MOV_REG_IMM(0, ireg, imm, imm_ror)                                      \
@@ -1237,12 +1239,10 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 
   #define emit_trace_instruction(pc)               \
     generate_save_flags();                         \
-    ARM_LDR_IMM(0, ARMREG_SP, reg_base, 34*4);     \
     ARM_STMDB_WB(0, ARMREG_SP, 0x500C);            \
     arm_load_imm_32bit(reg_a0, pc);                \
     generate_function_call(trace_instruction);     \
     ARM_LDMIA_WB(0, ARMREG_SP, 0x500C);            \
-    arm_load_imm_32bit(ARMREG_SP, (u32)reg);       \
     generate_restore_flags();
   #define emit_trace_thumb_instruction(pc)         \
     emit_trace_instruction(pc)
@@ -1656,6 +1656,11 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
 
 /* Operation types: imm, mem_reg, mem_imm */
 
+#define thumb_load_pc_pool_const(reg_rd, value)                               \
+  u32 rgdst = prepare_store_reg(reg_a0, reg_rd);                              \
+  generate_load_pc(rgdst, (value));                                           \
+  complete_store_reg(rgdst, reg_rd)
+
 #define thumb_access_memory_load(mem_type, _rd)                               \
   cycle_count += 2;                                                           \
   generate_function_call(execute_load_##mem_type);                            \
@@ -1875,6 +1880,12 @@ u32 execute_store_cpsr_body(u32 _cpsr, u32 store_mask, u32 address)
   generate_load_reg_pc(reg_a0, rs, 4);                                        \
   generate_indirect_branch_cycle_update(dual_thumb);                          \
 }                                                                             \
+
+#define thumb_process_cheats()                                                \
+  generate_function_call(thumb_cheat_hook);
+
+#define arm_process_cheats()                                                  \
+  generate_function_call(arm_cheat_hook);
 
 #define thumb_swi()                                                           \
   generate_swi_hle_handler(opcode & 0xFF, thumb);                             \

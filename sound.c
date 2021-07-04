@@ -90,9 +90,9 @@ void sound_timer(fixed8_24 frequency_step, u32 channel)
   u32 buffer_index = ds->buffer_index;
   s16 current_sample, next_sample;
 
-  current_sample = ds->fifo[ds->fifo_base] << 4;
+  current_sample = ds->fifo[ds->fifo_base] * 16;
   ds->fifo_base = (ds->fifo_base + 1) % 32;
-  next_sample = ds->fifo[ds->fifo_base] << 4;
+  next_sample = ds->fifo[ds->fifo_base] * 16;
 
   if(sound_on == 1)
   {
@@ -442,7 +442,7 @@ void update_gbc_sound(u32 cpu_ticks)
   s32 volume_left, volume_right;
   u32 envelope_volume;
   s32 current_sample;
-  u32 sound_status = address16(io_registers, 0x84) & 0xFFF0;
+  u16 sound_status = read_ioreg(REG_SOUNDCNT_X) & 0xFFF0;
   s8 *sample_data;
   s8 *wave_bank;
   u8 *wave_ram = ((u8 *)io_registers) + 0x90;
@@ -526,7 +526,7 @@ void update_gbc_sound(u32 cpu_ticks)
     }
   }
 
-  address16(io_registers, 0x84) = sound_status;
+  write_ioreg(REG_SOUNDCNT_X, sound_status);
 
   gbc_sound_last_cpu_ticks = cpu_ticks;
   gbc_sound_buffer_index =
@@ -660,7 +660,7 @@ void render_audio(void)
             current_sample = 2047;
          if(current_sample < -2048)
             current_sample = -2048;
-         stream_base[i] = current_sample << 4;
+         stream_base[i] = current_sample * 16;
          source[i] = 0;
       }
 #ifdef __LIBRETRO__

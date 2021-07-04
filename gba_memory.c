@@ -36,7 +36,7 @@
   gbc_sound_channel[channel].envelope_status = (envelope_ticks != 0);         \
   gbc_sound_channel[channel].envelope_volume = initial_volume;                \
   gbc_sound_update = 1;                                                       \
-  address16(io_registers, address) = value;                                   \
+  address16(io_registers, address) = eswap16(value);                          \
 }                                                                             \
 
 #define gbc_sound_tone_control_high(channel, address)                         \
@@ -57,7 +57,7 @@
   }                                                                           \
                                                                               \
   gbc_sound_update = 1;                                                       \
-  address16(io_registers, address) = value;                                   \
+  address16(io_registers, address) = eswap16(value);                          \
 }                                                                             \
 
 #define gbc_sound_tone_control_sweep()                                        \
@@ -69,7 +69,7 @@
   gbc_sound_channel[0].sweep_ticks = sweep_ticks;                             \
   gbc_sound_channel[0].sweep_initial_ticks = sweep_ticks;                     \
   gbc_sound_update = 1;                                                       \
-  address16(io_registers, 0x60) = value;                                      \
+  write_ioreg(REG_SOUND1CNT_L, value);                                        \
 }                                                                             \
 
 #define gbc_sound_wave_control()                                              \
@@ -81,7 +81,7 @@
     gbc_sound_channel[2].master_enable = 1;                                   \
                                                                               \
   gbc_sound_update = 1;                                                       \
-  address16(io_registers, 0x70) = value;                                      \
+  write_ioreg(REG_SOUND3CNT_L, value);                                        \
 }                                                                             \
 
 static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
@@ -95,7 +95,7 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
     gbc_sound_channel[2].wave_volume =                                        \
      gbc_sound_wave_volume[(value >> 13) & 0x03];                             \
   gbc_sound_update = 1;                                                       \
-  address16(io_registers, 0x72) = value;                                      \
+  write_ioreg(REG_SOUND3CNT_H, value);                                        \
 }                                                                             \
 
 #define gbc_sound_tone_control_high_wave()                                    \
@@ -111,7 +111,7 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
     gbc_sound_channel[2].active_flag = 1;                                     \
   }                                                                           \
   gbc_sound_update = 1;                                                       \
-  address16(io_registers, 0x74) = value;                                      \
+  write_ioreg(REG_SOUND3CNT_X, value);                                        \
 }                                                                             \
 
 #define gbc_sound_noise_control()                                             \
@@ -142,7 +142,7 @@ static u32 gbc_sound_wave_volume[4] = { 0, 16384, 8192, 4096 };
      gbc_sound_channel[3].envelope_initial_volume;                            \
   }                                                                           \
   gbc_sound_update = 1;                                                       \
-  address16(io_registers, 0x7C) = value;                                      \
+  write_ioreg(REG_SOUND4CNT_H, value);                                        \
 }                                                                             \
 
 static void gbc_trigger_sound(u32 value)
@@ -157,7 +157,7 @@ static void gbc_trigger_sound(u32 value)
       gbc_sound_channel[channel].status = 
          ((value >> (channel + 8)) & 0x01) | ((value >> (channel + 11)) & 0x03);
    }
-   address16(io_registers, 0x80) = value;
+   write_ioreg(REG_SOUNDCNT_L, value);
 }
 
 #define trigger_sound()                                                       \
@@ -176,7 +176,7 @@ static void gbc_trigger_sound(u32 value)
     sound_reset_fifo(0);                                                      \
   if((value >> 15) & 0x01)                                                    \
     sound_reset_fifo(1);                                                      \
-  address16(io_registers, 0x82) = value;                                      \
+  write_ioreg(REG_SOUNDCNT_H, value);                                         \
 }                                                                             \
 
 static void sound_control_x(u32 value)
@@ -194,8 +194,8 @@ static void sound_control_x(u32 value)
       sound_on = 0;
    }
 
-   address16(io_registers, 0x84) = 
-      (address16(io_registers, 0x84) & 0x000F) | (value & 0xFFF0);
+   address16(io_registers, 0x84) = eswap16(
+      (readaddress16(io_registers, 0x84) & 0x000F) | (value & 0xFFF0));
 }
 
 #define sound_update_frequency_step(timer_number)                             \
@@ -239,7 +239,7 @@ static void trigger_timer(u32 timer_number, u32 value)
          timer[timer_number].prescale = prescale;
          timer[timer_number].irq = (value >> 6) & 0x01;
 
-         address16(io_registers, 0x100 + (timer_number * 4)) = -timer_reload;
+         write_ioreg(REG_TM0D + (timer_number * 2), (u32)(-timer_reload));
 
          timer_reload <<= prescale;
          timer[timer_number].count = timer_reload;
@@ -267,7 +267,7 @@ static void trigger_timer(u32 timer_number, u32 value)
          timer[timer_number].stop_cpu_ticks = cpu_ticks;
       }
    }
-   address16(io_registers, 0x102 + (timer_number * 4)) = value;
+   write_ioreg(REG_TM0CNT + (timer_number * 2), value);
 }
 
 // This table is configured for sequential access on system defaults
@@ -322,9 +322,6 @@ u8 *gamepak_rom;
 u32 gamepak_size;
 
 dma_transfer_type dma[4];
-
-u8 *memory_regions[16];
-u32 memory_limits[16];
 
 typedef struct
 {
@@ -463,7 +460,7 @@ void function_cc write_eeprom(u32 unused_address, u32 value)
         if(eeprom_size == EEPROM_512_BYTE)
         {
           eeprom_address =
-           (address16(eeprom_buffer, 0) >> 2) * 8;
+           (readaddress16(eeprom_buffer, 0) >> 2) * 8;
         }
         else
         {
@@ -513,10 +510,10 @@ void function_cc write_eeprom(u32 unused_address, u32 value)
   u32 gamepak_index = address >> 15;                                          \
   u8 *map = memory_map_read[gamepak_index];                                   \
                                                                               \
-  if(!map)                                                             \
+  if(!map)                                                                    \
     map = load_gamepak_page(gamepak_index & 0x3FF);                           \
                                                                               \
-  value = address##type(map, address & 0x7FFF)                                \
+  value = readaddress##type(map, address & 0x7FFF)                            \
 
 #define read_open8()                                                          \
   if(!(reg[REG_CPSR] & 0x20))                                                 \
@@ -585,29 +582,29 @@ u32 function_cc read_eeprom(void)
     case 0x00:                                                                \
       /* BIOS */                                                              \
       if(reg[REG_PC] >= 0x4000)                                               \
-        value = address##type(&bios_read_protect, address & 0x03);            \
+        value = readaddress##type(&bios_read_protect, address & 0x03);        \
       else                                                                    \
-        value = address##type(bios_rom, address & 0x3FFF);                    \
+        value = readaddress##type(bios_rom, address & 0x3FFF);                \
       break;                                                                  \
                                                                               \
     case 0x02:                                                                \
       /* external work RAM */                                                 \
-      value = address##type(ewram, (address & 0x3FFFF));                      \
+      value = readaddress##type(ewram, (address & 0x3FFFF));                  \
       break;                                                                  \
                                                                               \
     case 0x03:                                                                \
       /* internal work RAM */                                                 \
-      value = address##type(iwram, (address & 0x7FFF) + 0x8000);              \
+      value = readaddress##type(iwram, (address & 0x7FFF) + 0x8000);          \
       break;                                                                  \
                                                                               \
     case 0x04:                                                                \
       /* I/O registers */                                                     \
-      value = address##type(io_registers, address & 0x3FF);                   \
+      value = readaddress##type(io_registers, address & 0x3FF);               \
       break;                                                                  \
                                                                               \
     case 0x05:                                                                \
       /* palette RAM */                                                       \
-      value = address##type(palette_ram, address & 0x3FF);                    \
+      value = readaddress##type(palette_ram, address & 0x3FF);                \
       break;                                                                  \
                                                                               \
     case 0x06:                                                                \
@@ -616,12 +613,12 @@ u32 function_cc read_eeprom(void)
       if(address > 0x18000)                                                   \
         address -= 0x8000;                                                    \
                                                                               \
-      value = address##type(vram, address);                                   \
+      value = readaddress##type(vram, address);                               \
       break;                                                                  \
                                                                               \
     case 0x07:                                                                \
       /* OAM RAM */                                                           \
-      value = address##type(oam_ram, address & 0x3FF);                        \
+      value = readaddress##type(oam_ram, address & 0x3FF);                    \
       break;                                                                  \
                                                                               \
     case 0x08:                                                                \
@@ -665,12 +662,12 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
     if(dma[dma_number].start_type == DMA_INACTIVE)
     {
       u32 start_type = (value >> 12) & 0x03;
-      u32 dest_address = address32(io_registers, (dma_number * 12) + 0xB4) &
+      u32 dest_address = readaddress32(io_registers, (dma_number * 12) + 0xB4) &
        0xFFFFFFF;
 
       dma[dma_number].dma_channel = dma_number;
       dma[dma_number].source_address =
-       address32(io_registers, (dma_number * 12) + 0xB0) & 0xFFFFFFF;
+       readaddress32(io_registers, (dma_number * 12) + 0xB0) & 0xFFFFFFF;
       dma[dma_number].dest_address = dest_address;
       dma[dma_number].source_direction = (value >>  7) & 0x03;
       dma[dma_number].repeat_type = (value >> 9) & 0x01;
@@ -691,7 +688,7 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
       }
       else
       {
-        u32 length = address16(io_registers, (dma_number * 12) + 0xB8);
+        u32 length = read_ioreg(REG_DMA0CNT_L + (dma_number * 6));
 
         if((dma_number == 3) && ((dest_address >> 24) == 0x0D) &&
          ((length & 0x1F) == 17))
@@ -713,7 +710,7 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
         dma[dma_number].dest_direction = (value >> 5) & 0x03;
       }
 
-      address16(io_registers, (dma_number * 12) + 0xBA) = value;
+      write_ioreg(REG_DMA0CNT_H + (dma_number * 6), value);
       if(start_type == DMA_START_IMMEDIATELY)
         return dma_transfer(dma + dma_number);
     }
@@ -722,7 +719,7 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
   {
     dma[dma_number].start_type = DMA_INACTIVE;
     dma[dma_number].direct_sound_channel = DMA_NO_DIRECT_SOUND;
-    address16(io_registers, (dma_number * 12) + 0xBA) = value;
+    write_ioreg(REG_DMA0CNT_H + (dma_number * 6), value);
   }
 
   return CPU_ALERT_NONE;
@@ -736,10 +733,10 @@ static cpu_alert_type trigger_dma(u32 dma_number, u32 value)
   value = ((address8(io_registers, address + 1)) << 8) | value                \
 
 #define access_register16_high(address)                                       \
-  value = (value << 16) | (address16(io_registers, address))                  \
+  value = (value << 16) | (readaddress16(io_registers, address))              \
 
 #define access_register16_low(address)                                        \
-  value = ((address16(io_registers, address + 2)) << 16) | value              \
+  value = ((readaddress16(io_registers, address + 2)) << 16) | value          \
 
 cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
 {
@@ -748,7 +745,7 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
   {
     case 0x00:
     {
-      u32 dispcnt = io_registers[REG_DISPCNT];
+      u32 dispcnt = read_ioreg(REG_DISPCNT);
 
       if((value & 0x07) != (dispcnt & 0x07))
         reg[OAM_UPDATED] = 1;
@@ -773,28 +770,28 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
       access_register8_low(0x28);
       access_register16_low(0x28);
       affine_reference_x[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x28) = value;
+      address32(io_registers, 0x28) = eswap32(value);
       break;
 
     case 0x29:
       access_register8_high(0x28);
       access_register16_low(0x28);
       affine_reference_x[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x28) = value;
+      address32(io_registers, 0x28) = eswap32(value);
       break;
 
     case 0x2A:
       access_register8_low(0x2A);
       access_register16_high(0x28);
       affine_reference_x[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x28) = value;
+      address32(io_registers, 0x28) = eswap32(value);
       break;
 
     case 0x2B:
       access_register8_high(0x2A);
       access_register16_high(0x28);
       affine_reference_x[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x28) = value;
+      address32(io_registers, 0x28) = eswap32(value);
       break;
 
     // BG2 reference Y
@@ -802,28 +799,28 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
       access_register8_low(0x2C);
       access_register16_low(0x2C);
       affine_reference_y[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x2C) = value;
+      address32(io_registers, 0x2C) = eswap32(value);
       break;
 
     case 0x2D:
       access_register8_high(0x2C);
       access_register16_low(0x2C);
       affine_reference_y[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x2C) = value;
+      address32(io_registers, 0x2C) = eswap32(value);
       break;
 
     case 0x2E:
       access_register8_low(0x2E);
       access_register16_high(0x2C);
       affine_reference_y[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x2C) = value;
+      address32(io_registers, 0x2C) = eswap32(value);
       break;
 
     case 0x2F:
       access_register8_high(0x2E);
       access_register16_high(0x2C);
       affine_reference_y[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x2C) = value;
+      address32(io_registers, 0x2C) = eswap32(value);
       break;
 
     // BG3 reference X
@@ -831,28 +828,28 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
       access_register8_low(0x38);
       access_register16_low(0x38);
       affine_reference_x[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x38) = value;
+      address32(io_registers, 0x38) = eswap32(value);
       break;
 
     case 0x39:
       access_register8_high(0x38);
       access_register16_low(0x38);
       affine_reference_x[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x38) = value;
+      address32(io_registers, 0x38) = eswap32(value);
       break;
 
     case 0x3A:
       access_register8_low(0x3A);
       access_register16_high(0x38);
       affine_reference_x[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x38) = value;
+      address32(io_registers, 0x38) = eswap32(value);
       break;
 
     case 0x3B:
       access_register8_high(0x3A);
       access_register16_high(0x38);
       affine_reference_x[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x38) = value;
+      address32(io_registers, 0x38) = eswap32(value);
       break;
 
     // BG3 reference Y
@@ -860,28 +857,28 @@ cpu_alert_type function_cc write_io_register8(u32 address, u32 value)
       access_register8_low(0x3C);
       access_register16_low(0x3C);
       affine_reference_y[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x3C) = value;
+      address32(io_registers, 0x3C) = eswap32(value);
       break;
 
     case 0x3D:
       access_register8_high(0x3C);
       access_register16_low(0x3C);
       affine_reference_y[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x3C) = value;
+      address32(io_registers, 0x3C) = eswap32(value);
       break;
 
     case 0x3E:
       access_register8_low(0x3E);
       access_register16_high(0x3C);
       affine_reference_y[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x3C) = value;
+      address32(io_registers, 0x3C) = eswap32(value);
       break;
 
     case 0x3F:
       access_register8_high(0x3E);
       access_register16_high(0x3C);
       affine_reference_y[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x3C) = value;
+      address32(io_registers, 0x3C) = eswap32(value);
       break;
 
     // Sound 1 control sweep
@@ -1165,18 +1162,17 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
   {
     case 0x00:
     {
-      u32 dispcnt = io_registers[REG_DISPCNT];
+      u32 dispcnt = read_ioreg(REG_DISPCNT);
       if((value & 0x07) != (dispcnt & 0x07))
         reg[OAM_UPDATED] = 1;
 
-      address16(io_registers, 0x00) = value;
+      write_ioreg(REG_DISPCNT, value);
       break;
     }
 
     // DISPSTAT
     case 0x04:
-      address16(io_registers, 0x04) =
-       (address16(io_registers, 0x04) & 0x07) | (value & ~0x07);
+      write_ioreg(REG_DISPSTAT, (read_ioreg(REG_DISPSTAT) & 0x07) | (value & ~0x07));
       break;
 
     // VCOUNT
@@ -1187,26 +1183,26 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
     case 0x28:
       access_register16_low(0x28);
       affine_reference_x[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x28) = value;
+      address32(io_registers, 0x28) = eswap32(value);
       break;
 
     case 0x2A:
       access_register16_high(0x28);
       affine_reference_x[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x28) = value;
+      address32(io_registers, 0x28) = eswap32(value);
       break;
 
     // BG2 reference Y
     case 0x2C:
       access_register16_low(0x2C);
       affine_reference_y[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x2C) = value;
+      address32(io_registers, 0x2C) = eswap32(value);
       break;
 
     case 0x2E:
       access_register16_high(0x2C);
       affine_reference_y[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x2C) = value;
+      address32(io_registers, 0x2C) = eswap32(value);
       break;
 
     // BG3 reference X
@@ -1214,26 +1210,26 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
     case 0x38:
       access_register16_low(0x38);
       affine_reference_x[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x38) = value;
+      address32(io_registers, 0x38) = eswap32(value);
       break;
 
     case 0x3A:
       access_register16_high(0x38);
       affine_reference_x[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x38) = value;
+      address32(io_registers, 0x38) = eswap32(value);
       break;
 
     // BG3 reference Y
     case 0x3C:
       access_register16_low(0x3C);
       affine_reference_y[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x3C) = value;
+      address32(io_registers, 0x3C) = eswap32(value);
       break;
 
     case 0x3E:
       access_register16_high(0x3C);
       affine_reference_y[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x3C) = value;
+      address32(io_registers, 0x3C) = eswap32(value);
       break;
 
     // Sound 1 control sweep
@@ -1318,7 +1314,7 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
     case 0x9D:
     case 0x9E:
       gbc_sound_wave_update = 1;
-      address16(io_registers, address) = value;
+      address16(io_registers, address) = eswap16(value);
       break;
 
     // Sound FIFO A
@@ -1387,7 +1383,7 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
 
     // Interrupt flag
     case 0x202:
-      address16(io_registers, 0x202) &= ~value;
+      write_ioreg(REG_IF, read_ioreg(REG_IF) & (~value));
       break;
 
     // WAITCNT
@@ -1404,7 +1400,7 @@ cpu_alert_type function_cc write_io_register16(u32 address, u32 value)
       return CPU_ALERT_HALT;
 
     default:
-      address16(io_registers, address) = value;
+      address16(io_registers, address) = eswap16(value);
       break;
   }
 
@@ -1419,25 +1415,25 @@ cpu_alert_type function_cc write_io_register32(u32 address, u32 value)
     // BG2 reference X
     case 0x28:
       affine_reference_x[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x28) = value;
+      address32(io_registers, 0x28) = eswap32(value);
       break;
 
     // BG2 reference Y
     case 0x2C:
       affine_reference_y[0] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x2C) = value;
+      address32(io_registers, 0x2C) = eswap32(value);
       break;
 
     // BG3 reference X
     case 0x38:
       affine_reference_x[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x38) = value;
+      address32(io_registers, 0x38) = eswap32(value);
       break;
 
     // BG3 reference Y
     case 0x3C:
       affine_reference_y[1] = (s32)(value << 4) >> 4;
-      address32(io_registers, 0x3C) = value;
+      address32(io_registers, 0x3C) = eswap32(value);
       break;
 
     // Sound FIFO A
@@ -1473,7 +1469,7 @@ cpu_alert_type function_cc write_io_register32(u32 address, u32 value)
 #define write_palette16(address, value)                                       \
 {                                                                             \
   u32 palette_address = address;                                              \
-  address16(palette_ram, palette_address) = value;                            \
+  address16(palette_ram, palette_address) = eswap16(value);                   \
   convert_palette(value);                                                     \
   address16(palette_ram_converted, palette_address) = value;                  \
 }                                                                             \
@@ -1483,11 +1479,11 @@ cpu_alert_type function_cc write_io_register32(u32 address, u32 value)
   u32 palette_address = address;                                              \
   u32 value_high = value >> 16;                                               \
   u32 value_low = value & 0xFFFF;                                             \
-  address32(palette_ram, palette_address) = value;                            \
+  address32(palette_ram, palette_address) = eswap32(value);                   \
   convert_palette(value_high);                                                \
+  address16(palette_ram_converted, palette_address + 2) = value_high;         \
   convert_palette(value_low);                                                 \
-  value = (value_high << 16) | value_low;                                     \
-  address32(palette_ram_converted, palette_address) = value;                  \
+  address16(palette_ram_converted, palette_address) = value_low;              \
 }                                                                             \
 
 
@@ -1621,13 +1617,13 @@ void function_cc write_backup(u32 address, u32 value)
 
 #define write_vram8()                                                         \
   address &= ~0x01;                                                           \
-  address16(vram, address) = ((value << 8) | value)                           \
+  address16(vram, address) = eswap16((value << 8) | value)                    \
 
 #define write_vram16()                                                        \
-  address16(vram, address) = value                                            \
+  address16(vram, address) = eswap16(value)                                   \
 
 #define write_vram32()                                                        \
-  address32(vram, address) = value                                            \
+  address32(vram, address) = eswap32(value)                                   \
 
 // RTC code derived from VBA's (due to lack of any real publically available
 // documentation...)
@@ -1687,7 +1683,7 @@ static u32 encode_bcd(u8 value)
   if(!map)                                                                    \
     map = load_gamepak_page(rtc_page_index & 0x3FF);                          \
                                                                               \
-  address16(map, update_address & 0x7FFF) = _value                            \
+  address16(map, update_address & 0x7FFF) = eswap16(_value)                   \
 
 void function_cc write_rtc(u32 address, u32 value)
 {
@@ -1902,12 +1898,12 @@ void function_cc write_rtc(u32 address, u32 value)
   {                                                                           \
     case 0x02:                                                                \
       /* external work RAM */                                                 \
-      address##type(ewram, (address & 0x3FFFF)) = value;                      \
+      address##type(ewram, (address & 0x3FFFF)) = eswap##type(value);         \
       break;                                                                  \
                                                                               \
     case 0x03:                                                                \
       /* internal work RAM */                                                 \
-      address##type(iwram, (address & 0x7FFF) + 0x8000) = value;              \
+      address##type(iwram, (address & 0x7FFF) + 0x8000) = eswap##type(value); \
       break;                                                                  \
                                                                               \
     case 0x04:                                                                \
@@ -1931,7 +1927,7 @@ void function_cc write_rtc(u32 address, u32 value)
     case 0x07:                                                                \
       /* OAM RAM */                                                           \
       reg[OAM_UPDATED] = 1;                                                   \
-      address##type(oam_ram, address & 0x3FF) = value;                        \
+      address##type(oam_ram, address & 0x3FF) = eswap##type(value);           \
       break;                                                                  \
                                                                               \
     case 0x08:                                                                \
@@ -2384,7 +2380,6 @@ u32 load_gamepak(const char *name)
 {
    char *dot_position = strrchr(name, '.');
    s32 file_size;
-   char cheats_filename[256];
    char *p;
 
    if(!strcmp(dot_position, ".zip"))
@@ -2429,9 +2424,6 @@ u32 load_gamepak(const char *name)
 
    if ((load_game_config_over(gamepak_title, gamepak_code, gamepak_maker)) == -1)
       load_game_config(gamepak_title, gamepak_code, gamepak_maker);
-
-   change_ext(gamepak_filename, cheats_filename, ".cht");
-   add_cheats(cheats_filename);
 
    return 0;
 }
@@ -2500,19 +2492,6 @@ dma_region_type dma_region_map[16] =
   DMA_REGION_EXT            // 0x0F - gamepak SRAM/flash ROM
 };
 
-#define dma_adjust_ptr_inc(ptr, size)                                         \
-  ptr += (size / 8)                                                           \
-
-#define dma_adjust_ptr_dec(ptr, size)                                         \
-  ptr -= (size / 8)                                                           \
-
-#define dma_adjust_ptr_fix(ptr, size)                                         \
-
-#define dma_adjust_ptr_writeback()                                            \
-  dma->dest_address = dest_ptr                                                \
-
-#define dma_adjust_ptr_reload()                                               \
-
 #define dma_print(src_op, dest_op, transfer_size, wb)                         \
   printf("dma from %x (%s) to %x (%s) for %x (%s) (%s) (%d) (pc %x)\n",       \
    src_ptr, #src_op, dest_ptr, #dest_op, length, #transfer_size, #wb,         \
@@ -2571,26 +2550,26 @@ dma_region_type dma_region_map[16] =
   }                                                                           \
 
 #define dma_read_iwram(type, transfer_size)                                   \
-  read_value = address##transfer_size(iwram + 0x8000, type##_ptr & 0x7FFF)    \
+  read_value = readaddress##transfer_size(iwram + 0x8000, type##_ptr & 0x7FFF)\
 
 #define dma_read_vram(type, transfer_size)                                    \
-  read_value = address##transfer_size(vram, type##_ptr & 0x1FFFF)             \
+  read_value = readaddress##transfer_size(vram, type##_ptr & 0x1FFFF)         \
 
 #define dma_read_io(type, transfer_size)                                      \
-  read_value = address##transfer_size(io_registers, type##_ptr & 0x7FFF)      \
+  read_value = readaddress##transfer_size(io_registers, type##_ptr & 0x7FFF)  \
 
 #define dma_read_oam_ram(type, transfer_size)                                 \
-  read_value = address##transfer_size(oam_ram, type##_ptr & 0x3FF)            \
+  read_value = readaddress##transfer_size(oam_ram, type##_ptr & 0x3FF)        \
 
 #define dma_read_palette_ram(type, transfer_size)                             \
-  read_value = address##transfer_size(palette_ram, type##_ptr & 0x3FF)        \
+  read_value = readaddress##transfer_size(palette_ram, type##_ptr & 0x3FF)    \
 
 #define dma_read_ewram(type, transfer_size)                                   \
-  read_value = address##transfer_size(ewram, type##_ptr & 0x3FFFF)            \
+  read_value = readaddress##transfer_size(ewram, type##_ptr & 0x3FFFF)        \
 
 #define dma_read_gamepak(type, transfer_size)                                 \
   dma_gamepak_check_region(type);                                             \
-  read_value = address##transfer_size(type##_address_block,                   \
+  read_value = readaddress##transfer_size(type##_address_block,               \
    type##_ptr & 0x7FFF)                                                       \
 
 // DMAing from the BIOS is funny, just returns 0..
@@ -2602,17 +2581,20 @@ dma_region_type dma_region_map[16] =
   read_value = read_memory##transfer_size(type##_ptr)                         \
 
 #define dma_write_iwram(type, transfer_size)                                  \
-  address##transfer_size(iwram + 0x8000, type##_ptr & 0x7FFF) = read_value;   \
+  address##transfer_size(iwram + 0x8000, type##_ptr & 0x7FFF) =               \
+                                          eswap##transfer_size(read_value);   \
   smc_trigger |= address##transfer_size(iwram, type##_ptr & 0x7FFF)           \
 
 #define dma_write_vram(type, transfer_size)                                   \
-  address##transfer_size(vram, type##_ptr & 0x1FFFF) = read_value             \
+  address##transfer_size(vram, type##_ptr & 0x1FFFF) =                        \
+                                 eswap##transfer_size(read_value)             \
 
 #define dma_write_io(type, transfer_size)                                     \
   write_io_register##transfer_size(type##_ptr & 0x3FF, read_value)            \
 
 #define dma_write_oam_ram(type, transfer_size)                                \
-  address##transfer_size(oam_ram, type##_ptr & 0x3FF) = read_value            \
+  address##transfer_size(oam_ram, type##_ptr & 0x3FF) =                       \
+                                  eswap##transfer_size(read_value)            \
 
 #define dma_write_palette_ram(type, transfer_size)                            \
   write_palette##transfer_size(type##_ptr & 0x3FF, read_value)                \
@@ -2621,7 +2603,8 @@ dma_region_type dma_region_map[16] =
   write_memory##transfer_size(type##_ptr, read_value)                         \
 
 #define dma_write_ewram(type, transfer_size)                                  \
-  address##transfer_size(ewram, type##_ptr & 0x3FFFF) = read_value;           \
+  address##transfer_size(ewram, type##_ptr & 0x3FFFF) =                       \
+                                  eswap##transfer_size(read_value);           \
   smc_trigger |= address##transfer_size(ewram,                                \
    (type##_ptr & 0x3FFFF) + 0x40000)                                          \
 
@@ -2664,17 +2647,24 @@ dma_region_type dma_region_map[16] =
   {                                                                           \
     dma_read_##src_region_type(src, transfer_size);                           \
     dma_write_##dest_region_type(dest, transfer_size);                        \
-    dma_adjust_ptr_##src_op(src_ptr, transfer_size);                          \
-    dma_adjust_ptr_##dest_op(dest_ptr, transfer_size);                        \
+    src_ptr += src_op;                                                        \
+    dest_ptr += dest_op;                                                      \
   }                                                                           \
   dma->source_address = src_ptr;                                              \
-  dma_adjust_ptr_##wb();                                                      \
+  if (wb)                                                                     \
+    dma->dest_address = dest_ptr;                                             \
   dma_epilogue_##dest_region_type();                                          \
   break;                                                                      \
 }                                                                             \
 
-#define dma_transfer_loop(src_op, dest_op, transfer_size, wb);                \
+#define dma_tf_loop_builder(transfer_size)                                    \
+cpu_alert_type dma_tf_loop##transfer_size(                                    \
+  u32 src_ptr, u32 dest_ptr, int src_strd, int dest_strd,                     \
+  bool wb, u32 length, dma_transfer_type *dma)                                \
 {                                                                             \
+  u32 i;                                                                      \
+  u32 read_value;                                                             \
+  cpu_alert_type return_value = CPU_ALERT_NONE;                               \
   u32 src_region = src_ptr >> 24;                                             \
   u32 dest_region = dest_ptr >> 24;                                           \
   dma_region_type src_region_type = dma_region_map[src_region];               \
@@ -2683,268 +2673,269 @@ dma_region_type dma_region_map[16] =
   switch(src_region_type | (dest_region_type << 4))                           \
   {                                                                           \
     case (DMA_REGION_BIOS | (DMA_REGION_IWRAM << 4)):                         \
-      dma_transfer_loop_region(bios, iwram, src_op, dest_op,                  \
+      dma_transfer_loop_region(bios, iwram, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IWRAM | (DMA_REGION_IWRAM << 4)):                        \
-      dma_transfer_loop_region(iwram, iwram, src_op, dest_op,                 \
+      dma_transfer_loop_region(iwram, iwram, src_strd, dest_strd,             \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EWRAM | (DMA_REGION_IWRAM << 4)):                        \
-      dma_transfer_loop_region(ewram, iwram, src_op, dest_op,                 \
+      dma_transfer_loop_region(ewram, iwram, src_strd, dest_strd,             \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_VRAM | (DMA_REGION_IWRAM << 4)):                         \
-      dma_transfer_loop_region(vram, iwram, src_op, dest_op,                  \
+      dma_transfer_loop_region(vram, iwram, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_PALETTE_RAM | (DMA_REGION_IWRAM << 4)):                  \
-      dma_transfer_loop_region(palette_ram, iwram, src_op, dest_op,           \
+      dma_transfer_loop_region(palette_ram, iwram, src_strd, dest_strd,       \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_OAM_RAM | (DMA_REGION_IWRAM << 4)):                      \
-      dma_transfer_loop_region(oam_ram, iwram, src_op, dest_op,               \
+      dma_transfer_loop_region(oam_ram, iwram, src_strd, dest_strd,           \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IO | (DMA_REGION_IWRAM << 4)):                           \
-      dma_transfer_loop_region(io, iwram, src_op, dest_op,                    \
+      dma_transfer_loop_region(io, iwram, src_strd, dest_strd,                \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_GAMEPAK | (DMA_REGION_IWRAM << 4)):                      \
-      dma_transfer_loop_region(gamepak, iwram, src_op, dest_op,               \
+      dma_transfer_loop_region(gamepak, iwram, src_strd, dest_strd,           \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EXT | (DMA_REGION_IWRAM << 4)):                          \
-      dma_transfer_loop_region(ext, iwram, src_op, dest_op,                   \
+      dma_transfer_loop_region(ext, iwram, src_strd, dest_strd,               \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_BIOS | (DMA_REGION_EWRAM << 4)):                         \
-      dma_transfer_loop_region(bios, ewram, src_op, dest_op,                  \
+      dma_transfer_loop_region(bios, ewram, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IWRAM | (DMA_REGION_EWRAM << 4)):                        \
-      dma_transfer_loop_region(iwram, ewram, src_op, dest_op,                 \
+      dma_transfer_loop_region(iwram, ewram, src_strd, dest_strd,             \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EWRAM | (DMA_REGION_EWRAM << 4)):                        \
-      dma_transfer_loop_region(ewram, ewram, src_op, dest_op,                 \
+      dma_transfer_loop_region(ewram, ewram, src_strd, dest_strd,             \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_VRAM | (DMA_REGION_EWRAM << 4)):                         \
-      dma_transfer_loop_region(vram, ewram, src_op, dest_op,                  \
+      dma_transfer_loop_region(vram, ewram, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_PALETTE_RAM | (DMA_REGION_EWRAM << 4)):                  \
-      dma_transfer_loop_region(palette_ram, ewram, src_op, dest_op,           \
+      dma_transfer_loop_region(palette_ram, ewram, src_strd, dest_strd,       \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_OAM_RAM | (DMA_REGION_EWRAM << 4)):                      \
-      dma_transfer_loop_region(oam_ram, ewram, src_op, dest_op,               \
+      dma_transfer_loop_region(oam_ram, ewram, src_strd, dest_strd,           \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IO | (DMA_REGION_EWRAM << 4)):                           \
-      dma_transfer_loop_region(io, ewram, src_op, dest_op,                    \
+      dma_transfer_loop_region(io, ewram, src_strd, dest_strd,                \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_GAMEPAK | (DMA_REGION_EWRAM << 4)):                      \
-      dma_transfer_loop_region(gamepak, ewram, src_op, dest_op,               \
+      dma_transfer_loop_region(gamepak, ewram, src_strd, dest_strd,           \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EXT | (DMA_REGION_EWRAM << 4)):                          \
-      dma_transfer_loop_region(ext, ewram, src_op, dest_op,                   \
+      dma_transfer_loop_region(ext, ewram, src_strd, dest_strd,               \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_BIOS | (DMA_REGION_VRAM << 4)):                          \
-      dma_transfer_loop_region(bios, vram, src_op, dest_op,                   \
+      dma_transfer_loop_region(bios, vram, src_strd, dest_strd,               \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IWRAM | (DMA_REGION_VRAM << 4)):                         \
-      dma_transfer_loop_region(iwram, vram, src_op, dest_op,                  \
+      dma_transfer_loop_region(iwram, vram, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EWRAM | (DMA_REGION_VRAM << 4)):                         \
-      dma_transfer_loop_region(ewram, vram, src_op, dest_op,                  \
+      dma_transfer_loop_region(ewram, vram, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_VRAM | (DMA_REGION_VRAM << 4)):                          \
-      dma_transfer_loop_region(vram, vram, src_op, dest_op,                   \
+      dma_transfer_loop_region(vram, vram, src_strd, dest_strd,               \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_PALETTE_RAM | (DMA_REGION_VRAM << 4)):                   \
-      dma_transfer_loop_region(palette_ram, vram, src_op, dest_op,            \
+      dma_transfer_loop_region(palette_ram, vram, src_strd, dest_strd,        \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_OAM_RAM | (DMA_REGION_VRAM << 4)):                       \
-      dma_transfer_loop_region(oam_ram, vram, src_op, dest_op,                \
+      dma_transfer_loop_region(oam_ram, vram, src_strd, dest_strd,            \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IO | (DMA_REGION_VRAM << 4)):                            \
-      dma_transfer_loop_region(io, vram, src_op, dest_op,                     \
+      dma_transfer_loop_region(io, vram, src_strd, dest_strd,                 \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_GAMEPAK | (DMA_REGION_VRAM << 4)):                       \
-      dma_transfer_loop_region(gamepak, vram, src_op, dest_op,                \
+      dma_transfer_loop_region(gamepak, vram, src_strd, dest_strd,            \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EXT | (DMA_REGION_VRAM << 4)):                           \
-      dma_transfer_loop_region(ext, vram, src_op, dest_op,                    \
+      dma_transfer_loop_region(ext, vram, src_strd, dest_strd,                \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_BIOS | (DMA_REGION_PALETTE_RAM << 4)):                   \
-      dma_transfer_loop_region(bios, palette_ram, src_op, dest_op,            \
+      dma_transfer_loop_region(bios, palette_ram, src_strd, dest_strd,        \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IWRAM | (DMA_REGION_PALETTE_RAM << 4)):                  \
-      dma_transfer_loop_region(iwram, palette_ram, src_op, dest_op,           \
+      dma_transfer_loop_region(iwram, palette_ram, src_strd, dest_strd,       \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EWRAM | (DMA_REGION_PALETTE_RAM << 4)):                  \
-      dma_transfer_loop_region(ewram, palette_ram, src_op, dest_op,           \
+      dma_transfer_loop_region(ewram, palette_ram, src_strd, dest_strd,       \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_VRAM | (DMA_REGION_PALETTE_RAM << 4)):                   \
-      dma_transfer_loop_region(vram, palette_ram, src_op, dest_op,            \
+      dma_transfer_loop_region(vram, palette_ram, src_strd, dest_strd,        \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_PALETTE_RAM | (DMA_REGION_PALETTE_RAM << 4)):            \
-      dma_transfer_loop_region(palette_ram, palette_ram, src_op, dest_op,     \
+      dma_transfer_loop_region(palette_ram, palette_ram, src_strd, dest_strd, \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_OAM_RAM | (DMA_REGION_PALETTE_RAM << 4)):                \
-      dma_transfer_loop_region(oam_ram, palette_ram, src_op, dest_op,         \
+      dma_transfer_loop_region(oam_ram, palette_ram, src_strd, dest_strd,     \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IO | (DMA_REGION_PALETTE_RAM << 4)):                     \
-      dma_transfer_loop_region(io, palette_ram, src_op, dest_op,              \
+      dma_transfer_loop_region(io, palette_ram, src_strd, dest_strd,          \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_GAMEPAK | (DMA_REGION_PALETTE_RAM << 4)):                \
-      dma_transfer_loop_region(gamepak, palette_ram, src_op, dest_op,         \
+      dma_transfer_loop_region(gamepak, palette_ram, src_strd, dest_strd,     \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EXT | (DMA_REGION_PALETTE_RAM << 4)):                    \
-      dma_transfer_loop_region(ext, palette_ram, src_op, dest_op,             \
+      dma_transfer_loop_region(ext, palette_ram, src_strd, dest_strd,         \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_BIOS | (DMA_REGION_OAM_RAM << 4)):                       \
-      dma_transfer_loop_region(bios, oam_ram, src_op, dest_op,                \
+      dma_transfer_loop_region(bios, oam_ram, src_strd, dest_strd,            \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IWRAM | (DMA_REGION_OAM_RAM << 4)):                      \
-      dma_transfer_loop_region(iwram, oam_ram, src_op, dest_op,               \
+      dma_transfer_loop_region(iwram, oam_ram, src_strd, dest_strd,           \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EWRAM | (DMA_REGION_OAM_RAM << 4)):                      \
-      dma_transfer_loop_region(ewram, oam_ram, src_op, dest_op,               \
+      dma_transfer_loop_region(ewram, oam_ram, src_strd, dest_strd,           \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_VRAM | (DMA_REGION_OAM_RAM << 4)):                       \
-      dma_transfer_loop_region(vram, oam_ram, src_op, dest_op,                \
+      dma_transfer_loop_region(vram, oam_ram, src_strd, dest_strd,            \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_PALETTE_RAM | (DMA_REGION_OAM_RAM << 4)):                \
-      dma_transfer_loop_region(palette_ram, oam_ram, src_op, dest_op,         \
+      dma_transfer_loop_region(palette_ram, oam_ram, src_strd, dest_strd,     \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_OAM_RAM | (DMA_REGION_OAM_RAM << 4)):                    \
-      dma_transfer_loop_region(oam_ram, oam_ram, src_op, dest_op,             \
+      dma_transfer_loop_region(oam_ram, oam_ram, src_strd, dest_strd,         \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IO | (DMA_REGION_OAM_RAM << 4)):                         \
-      dma_transfer_loop_region(io, oam_ram, src_op, dest_op,                  \
+      dma_transfer_loop_region(io, oam_ram, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_GAMEPAK | (DMA_REGION_OAM_RAM << 4)):                    \
-      dma_transfer_loop_region(gamepak, oam_ram, src_op, dest_op,             \
+      dma_transfer_loop_region(gamepak, oam_ram, src_strd, dest_strd,         \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EXT | (DMA_REGION_OAM_RAM << 4)):                        \
-      dma_transfer_loop_region(ext, oam_ram, src_op, dest_op,                 \
+      dma_transfer_loop_region(ext, oam_ram, src_strd, dest_strd,             \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_BIOS | (DMA_REGION_IO << 4)):                            \
-      dma_transfer_loop_region(bios, io, src_op, dest_op,                     \
+      dma_transfer_loop_region(bios, io, src_strd, dest_strd,                 \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IWRAM | (DMA_REGION_IO << 4)):                           \
-      dma_transfer_loop_region(iwram, io, src_op, dest_op,                    \
+      dma_transfer_loop_region(iwram, io, src_strd, dest_strd,                \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EWRAM | (DMA_REGION_IO << 4)):                           \
-      dma_transfer_loop_region(ewram, io, src_op, dest_op,                    \
+      dma_transfer_loop_region(ewram, io, src_strd, dest_strd,                \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_VRAM | (DMA_REGION_IO << 4)):                            \
-      dma_transfer_loop_region(vram, io, src_op, dest_op,                     \
+      dma_transfer_loop_region(vram, io, src_strd, dest_strd,                 \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_PALETTE_RAM | (DMA_REGION_IO << 4)):                     \
-      dma_transfer_loop_region(palette_ram, io, src_op, dest_op,              \
+      dma_transfer_loop_region(palette_ram, io, src_strd, dest_strd,          \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_OAM_RAM | (DMA_REGION_IO << 4)):                         \
-      dma_transfer_loop_region(oam_ram, io, src_op, dest_op,                  \
+      dma_transfer_loop_region(oam_ram, io, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IO | (DMA_REGION_IO << 4)):                              \
-      dma_transfer_loop_region(io, io, src_op, dest_op,                       \
+      dma_transfer_loop_region(io, io, src_strd, dest_strd,                   \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_GAMEPAK | (DMA_REGION_IO << 4)):                         \
-      dma_transfer_loop_region(gamepak, io, src_op, dest_op,                  \
+      dma_transfer_loop_region(gamepak, io, src_strd, dest_strd,              \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EXT | (DMA_REGION_IO << 4)):                             \
-      dma_transfer_loop_region(ext, io, src_op, dest_op,                      \
+      dma_transfer_loop_region(ext, io, src_strd, dest_strd,                  \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_BIOS | (DMA_REGION_EXT << 4)):                           \
-      dma_transfer_loop_region(bios, ext, src_op, dest_op,                    \
+      dma_transfer_loop_region(bios, ext, src_strd, dest_strd,                \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IWRAM | (DMA_REGION_EXT << 4)):                          \
-      dma_transfer_loop_region(iwram, ext, src_op, dest_op,                   \
+      dma_transfer_loop_region(iwram, ext, src_strd, dest_strd,               \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EWRAM | (DMA_REGION_EXT << 4)):                          \
-      dma_transfer_loop_region(ewram, ext, src_op, dest_op,                   \
+      dma_transfer_loop_region(ewram, ext, src_strd, dest_strd,               \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_VRAM | (DMA_REGION_EXT << 4)):                           \
-      dma_transfer_loop_region(vram, ext, src_op, dest_op,                    \
+      dma_transfer_loop_region(vram, ext, src_strd, dest_strd,                \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_PALETTE_RAM | (DMA_REGION_EXT << 4)):                    \
-      dma_transfer_loop_region(palette_ram, ext, src_op, dest_op,             \
+      dma_transfer_loop_region(palette_ram, ext, src_strd, dest_strd,         \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_OAM_RAM | (DMA_REGION_EXT << 4)):                        \
-      dma_transfer_loop_region(oam_ram, ext, src_op, dest_op,                 \
+      dma_transfer_loop_region(oam_ram, ext, src_strd, dest_strd,             \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_IO | (DMA_REGION_EXT << 4)):                             \
-      dma_transfer_loop_region(io, ext, src_op, dest_op,                      \
+      dma_transfer_loop_region(io, ext, src_strd, dest_strd,                  \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_GAMEPAK | (DMA_REGION_EXT << 4)):                        \
-      dma_transfer_loop_region(gamepak, ext, src_op, dest_op,                 \
+      dma_transfer_loop_region(gamepak, ext, src_strd, dest_strd,             \
        transfer_size, wb);                                                    \
                                                                               \
     case (DMA_REGION_EXT | (DMA_REGION_EXT << 3)):                            \
-      dma_transfer_loop_region(ext, ext, src_op, dest_op,                     \
+      dma_transfer_loop_region(ext, ext, src_strd, dest_strd,                 \
        transfer_size, wb);                                                    \
   }                                                                           \
-  break;                                                                      \
+  return return_value;                                                        \
 }                                                                             \
+
+dma_tf_loop_builder(16);
+dma_tf_loop_builder(32);
 
 cpu_alert_type dma_transfer(dma_transfer_type *dma)
 {
-  u32 i;
   u32 length = dma->length;
-  u32 read_value;
   u32 src_ptr = dma->source_address;
   uintptr_t dest_ptr = dma->dest_address;
-  cpu_alert_type return_value = CPU_ALERT_NONE;
+  cpu_alert_type ret = CPU_ALERT_NONE;
 
   // Technically this should be done for source and destination, but
   // chances are this is only ever used (probably mistakingly!) for dest.
@@ -2973,35 +2964,35 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
     switch((dma->dest_direction << 2) | dma->source_direction)
     {
        case 0x00:
-          dma_transfer_loop(inc, inc, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  2,  2, true, length, dma); break;
        case 0x01:
-          dma_transfer_loop(dec, inc, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr, -2,  2, true, length, dma); break;
        case 0x02:
-          dma_transfer_loop(fix, inc, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  0,  2, true, length, dma); break;
        case 0x03:
           break;
        case 0x04:
-          dma_transfer_loop(inc, dec, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  2, -2, true, length, dma); break;
        case 0x05:
-          dma_transfer_loop(dec, dec, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr, -2, -2, true, length, dma); break;
        case 0x06:
-          dma_transfer_loop(fix, dec, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  0, -2, true, length, dma); break;
        case 0x07:
           break;
        case 0x08:
-          dma_transfer_loop(inc, fix, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  2,  0, true, length, dma); break;
        case 0x09:
-          dma_transfer_loop(dec, fix, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr, -2,  0, true, length, dma); break;
        case 0x0A:
-          dma_transfer_loop(fix, fix, 16, writeback);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  0,  0, true, length, dma); break;
        case 0x0B:
           break;
        case 0x0C:
-          dma_transfer_loop(inc, inc, 16, reload);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  2,  2, false, length, dma); break;
        case 0x0D:
-          dma_transfer_loop(dec, inc, 16, reload);
+          ret = dma_tf_loop16(src_ptr, dest_ptr, -2,  2, false, length, dma); break;
        case 0x0E:
-          dma_transfer_loop(fix, inc, 16, reload);
+          ret = dma_tf_loop16(src_ptr, dest_ptr,  0,  2, false, length, dma); break;
        case 0x0F:
           break;
     }
@@ -3015,35 +3006,35 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
     switch((dma->dest_direction << 2) | dma->source_direction)
     {
        case 0x00:
-          dma_transfer_loop(inc, inc, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  4,  4, true, length, dma); break;
        case 0x01:
-          dma_transfer_loop(dec, inc, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr, -4,  4, true, length, dma); break;
        case 0x02:
-          dma_transfer_loop(fix, inc, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  0,  4, true, length, dma); break;
        case 0x03:
           break;
        case 0x04:
-          dma_transfer_loop(inc, dec, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  4, -4, true, length, dma); break;
        case 0x05:
-          dma_transfer_loop(dec, dec, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr, -4, -4, true, length, dma); break;
        case 0x06:
-          dma_transfer_loop(fix, dec, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  0, -4, true, length, dma); break;
        case 0x07:
           break;
        case 0x08:
-          dma_transfer_loop(inc, fix, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  4,  0, true, length, dma); break;
        case 0x09:
-          dma_transfer_loop(dec, fix, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr, -4,  0, true, length, dma); break;
        case 0x0A:
-          dma_transfer_loop(fix, fix, 32, writeback);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  0,  0, true, length, dma); break;
        case 0x0B:
           break;
        case 0x0C:
-          dma_transfer_loop(inc, inc, 32, reload);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  4,  4, false, length, dma); break;
        case 0x0D:
-          dma_transfer_loop(dec, inc, 32, reload);
+          ret = dma_tf_loop32(src_ptr, dest_ptr, -4,  4, false, length, dma); break;
        case 0x0E:
-          dma_transfer_loop(fix, inc, 32, reload);
+          ret = dma_tf_loop32(src_ptr, dest_ptr,  0,  4, false, length, dma); break;
        case 0x0F:
           break;
     }
@@ -3053,17 +3044,17 @@ cpu_alert_type dma_transfer(dma_transfer_type *dma)
    (dma->start_type == DMA_START_IMMEDIATELY))
   {
     dma->start_type = DMA_INACTIVE;
-    address16(io_registers, (dma->dma_channel * 12) + 0xBA) &=
-     (~0x8000);
+    address16(io_registers, (dma->dma_channel * 12) + 0xBA) =
+      readaddress16(io_registers, (dma->dma_channel * 12) + 0xBA) & (~0x8000);
   }
 
   if(dma->irq)
   {
     raise_interrupt(IRQ_DMA0 << dma->dma_channel);
-    return_value = CPU_ALERT_IRQ;
+    ret = CPU_ALERT_IRQ;
   }
 
-  return return_value;
+  return ret;
 }
 
 // Be sure to do this after loading ROMs.
@@ -3166,12 +3157,12 @@ static void init_memory_gamepak(void)
   }
   else
   {
-    map_region(read, 0x8000000, 0x8000000 + gamepak_size, 1024, gamepak_rom);
-    map_null(read, 0x8000000 + gamepak_size, 0xA000000);
-    map_region(read, 0xA000000, 0xA000000 + gamepak_size, 1024, gamepak_rom);
-    map_null(read, 0xA000000 + gamepak_size, 0xC000000);
-    map_region(read, 0xC000000, 0xC000000 + gamepak_size, 1024, gamepak_rom);
-    map_null(read, 0xC000000 + gamepak_size, 0xE000000);
+    /* Map the ROM using mirroring, not many games use it */
+    unsigned numblocks = gamepak_size >> 15;
+    map_region(read, 0x8000000, 0xA000000, numblocks, gamepak_rom);
+    map_region(read, 0xA000000, 0xC000000, numblocks, gamepak_rom);
+    map_region(read, 0xC000000, 0xD000000, numblocks, gamepak_rom);
+    /* Do not map D-E regions since they are also used for FLASH */
   }
 }
 
@@ -3207,38 +3198,6 @@ void init_memory(void)
 {
   u32 map_offset = 0;
 
-  memory_regions[0x00] = (u8 *)bios_rom;
-  memory_regions[0x01] = (u8 *)bios_rom;
-  memory_regions[0x02] = (u8 *)ewram;
-  memory_regions[0x03] = (u8 *)iwram + 0x8000;
-  memory_regions[0x04] = (u8 *)io_registers;
-  memory_regions[0x05] = (u8 *)palette_ram;
-  memory_regions[0x06] = (u8 *)vram;
-  memory_regions[0x07] = (u8 *)oam_ram;
-  memory_regions[0x08] = (u8 *)gamepak_rom;
-  memory_regions[0x09] = (u8 *)(gamepak_rom + 0xFFFFFF);
-  memory_regions[0x0A] = (u8 *)gamepak_rom;
-  memory_regions[0x0B] = (u8 *)(gamepak_rom + 0xFFFFFF);
-  memory_regions[0x0C] = (u8 *)gamepak_rom;
-  memory_regions[0x0D] = (u8 *)(gamepak_rom + 0xFFFFFF);
-  memory_regions[0x0E] = (u8 *)gamepak_backup;
-
-  memory_limits[0x00] = 0x3FFF;
-  memory_limits[0x01] = 0x3FFF;
-  memory_limits[0x02] = 0x3FFFF;
-  memory_limits[0x03] = 0x7FFF;
-  memory_limits[0x04] = 0x7FFF;
-  memory_limits[0x05] = 0x3FF;
-  memory_limits[0x06] = 0x17FFF;
-  memory_limits[0x07] = 0x3FF;
-  memory_limits[0x08] = 0x1FFFFFF;
-  memory_limits[0x09] = 0x1FFFFFF;
-  memory_limits[0x0A] = 0x1FFFFFF;
-  memory_limits[0x0B] = 0x1FFFFFF;
-  memory_limits[0x0C] = 0x1FFFFFF;
-  memory_limits[0x0D] = 0x1FFFFFF;
-  memory_limits[0x0E] = 0xFFFF;
-
   // Fill memory map regions, areas marked as NULL must be checked directly
   map_region(read, 0x0000000, 0x1000000, 1, bios_rom);
   map_null(read, 0x1000000, 0x2000000);
@@ -3259,13 +3218,13 @@ void init_memory(void)
   memset(ewram, 0, sizeof(ewram));
   memset(vram, 0, sizeof(vram));
 
-  io_registers[REG_DISPCNT] = 0x80;
-  io_registers[REG_P1] = 0x3FF;
-  io_registers[REG_BG2PA] = 0x100;
-  io_registers[REG_BG2PD] = 0x100;
-  io_registers[REG_BG3PA] = 0x100;
-  io_registers[REG_BG3PD] = 0x100;
-  io_registers[REG_RCNT] = 0x8000;
+  write_ioreg(REG_DISPCNT, 0x80);
+  write_ioreg(REG_P1, 0x3FF);
+  write_ioreg(REG_BG2PA, 0x100);
+  write_ioreg(REG_BG2PD, 0x100);
+  write_ioreg(REG_BG3PA, 0x100);
+  write_ioreg(REG_BG3PD, 0x100);
+  write_ioreg(REG_RCNT, 0x8000);
 
   backup_type = BACKUP_NONE;
 
