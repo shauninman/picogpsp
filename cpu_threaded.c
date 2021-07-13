@@ -3154,6 +3154,12 @@ s32 translate_block_arm(u32 pc, translation_region_type
       generate_cycle_update();
     }
   }
+
+  /* This can happen if the last instruction is *not* inconditional */
+  if ((last_condition & 0x0F) != 0x0E) {
+    generate_branch_patch_conditional(backpatch_address, translation_ptr);
+  }
+
   for(i = 0; i < translation_gate_targets; i++)
   {
     if(pc == translation_gate_target_pc[i])
