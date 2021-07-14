@@ -292,6 +292,7 @@ fail:
   if (f)
     fclose(f);
 
+  sync();
   return ret;
 }
 
