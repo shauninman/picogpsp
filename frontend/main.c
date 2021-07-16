@@ -357,14 +357,35 @@ int main(int argc, char *argv[])
 
   if (selected_bios == auto_detect || selected_bios == official_bios) {
     bios_loaded = true;
-    getcwd(bios_filename, MAXPATHLEN);
-    strncat(bios_filename, "/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
-
-    if (load_bios(bios_filename)) {
-      if (selected_bios == official_bios)
-        printf("Could not load BIOS image file\n");
-      bios_loaded = false;
-    }
+	
+	// check adjacent (.pak)
+	strncpy(bios_filename, argv[0], MAXPATHLEN);
+	bios_filename[strlen(bios_filename)-strlen("picogpsp")] = '\0'; // trim binary name
+	strncat(bios_filename, "gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
+	if (load_bios(bios_filename)) {
+		// if (selected_bios == official_bios)
+		// 	printf("Could not load BIOS image file\n");
+		// bios_loaded = false;
+		
+		// check .picogpsp (hidden in roms)
+		getcwd(bios_filename, MAXPATHLEN);
+		strncat(bios_filename, "/.picogpsp/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
+		if (load_bios(bios_filename)) {
+			// if (selected_bios == official_bios)
+			// 	printf("Could not load BIOS image file\n");
+			// bios_loaded = false;
+			
+			// check $HOME (roms folder)
+			getcwd(bios_filename, MAXPATHLEN);
+			strncat(bios_filename, "/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
+			if (load_bios(bios_filename)) {
+				// if (selected_bios == official_bios)
+				// 	printf("Could not load BIOS image file\n");
+				bios_loaded = false;
+			}
+		}
+	}
+	if (bios_loaded) printf("found bios %s\n", bios_filename);
 
     if (bios_loaded && bios_rom[0] != 0x18) {
       if (selected_bios == official_bios)
