@@ -10,7 +10,7 @@
 #include "frontend/libpicofe/config_file.h"
 
 #define MENU_ALIGN_LEFT 0
-#define MENU_X2 0
+#define MENU_X2 1
 
 typedef enum
 {
@@ -118,7 +118,7 @@ static const char h_dynarec_enable[]  = "Improves performance, but may reduce ac
 
 static const char *men_frameskip[] = { "OFF", "Auto", "Manual", NULL };
 
-static const char *men_scaling[] = { "Native", "3:2 Sharp", "3:2 Smooth", "4:3 Sharp", "4:3 Smooth", NULL};
+static const char *men_scaling[] = { "Native", "Native LCD", NULL};
 
 static menu_entry e_menu_options[] =
 {
@@ -225,8 +225,8 @@ void menu_set_defaults(void)
 {
   dynarec_enable = 1;
   frameskip_style = 1;
-  scaling_mode = SCALING_ASPECT_SMOOTH;
-  max_frameskip = 3;
+  scaling_mode = 1;
+  max_frameskip = 2;
   color_correct = 0;
   lcd_blend = 0;
   show_fps = 0;

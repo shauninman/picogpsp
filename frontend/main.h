@@ -36,11 +36,8 @@ typedef enum {
 } frameskip_style_t;
 
 typedef enum {
-  SCALING_NONE = 0,
-  SCALING_ASPECT_SHARP,
-  SCALING_ASPECT_SMOOTH,
-  SCALING_FULL_SHARP,
-  SCALING_FULL_SMOOTH,
+  SCALING_2X = 0,
+  SCALING_2X_LCD,
 } scaling_mode_t;
 
 

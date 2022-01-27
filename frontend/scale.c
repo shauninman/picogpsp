@@ -441,30 +441,184 @@ void video_print_msg(uint16_t *dst, uint32_t h, uint32_t pitch, char *msg)
   basic_text_out16_nf(dst, pitch, 2, h - 10, msg);
 }
 
+#define A32( ) (0xFF << 24)
+#define R32(c) (((((c >> 11) & 0x1F) * 527 + 23 ) >> 6) << 16)
+#define G32(c) (((((c >>  5) & 0x3F) * 259 + 33 ) >> 6) <<  8)
+#define B32(c) (((((c      ) & 0x1F) * 527 + 23 ) >> 6)      )
+
+void scale2x_8888(uint32_t* dst, uint32_t* src) {
+    uint16_t* Src16 = (uint16_t*) src;
+    uint32_t* Dst32 = (uint32_t*) dst;
+
+    // There are 240 pixels horizontally, and 160 vertically.
+    // Each pixel becomes 2x2 with an added grid pattern.
+
+    uint8_t BlockX, BlockY;
+    uint16_t* BlockSrc;
+    uint32_t* BlockDst;
+    for (BlockY = 0; BlockY < 160; BlockY++)
+    {
+        BlockSrc = Src16 + BlockY * 240 * 1;
+        BlockDst = Dst32 + BlockY * 640 * 2;
+        for (BlockX = 0; BlockX < 240; BlockX++)
+        {
+            // Before:          After:
+            // (a)              (a)(a)
+            //                  (a)(a)
+
+			uint16_t c = *(BlockSrc);
+			uint32_t c32 = A32() | R32(c) | G32(c) | B32(c);
+
+            // -- Row 1 --
+            *(BlockDst               ) = c32;
+            *(BlockDst            + 1) = c32;
+
+            // -- Row 2 --
+            *(BlockDst + 640 *  1    ) = c32;
+            *(BlockDst + 640 *  1 + 1) = c32;
+
+            BlockSrc += 1;
+            BlockDst += 2;
+        }
+    }
+}
+
+void scale2x_lcd_8888(uint32_t* dst, uint32_t* src) {
+    uint16_t* Src16 = (uint16_t*) src;
+    uint32_t* Dst32 = (uint32_t*) dst;
+
+    // There are 240 pixels horizontally, and 160 vertically.
+    // Each pixel becomes 2x2 with an added grid pattern.
+
+    uint8_t BlockX, BlockY;
+    uint16_t* BlockSrc;
+    uint32_t* BlockDst;
+	uint32_t k = 0xff000000;
+    for (BlockY = 0; BlockY < 160; BlockY++)
+    {
+        BlockSrc = Src16 + BlockY * 240 * 1;
+        BlockDst = Dst32 + BlockY * 640 * 2;
+        for (BlockX = 0; BlockX < 240; BlockX++)
+        {
+            // Before:          After:
+            // (a)              (a)(a)
+            //                  (a)(a)
+
+			uint16_t c = *(BlockSrc);
+			uint32_t r = A32() | R32(c);
+			uint32_t g = A32() | G32(c);
+			uint32_t b = A32() | B32(c);
+			
+            // -- Row 1 --
+            *(BlockDst          ) = r;
+            *(BlockDst       + 1) = b;
+
+            // -- Row 2 --
+            *(BlockDst + 640    ) = g;
+            *(BlockDst + 640 + 1) = k;
+
+            BlockSrc += 1;
+            BlockDst += 2;
+        }
+    }
+}
+
+void scale2x(uint16_t* dst, uint16_t* src)
+{
+    uint16_t* Src16 = (uint16_t*) src;
+    uint16_t* Dst16 = (uint16_t*) dst;
+
+    // There are 240 pixels horizontally, and 160 vertically.
+    // Each pixel becomes 2x2
+
+    uint8_t BlockX, BlockY;
+    uint16_t* BlockSrc;
+    uint16_t* BlockDst;
+    for (BlockY = 0; BlockY < 160; BlockY++)
+    {
+        BlockSrc = Src16 + BlockY * 240 * 1;
+        BlockDst = Dst16 + BlockY * 640 * 2;
+        for (BlockX = 0; BlockX < 240; BlockX++)
+        {
+            // Before:          After:
+            // (a)              (a)(a)
+            //                  (a)(a)
+
+            uint16_t  _1 = *(BlockSrc);
+
+            // -- Row 1 --
+            *(BlockDst               ) = _1;
+            *(BlockDst            + 1) = _1;
+
+            // -- Row 2 --
+            *(BlockDst + 640 *  1    ) = _1;
+            *(BlockDst + 640 *  1 + 1) = _1;
+
+            BlockSrc += 1;
+            BlockDst += 2;
+        }
+    }
+}
+
+void scale2x_lcd(uint16_t* dst, uint16_t* src) {
+    uint16_t* Src16 = (uint16_t*) src;
+    uint16_t* Dst16 = (uint16_t*) dst;
+
+    // There are 240 pixels horizontally, and 160 vertically.
+    // Each pixel becomes 2x2 with an added grid pattern.
+
+    uint8_t BlockX, BlockY;
+    uint16_t* BlockSrc;
+    uint16_t* BlockDst;
+	uint16_t k = 0x0000;
+    for (BlockY = 0; BlockY < 160; BlockY++)
+    {
+        BlockSrc = Src16 + BlockY * 240 * 1;
+        BlockDst = Dst16 + BlockY * 640 * 2;
+        for (BlockX = 0; BlockX < 240; BlockX++)
+        {
+            // Before:          After:
+            // (a)              (a)(a)
+            //                  (a)(a)
+
+			uint16_t  p = *(BlockSrc);
+            uint16_t  r = (p & 0b1111100000000000);
+            uint16_t  g = (p & 0b0000011111100000);
+            uint16_t  b = (p & 0b0000000000011111);
+			
+            // -- Row 1 --
+            *(BlockDst          ) = r;
+            *(BlockDst       + 1) = b;
+
+            // -- Row 2 --
+            *(BlockDst + 640    ) = g;
+            *(BlockDst + 640 + 1) = k;
+
+            BlockSrc += 1;
+            BlockDst += 2;
+        }
+    }
+}
+
 void video_scale(uint16_t *dst, uint32_t h, uint32_t pitch) {
-  uint16_t *gba_screen_pixels_buf = gba_screen_pixels;
+    uint16_t* Dst16 = (uint16_t*)dst;
+    Dst16 += ((480-320)/2 * 640) + (640-480)/2;
 
-  if (color_correct || lcd_blend)
-    gba_screen_pixels_buf = gba_processed_pixels;
+	uint16_t *gba_screen_pixels_buf = gba_screen_pixels;
 
-  switch (scaling_mode)
-  {
-    case SCALING_ASPECT_SHARP:
-      gba_smooth_subpx_upscale(dst, gba_screen_pixels_buf, 214);
-      break;
-    case SCALING_ASPECT_SMOOTH:
-      gba_smooth_upscale(dst, gba_screen_pixels_buf, 214);
-      break;
-    case SCALING_FULL_SHARP:
-      gba_smooth_subpx_upscale(dst, gba_screen_pixels_buf, 240);
-      break;
-    case SCALING_FULL_SMOOTH:
-      gba_smooth_upscale(dst, gba_screen_pixels_buf, 240);
-      break;
-    default:
-      gba_nofilter_noscale(dst, h, pitch, gba_screen_pixels_buf);
-      break;
-  }
+	if (color_correct || lcd_blend)
+		gba_screen_pixels_buf = gba_processed_pixels;
+
+	switch (scaling_mode)
+	{
+	case SCALING_2X_LCD:
+    	scale2x_lcd(Dst16, gba_screen_pixels_buf);
+		break;
+	case SCALING_2X:
+	default:
+	 	scale2x(Dst16, gba_screen_pixels_buf);
+		break;
+	}
 }
 
 /* Video post processing START */

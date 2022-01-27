@@ -167,8 +167,7 @@ void handle_emu_action(emu_action action)
       update_backup();
 	  if (mmenu) {
 	  	ShowMenu_t ShowMenu = (ShowMenu_t)dlsym(mmenu, "ShowMenu");
-		SDL_Surface *screen = SDL_GetVideoSurface();
-		MenuReturnStatus status = ShowMenu(rom_path, save_template_path, screen, kMenuEventKeyDown);
+		MenuReturnStatus status = ShowMenu(rom_path, save_template_path);
 
 	  	if (status==kStatusExitGame) {
 			should_quit = 1;
@@ -357,35 +356,15 @@ int main(int argc, char *argv[])
 
   if (selected_bios == auto_detect || selected_bios == official_bios) {
     bios_loaded = true;
-	
-	// check adjacent (.pak)
-	strncpy(bios_filename, argv[0], MAXPATHLEN);
-	bios_filename[strlen(bios_filename)-strlen("picogpsp")] = '\0'; // trim binary name
-	strncat(bios_filename, "gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
-	if (load_bios(bios_filename)) {
-		// if (selected_bios == official_bios)
-		// 	printf("Could not load BIOS image file\n");
-		// bios_loaded = false;
-		
-		// check .picogpsp (hidden in roms)
-		getcwd(bios_filename, MAXPATHLEN);
-		strncat(bios_filename, "/.picogpsp/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
-		if (load_bios(bios_filename)) {
-			// if (selected_bios == official_bios)
-			// 	printf("Could not load BIOS image file\n");
-			// bios_loaded = false;
-			
-			// check $HOME (roms folder)
-			getcwd(bios_filename, MAXPATHLEN);
-			strncat(bios_filename, "/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
-			if (load_bios(bios_filename)) {
-				// if (selected_bios == official_bios)
-				// 	printf("Could not load BIOS image file\n");
-				bios_loaded = false;
-			}
-		}
-	}
-	if (bios_loaded) printf("found bios %s\n", bios_filename);
+    // getcwd(bios_filename, MAXPATHLEN);
+    // strncat(bios_filename, "/gba_bios.bin", MAXPATHLEN - strlen(bios_filename));
+	sprintf(bios_filename, "%s/Bios/GBA/gba_bios.bin", getenv("SDCARD_PATH"));
+
+    if (load_bios(bios_filename)) {
+      if (selected_bios == official_bios)
+        printf("Could not load BIOS image file\n");
+      bios_loaded = false;
+    }
 
     if (bios_loaded && bios_rom[0] != 0x18) {
       if (selected_bios == official_bios)
@@ -403,7 +382,8 @@ int main(int argc, char *argv[])
   }
 
   getcwd(main_path, 512);
-  plat_get_root_dir(save_path, 512);
+  sprintf(save_path, "%s/Saves/GBA", getenv("SDCARD_PATH"));
+  // plat_get_root_dir(save_path, 512);
 
   if (!gamepak_rom)
     init_gamepak_buffer();
