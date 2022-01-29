@@ -224,7 +224,7 @@ void draw_savestate_bg(int slot)
 void menu_set_defaults(void)
 {
   dynarec_enable = 1;
-  frameskip_style = 1;
+  frameskip_style = 0;
   scaling_mode = 1;
   max_frameskip = 2;
   color_correct = 0;
