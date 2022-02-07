@@ -10,8 +10,10 @@
 #include <dlfcn.h>
 #include <mmenu.h>
 #include <SDL/SDL.h>
+#include "scale.h"
 static void* mmenu = NULL;
 static int resume_slot = -1;
+static SDL_Surface* clean_screen = NULL;
 char rom_path[MAXPATHLEN];
 char save_template_path[MAXPATHLEN];
 
@@ -167,7 +169,14 @@ void handle_emu_action(emu_action action)
       update_backup();
 	  if (mmenu) {
 	  	ShowMenu_t ShowMenu = (ShowMenu_t)dlsym(mmenu, "ShowMenu");
-		MenuReturnStatus status = ShowMenu(rom_path, save_template_path);
+		SDL_Surface* snapshot = NULL;
+		if (scaling_mode==SCALING_2X_LCD) {
+			snapshot = clean_screen;
+		    uint16_t* Dst16 = (uint16_t*)snapshot->pixels;
+		    Dst16 += ((480-320)/2 * 640) + (640-480)/2;
+			scale2x(Dst16, gba_screen_pixels);
+		}
+		MenuReturnStatus status = ShowMenu(rom_path, save_template_path, snapshot);
 
 	  	if (status==kStatusExitGame) {
 			should_quit = 1;
@@ -429,6 +438,7 @@ int main(int argc, char *argv[])
   
 	mmenu = dlopen("libmmenu.so", RTLD_LAZY);
 	if (mmenu) {
+		clean_screen = SDL_CreateRGBSurface(SDL_SWSURFACE, 640, 480, 16, 0, 0, 0, 0);
 		ResumeSlot_t ResumeSlot = (ResumeSlot_t)dlsym(mmenu, "ResumeSlot");
 		if (ResumeSlot) resume_slot = ResumeSlot();
 	}
@@ -466,6 +476,8 @@ int main(int argc, char *argv[])
 
 void quit()
 {
+	if (clean_screen!=NULL) SDL_FreeSurface(clean_screen);
+	
   update_backup();
 
   memory_term();
